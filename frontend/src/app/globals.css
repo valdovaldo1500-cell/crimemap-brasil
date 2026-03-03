@@ -10,3 +10,4 @@ body{font-family:DM Sans,system-ui,sans-serif;background:var(--bg);color:var(--t
 .popup-title{font-weight:700;font-size:14px;color:var(--red);margin-bottom:4px}
 .popup-detail{color:var(--t2);font-size:12px}
 .popup-detail strong{color:var(--t1)}
+.crime-dot-icon{background:transparent!important;border:none!important}

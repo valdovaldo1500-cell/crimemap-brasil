@@ -4,6 +4,13 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { fetchHeatmapMunicipios, fetchHeatmapBairros } from '@/lib/api';
 interface Props { center:[number,number]; zoom:number; filters:any; }
+
+function formatCount(n: number): string {
+  if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(n);
+}
+
 export default function CrimeMap({ center, zoom, filters }: Props) {
   const mapRef = useRef<L.Map|null>(null);
   const markersRef = useRef<L.LayerGroup|null>(null);
@@ -63,11 +70,15 @@ export default function CrimeMap({ center, zoom, filters }: Props) {
         else if (intensity > 0.5) color = '#f97316';
         else if (intensity > 0.25) color = '#eab308';
         const label = d.bairro ? d.bairro + ', ' + d.municipio : d.municipio;
-        const marker = L.circleMarker([d.latitude, d.longitude], {
-          radius: Math.max(4, Math.min(20, intensity * 20)),
-          fillColor: color, color: color, weight: 2,
-          opacity: 0.8, fillOpacity: 0.7
+        const size = Math.round(28 + intensity * 28);
+        const fontSize = Math.round(10 + intensity * 6);
+        const icon = L.divIcon({
+          className: 'crime-dot-icon',
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2],
+          html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:2px solid ${color};opacity:0.85;display:flex;align-items:center;justify-content:center;"><span style="color:#fff;font-size:${fontSize}px;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,0.7);line-height:1;">${formatCount(d.weight)}</span></div>`
         });
+        const marker = L.marker([d.latitude, d.longitude], { icon });
         marker.bindPopup(
           '<div class="popup-title">' + label + '</div>' +
           '<div class="popup-detail"><strong>' + d.weight.toLocaleString() +
