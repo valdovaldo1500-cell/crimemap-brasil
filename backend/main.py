@@ -116,6 +116,41 @@ def get_stats(tipo: Optional[List[str]] = Query(None),
         top_crime_types=[CrimeTypeCount(tipo_enquadramento=t[0], count=t[1]) for t in tt],
         top_municipios=[MunicipioCount(municipio=m[0], count=m[1]) for m in tm])
 
+@app.get("/api/autocomplete")
+def autocomplete(q: str, db: Session = Depends(get_db)):
+    if len(q) < 2:
+        return []
+    term = f"%{q}%"
+    results = []
+    munis = db.query(
+        Crime.municipio_fato,
+        func.count(Crime.id).label("cnt"),
+        func.avg(Crime.latitude).label("lat"),
+        func.avg(Crime.longitude).label("lng")
+    ).filter(
+        Crime.municipio_fato.ilike(term),
+        Crime.latitude.isnot(None)
+    ).group_by(Crime.municipio_fato).order_by(func.count(Crime.id).desc()).limit(5).all()
+    for m in munis:
+        if m.lat and m.lng:
+            results.append({"type": "municipio", "name": m.municipio_fato,
+                "latitude": float(m.lat), "longitude": float(m.lng), "count": m.cnt})
+    bairros = db.query(
+        Crime.bairro, Crime.municipio_fato,
+        func.count(Crime.id).label("cnt"),
+        func.avg(Crime.latitude).label("lat"),
+        func.avg(Crime.longitude).label("lng")
+    ).filter(
+        Crime.bairro.ilike(term),
+        Crime.bairro.isnot(None), Crime.bairro != "",
+        Crime.latitude.isnot(None)
+    ).group_by(Crime.bairro, Crime.municipio_fato).order_by(func.count(Crime.id).desc()).limit(10).all()
+    for b in bairros:
+        if b.lat and b.lng:
+            results.append({"type": "bairro", "name": b.bairro + ", " + b.municipio_fato,
+                "latitude": float(b.lat), "longitude": float(b.lng), "count": b.cnt})
+    return results
+
 @app.get("/api/search")
 def search_location(q: str, db: Session = Depends(get_db)):
     results = []

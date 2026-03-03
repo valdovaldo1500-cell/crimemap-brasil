@@ -33,3 +33,6 @@ export async function fetchStats(p: any = {}) {
 export async function searchLocation(q: string) {
   return (await fetch(`${API}/api/search?q=${encodeURIComponent(q)}`)).json();
 }
+export async function fetchAutocomplete(q: string) {
+  return (await fetch(`${API}/api/autocomplete?q=${encodeURIComponent(q)}`)).json();
+}
