@@ -22,6 +22,7 @@ export default function Home() {
   const [center, setCenter] = useState<[number,number]>([-30.03,-51.22]);
   const [zoom, setZoom] = useState(7);
   const [showFilters, setShowFilters] = useState(false);
+  const [viewMode, setViewMode] = useState<'dots' | 'choropleth'>('dots');
   const searchRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>|null>(null);
 
@@ -96,7 +97,13 @@ export default function Home() {
               </div>
             )}
           </div>
-          <button onClick={()=>setShowFilters(!showFilters)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#1a2234] border border-[#1e293b] text-sm hover:bg-[#1e293b]">Filtros{selectedTypes.length>0&&<span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{selectedTypes.length}</span>}</button>
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-xl border border-[#1e293b] overflow-hidden">
+              <button onClick={()=>setViewMode('dots')} className={`px-3 py-2.5 text-sm ${viewMode==='dots'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>Pontos</button>
+              <button onClick={()=>setViewMode('choropleth')} className={`px-3 py-2.5 text-sm ${viewMode==='choropleth'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>Regioes</button>
+            </div>
+            <button onClick={()=>setShowFilters(!showFilters)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#1a2234] border border-[#1e293b] text-sm hover:bg-[#1e293b]">Filtros{selectedTypes.length>0&&<span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{selectedTypes.length}</span>}</button>
+          </div>
         </div></header>
       <div className="flex h-[calc(100vh-57px)]">
         {showFilters&&<aside className="w-80 border-r border-[#1e293b] bg-[#111827] overflow-y-auto p-4 space-y-4">
@@ -104,7 +111,7 @@ export default function Home() {
           <div><h3 className="text-xs uppercase tracking-wider text-[#94a3b8] mb-2">Tipo de Crime</h3><div className="space-y-1 max-h-96 overflow-y-auto">{crimeTypes.slice(0,30).map((ct:any)=><label key={ct.tipo_enquadramento} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-[#1a2234] cursor-pointer text-sm"><input type="checkbox" checked={selectedTypes.includes(ct.tipo_enquadramento)} onChange={()=>toggle(ct.tipo_enquadramento)} /><span className="flex-1 truncate">{ct.tipo_enquadramento}</span><span className="text-[10px] text-[#94a3b8] font-mono">{ct.count.toLocaleString()}</span></label>)}</div></div>
         </aside>}
         <main className="flex-1 relative">
-          <CrimeMap center={center} zoom={zoom} filters={filters} />
+          <CrimeMap center={center} zoom={zoom} filters={filters} viewMode={viewMode} />
           {stats&&<div className="absolute bottom-4 left-4 bg-[#111827]/90 backdrop-blur-xl border border-[#1e293b] rounded-2xl p-4 z-[1000] flex gap-6">
             <div><p className="text-2xl font-bold font-mono text-red-400">{stats.total_crimes?.toLocaleString()}</p><p className="text-[10px] text-[#94a3b8] uppercase tracking-wider">Ocorrencias</p></div>
             <div><p className="text-2xl font-bold font-mono text-amber-400">{stats.total_municipios}</p><p className="text-[10px] text-[#94a3b8] uppercase tracking-wider">Municipios</p></div>
