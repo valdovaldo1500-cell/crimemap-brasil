@@ -115,6 +115,7 @@ def ingest_from_url(url, db=None):
         raise
 
 KNOWN_URLS = [
+    "https://www.ssp.rs.gov.br/upload/arquivos/202601/16132458-spj-dados-abertos-ocorrencias-jan-dez-2025-em-05-01-2026.zip",
     "https://www.ssp.rs.gov.br/upload/arquivos/202602/19140211-spj-dados-abertos-ocorrencias-jan-2026-em-05-02-2026.zip",
 ]
 
