@@ -33,7 +33,8 @@ class Crime(Base):
     year_month = Column(String, index=True)
     __table_args__ = (
         Index('idx_mun_bairro', 'municipio_fato', 'bairro'),
-        Index('idx_tipo_data', 'tipo_enquadramento', 'data_fato'),)
+        Index('idx_tipo_data', 'tipo_enquadramento', 'data_fato'),
+        Index('idx_lat_lng', 'latitude', 'longitude'),)
 
 class GeocodeCache(Base):
     __tablename__ = "geocode_cache"

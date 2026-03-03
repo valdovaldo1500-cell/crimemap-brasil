@@ -1,12 +1,20 @@
 const API = '';
 
 export async function fetchHeatmapMunicipios(p: any = {}) {
-  const qs = new URLSearchParams(p).toString();
-  return (await fetch(`${API}/api/heatmap/municipios?${qs}`)).json();
+  const params = new URLSearchParams();
+  Object.entries(p).forEach(([k, v]) => {
+    if (Array.isArray(v)) v.forEach(val => params.append(k, String(val)));
+    else if (v !== undefined && v !== null) params.set(k, String(v));
+  });
+  return (await fetch(`${API}/api/heatmap/municipios?${params}`)).json();
 }
 export async function fetchHeatmapBairros(p: any = {}) {
-  const qs = new URLSearchParams(p).toString();
-  return (await fetch(`${API}/api/heatmap/bairros?${qs}`)).json();
+  const params = new URLSearchParams();
+  Object.entries(p).forEach(([k, v]) => {
+    if (Array.isArray(v)) v.forEach(val => params.append(k, String(val)));
+    else if (v !== undefined && v !== null) params.set(k, String(v));
+  });
+  return (await fetch(`${API}/api/heatmap/bairros?${params}`)).json();
 }
 export async function fetchCrimes(p: any = {}) {
   const qs = new URLSearchParams(p).toString();

@@ -37,24 +37,36 @@ def get_crimes(tipo: Optional[List[str]] = Query(None), grupo: Optional[str] = N
 @app.get("/api/heatmap/municipios", response_model=List[HeatmapPoint])
 def heatmap_municipios(tipo: Optional[List[str]] = Query(None), grupo: Optional[str] = None,
     data_inicio: Optional[str] = None, data_fim: Optional[str] = None,
+    south: Optional[float] = None, west: Optional[float] = None,
+    north: Optional[float] = None, east: Optional[float] = None,
     db: Session = Depends(get_db)):
     q = db.query(Crime.municipio_fato, func.count(Crime.id).label("cnt")).filter(Crime.latitude.isnot(None))
     if tipo: q = q.filter(Crime.tipo_enquadramento.in_(tipo))
     if grupo: q = q.filter(Crime.grupo_fato == grupo)
     if data_inicio: q = q.filter(Crime.data_fato >= data_inicio)
     if data_fim: q = q.filter(Crime.data_fato <= data_fim)
+    if south is not None and north is not None:
+        q = q.filter(Crime.latitude.between(south, north))
+    if west is not None and east is not None:
+        q = q.filter(Crime.longitude.between(west, east))
     q = q.group_by(Crime.municipio_fato)
     results = []
     for row in q.all():
         geo = db.query(GeocodeCache).filter(GeocodeCache.municipio == row.municipio_fato, GeocodeCache.bairro == "").first()
         if geo:
+            if south is not None and north is not None and west is not None and east is not None:
+                if not (south <= geo.latitude <= north and west <= geo.longitude <= east):
+                    continue
             results.append(HeatmapPoint(latitude=geo.latitude, longitude=geo.longitude, weight=row.cnt, municipio=row.municipio_fato))
     return results
 
 @app.get("/api/heatmap/bairros", response_model=List[HeatmapPoint])
 def heatmap_bairros(municipio: Optional[str] = None, tipo: Optional[List[str]] = Query(None),
     grupo: Optional[str] = None, data_inicio: Optional[str] = None,
-    data_fim: Optional[str] = None, db: Session = Depends(get_db)):
+    data_fim: Optional[str] = None,
+    south: Optional[float] = None, west: Optional[float] = None,
+    north: Optional[float] = None, east: Optional[float] = None,
+    db: Session = Depends(get_db)):
     q = db.query(Crime.municipio_fato, Crime.bairro, func.count(Crime.id).label("cnt"),
         func.avg(Crime.latitude).label("lat"), func.avg(Crime.longitude).label("lng")
     ).filter(Crime.latitude.isnot(None), Crime.bairro.isnot(None), Crime.bairro != "")
@@ -63,6 +75,10 @@ def heatmap_bairros(municipio: Optional[str] = None, tipo: Optional[List[str]] =
     if grupo: q = q.filter(Crime.grupo_fato == grupo)
     if data_inicio: q = q.filter(Crime.data_fato >= data_inicio)
     if data_fim: q = q.filter(Crime.data_fato <= data_fim)
+    if south is not None and north is not None:
+        q = q.filter(Crime.latitude.between(south, north))
+    if west is not None and east is not None:
+        q = q.filter(Crime.longitude.between(west, east))
     q = q.group_by(Crime.municipio_fato, Crime.bairro)
     return [HeatmapPoint(latitude=float(r.lat), longitude=float(r.lng), weight=r.cnt,
         municipio=r.municipio_fato, bairro=r.bairro) for r in q.all() if r.lat and r.lng]
