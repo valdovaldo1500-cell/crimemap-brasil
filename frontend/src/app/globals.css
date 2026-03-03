@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+:root{--bg:#0a0f1a;--bg2:#111827;--card:#1a2234;--t1:#f1f5f9;--t2:#94a3b8;--red:#ef4444;--border:#1e293b}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:DM Sans,system-ui,sans-serif;background:var(--bg);color:var(--t1);min-height:100vh}
+.leaflet-container{width:100%;height:100%;background:var(--bg)!important}
+.leaflet-popup-content-wrapper{background:var(--card)!important;color:var(--t1)!important;border-radius:12px!important;border:1px solid var(--border)!important}
+.leaflet-popup-tip{background:var(--card)!important}
+.popup-title{font-weight:700;font-size:14px;color:var(--red);margin-bottom:4px}
+.popup-detail{color:var(--t2);font-size:12px}
+.popup-detail strong{color:var(--t1)}
