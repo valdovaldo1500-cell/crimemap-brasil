@@ -1,5 +1,6 @@
 """CrimeBrasil"""
 import os, logging, threading, unicodedata, hmac, hashlib, time, random, base64, json
+import os as _os, json as _json
 from typing import Optional, List
 from fastapi import FastAPI, Depends, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,7 +8,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import func, distinct
 from database import init_db, get_db, Crime, GeocodeCache, BugReport, CrimeStaging, SessionLocal
-from schemas import CrimeOut, HeatmapPoint, CrimeTypeCount, MunicipioCount, StatsResponse
+from schemas import CrimeOut, HeatmapPoint, BairroComponent, CrimeTypeCount, MunicipioCount, StatsResponse
 from services.geocoder import GeocoderService, batch_geocode_new_bairros
 
 CAPTCHA_SECRET = os.getenv("CAPTCHA_SECRET", "crimebrasil-captcha-2024")
@@ -18,6 +19,70 @@ def normalize_name(s: str) -> str:
     """Strip accents and uppercase — works for Brazilian Portuguese."""
     nfkd = unicodedata.normalize('NFD', s)
     return ''.join(c for c in nfkd if unicodedata.category(c) != 'Mn').upper().strip()
+
+def normalize_fuzzy(s: str) -> str:
+    """Aggressive normalization: strip accents, spaces, hyphens, apostrophes."""
+    import re
+    n = normalize_name(s)
+    return re.sub(r"[\s'\-]+", "", n)
+
+def _load_bairro_polygons():
+    """Load rs-bairros.geojson into a spatial index keyed by municipio."""
+    path = _os.path.join(_os.path.dirname(__file__), "..", "frontend", "public", "geo", "rs-bairros.geojson")
+    if not _os.path.exists(path):
+        path = "/app/geo/rs-bairros.geojson"
+    if not _os.path.exists(path):
+        return {}
+    with open(path) as f:
+        data = _json.load(f)
+    index = {}  # municipio_norm -> [(bairro_norm, display_name, [ring, ...]), ...]
+    for feat in data.get("features", []):
+        props = feat.get("properties", {})
+        mun = props.get("municipio_normalized", "")
+        name_norm = props.get("name_normalized", "")
+        name = props.get("name", "")
+        if not mun or not name_norm:
+            continue
+        geom = feat.get("geometry", {})
+        rings = []
+        if geom["type"] == "Polygon":
+            rings = [geom["coordinates"][0]]  # outer ring only
+        elif geom["type"] == "MultiPolygon":
+            rings = [poly[0] for poly in geom["coordinates"]]  # outer ring of each sub-polygon
+        if rings:
+            index.setdefault(mun, []).append((name_norm, name, rings))
+    return index
+
+BAIRRO_POLYGON_INDEX = _load_bairro_polygons()
+
+def _point_in_polygon(px, py, polygon):
+    """Ray-casting PIP test. polygon is [[lon,lat], ...]."""
+    n = len(polygon)
+    inside = False
+    j = n - 1
+    for i in range(n):
+        xi, yi = polygon[i]
+        xj, yj = polygon[j]
+        if ((yi > py) != (yj > py)) and (px < (xj - xi) * (py - yi) / (yj - yi) + xi):
+            inside = not inside
+        j = i
+    return inside
+
+def _find_containing_polygon(lat, lng, mun_norm):
+    """Find which bairro polygon contains point (lat, lng) for a given municipality.
+    Returns (name_normalized, display_name) or None."""
+    polys = BAIRRO_POLYGON_INDEX.get(mun_norm, [])
+    for name_norm, display_name, rings in polys:
+        for ring in rings:
+            if _point_in_polygon(lng, lat, ring):  # PIP takes (lon, lat)
+                return (name_norm, display_name)
+    # Retry with small offsets for boundary-edge cases (~50m buffer)
+    for dlat, dlng in [(0.0005, 0), (-0.0005, 0), (0, 0.0005), (0, -0.0005)]:
+        for name_norm, display_name, rings in polys:
+            for ring in rings:
+                if _point_in_polygon(lng + dlng, lat + dlat, ring):
+                    return (name_norm, display_name)
+    return None
 
 def semester_months(semestre: str) -> list[str]:
     """'2025-S1' -> ['2025-01', ..., '2025-06']"""
@@ -99,8 +164,56 @@ def heatmap_municipios(tipo: Optional[List[str]] = Query(None), grupo: Optional[
     if west is not None and east is not None:
         q = q.filter(Crime.longitude.between(west, east))
     q = q.group_by(Crime.municipio_fato)
-    return [HeatmapPoint(latitude=float(r.lat), longitude=float(r.lng),
+    crimes_results = [HeatmapPoint(latitude=float(r.lat), longitude=float(r.lng),
         weight=r.cnt, municipio=r.municipio_fato) for r in q.all() if r.lat and r.lng]
+
+    # Also query staging table for non-RS municipalities
+    q2 = db.query(
+        CrimeStaging.municipio, CrimeStaging.state,
+        (func.coalesce(func.sum(CrimeStaging.occurrences), 0) +
+         func.coalesce(func.sum(CrimeStaging.victims), 0)).label("cnt")
+    ).filter(CrimeStaging.municipio.isnot(None), CrimeStaging.state != "RS")
+    if tipo: q2 = q2.filter(CrimeStaging.crime_type.in_(tipo))
+    if semestre:
+        year_str, sem = semestre.split('-')
+        q2 = q2.filter(CrimeStaging.year == int(year_str))
+        if sem == "S1": q2 = q2.filter(CrimeStaging.month.between(1, 6))
+        else: q2 = q2.filter(CrimeStaging.month.between(7, 12))
+    elif ano:
+        q2 = q2.filter(CrimeStaging.year == int(ano))
+    if sexo: q2 = q2.filter(CrimeStaging.sexo_vitima.in_(sexo))
+    if state: q2 = q2.filter(CrimeStaging.state == state)
+    staging_rows = q2.group_by(CrimeStaging.municipio, CrimeStaging.state).all()
+
+    # For staging municipalities, geocode or look up coordinates
+    staging_results = []
+    for r in staging_rows:
+        if not r.cnt or int(r.cnt) == 0:
+            continue
+        mun_name = r.municipio
+        # Try GeocodeCache first
+        geo = db.query(GeocodeCache).filter(
+            GeocodeCache.municipio == normalize_name(mun_name), GeocodeCache.bairro == "").first()
+        if geo and geo.latitude and geo.longitude:
+            lat, lng = geo.latitude, geo.longitude
+        else:
+            # Fall back to state centroid
+            centroid = STATE_CENTROIDS.get(r.state)
+            if not centroid:
+                continue
+            lat, lng = centroid
+        # Apply bounds filter
+        if south is not None and north is not None:
+            if not (south <= lat <= north):
+                continue
+        if west is not None and east is not None:
+            if not (west <= lng <= east):
+                continue
+        staging_results.append(HeatmapPoint(latitude=lat, longitude=lng,
+            weight=int(r.cnt), municipio=mun_name))
+
+    # Merge: crimes (RS) + staging (non-RS), no overlap since we filtered state != "RS" in staging
+    return crimes_results + staging_results
 
 @app.get("/api/heatmap/bairros", response_model=List[HeatmapPoint])
 def heatmap_bairros(municipio: Optional[str] = None, tipo: Optional[List[str]] = Query(None),
@@ -136,22 +249,95 @@ def heatmap_bairros(municipio: Optional[str] = None, tipo: Optional[List[str]] =
     # Load GeocodeCache with normalized keys
     cache_rows = db.query(GeocodeCache).filter(GeocodeCache.bairro != "").all()
     cache = {(normalize_name(c.municipio), normalize_name(c.bairro)): (c.latitude, c.longitude) for c in cache_rows}
-    # Merge rows by normalized bairro name (handles accented variants)
+    # Merge rows by normalized bairro name + fuzzy (no hardcoded aliases)
     merged: dict[tuple[str, str], dict] = {}
+    fuzzy_key_map: dict[tuple[str, str], tuple[str, str]] = {}
     for r in rows:
         if not (r.lat and r.lng):
             continue
-        key = (normalize_name(r.municipio_fato), normalize_name(r.bairro))
+        mun_norm = normalize_name(r.municipio_fato)
+        bairro_norm = normalize_name(r.bairro)
+        key = (mun_norm, bairro_norm)
+        # Fuzzy merge (BOM FIM / BOMFIM → same key)
+        fuzzy = (mun_norm, normalize_fuzzy(bairro_norm))
+        if fuzzy in fuzzy_key_map:
+            key = fuzzy_key_map[fuzzy]
+        else:
+            fuzzy_key_map[fuzzy] = key
         if key in merged:
             merged[key]['cnt'] += r.cnt
         else:
             merged[key] = {'municipio': r.municipio_fato, 'bairro': r.bairro,
                             'cnt': r.cnt, 'lat': float(r.lat), 'lng': float(r.lng)}
+
+    # PIP pass: for merged bairros that don't match any polygon by name,
+    # check if their geocoded point falls inside an existing polygon → re-merge
+    polygon_names_by_mun: dict[str, set[str]] = {}
+    for mun, polys in BAIRRO_POLYGON_INDEX.items():
+        polygon_names_by_mun[mun] = {p[0] for p in polys}
+
+    pip_remap: dict[tuple[str, str], tuple[str, str, str]] = {}
+    for key, m in merged.items():
+        mun_norm, bairro_norm = key
+        poly_names = polygon_names_by_mun.get(mun_norm, set())
+        if bairro_norm in poly_names or normalize_fuzzy(bairro_norm) in {normalize_fuzzy(pn) for pn in poly_names}:
+            continue  # already matches a polygon — no remap needed
+        cache_coords = cache.get(key)
+        lat, lng = cache_coords if cache_coords else (m['lat'], m['lng'])
+        result = _find_containing_polygon(lat, lng, mun_norm)
+        if not result and cache_coords:
+            # Also try with Crime average coords (what the frontend displays)
+            result = _find_containing_polygon(m['lat'], m['lng'], mun_norm)
+        if result:
+            pip_remap[key] = (mun_norm, result[0], result[1])
+
+    for old_key, (mun_norm, new_bairro_norm, new_display) in pip_remap.items():
+        old_data = merged.pop(old_key)
+        new_key = (mun_norm, new_bairro_norm)
+        if new_key in merged:
+            merged[new_key]['cnt'] += old_data['cnt']
+        else:
+            merged[new_key] = {'municipio': old_data['municipio'], 'bairro': new_display,
+                                'cnt': old_data['cnt'], 'lat': old_data['lat'], 'lng': old_data['lng']}
+
+    # Build municipality centroid lookup for "unknown bairro" detection
+    from services.geocoder import MAJOR_CITIES_RS, _haversine_km
+    mun_cache_rows = db.query(GeocodeCache).filter(GeocodeCache.bairro == "").all()
+    mun_centroids: dict[str, tuple[float, float]] = {}
+    for c in mun_cache_rows:
+        mun_centroids[normalize_name(c.municipio)] = (c.latitude, c.longitude)
+    for mun_name, coords in MAJOR_CITIES_RS.items():
+        mun_centroids[mun_name] = coords
+
+    # Group bairros at municipality centroid (within 0.5km) OR with < 3 occurrences into "Bairro desconhecido"
+    unknown_bucket: dict[str, dict] = {}  # keyed by mun_norm
     results = []
     for key, m in merged.items():
+        mun_norm = key[0]
         lat, lng = cache.get(key, (m['lat'], m['lng']))
-        results.append(HeatmapPoint(latitude=lat, longitude=lng, weight=m['cnt'],
-            municipio=m['municipio'], bairro=m['bairro']))
+        centroid = mun_centroids.get(mun_norm)
+        # Validate bairro coords against municipality centroid; snap if too far (cross-city geocoding error)
+        if centroid and _haversine_km(lat, lng, centroid[0], centroid[1]) > 30:
+            lat, lng = centroid[0], centroid[1]
+        is_at_centroid = centroid and _haversine_km(lat, lng, centroid[0], centroid[1]) < 0.5
+        is_low_count = m['cnt'] < 3
+        if is_at_centroid or is_low_count:
+            if mun_norm not in unknown_bucket:
+                c_lat, c_lng = centroid if centroid else (lat, lng)
+                unknown_bucket[mun_norm] = {'municipio': m['municipio'], 'cnt': 0,
+                                             'lat': c_lat, 'lng': c_lng, 'components': []}
+            unknown_bucket[mun_norm]['cnt'] += m['cnt']
+            unknown_bucket[mun_norm]['components'].append({'bairro': m['bairro'], 'weight': m['cnt']})
+        else:
+            results.append(HeatmapPoint(latitude=lat, longitude=lng, weight=m['cnt'],
+                municipio=m['municipio'], bairro=m['bairro']))
+    # Add unknown buckets
+    for mun_norm, ub in unknown_bucket.items():
+        if ub['cnt'] >= 5:  # only show if substantial
+            components = sorted(ub['components'], key=lambda x: x['weight'], reverse=True)
+            results.append(HeatmapPoint(latitude=ub['lat'], longitude=ub['lng'], weight=ub['cnt'],
+                municipio=ub['municipio'], bairro='Bairro desconhecido',
+                components=[BairroComponent(**c) for c in components]))
     return results
 
 @app.get("/api/crime-types", response_model=List[CrimeTypeCount])
@@ -177,6 +363,14 @@ def get_cor_values(db: Session = Depends(get_db)):
     q = db.query(Crime.cor_vitima, func.count(Crime.id)).filter(
         Crime.cor_vitima.isnot(None), Crime.cor_vitima != ""
     ).group_by(Crime.cor_vitima).order_by(func.count(Crime.id).desc())
+    return [{"value": r[0], "count": r[1]} for r in q.all()]
+
+@app.get("/api/grupo-values")
+def get_grupo_values(db: Session = Depends(get_db)):
+    q = db.query(Crime.grupo_fato, func.count(Crime.id)).filter(
+        Crime.grupo_fato.isnot(None), Crime.grupo_fato != "",
+        Crime.grupo_fato.in_(["CRIMES", "CONTRAVENCOES"])
+    ).group_by(Crime.grupo_fato).order_by(func.count(Crime.id).desc())
     return [{"value": r[0], "count": r[1]} for r in q.all()]
 
 @app.get("/api/bairros")
@@ -208,9 +402,75 @@ def get_stats(tipo: Optional[List[str]] = Query(None),
         top_crime_types=[CrimeTypeCount(tipo_enquadramento=t[0], count=t[1]) for t in tt],
         top_municipios=[MunicipioCount(municipio=m[0], count=m[1]) for m in tm])
 
+@app.get("/api/filter-options")
+def filter_options(
+    tipo: Optional[List[str]] = Query(None),
+    grupo: Optional[str] = None,
+    semestre: Optional[str] = None,
+    ano: Optional[str] = None,
+    idade_min: Optional[int] = None,
+    idade_max: Optional[int] = None,
+    sexo: Optional[List[str]] = Query(None),
+    cor: Optional[List[str]] = Query(None),
+    db: Session = Depends(get_db)):
+    """Return available filter options with counts, applying cross-filtering."""
+    def base_query():
+        return db.query(Crime)
+
+    def apply_common(q, skip=None):
+        if skip != 'tipo' and tipo:
+            q = q.filter(Crime.tipo_enquadramento.in_(tipo))
+        if skip != 'grupo' and grupo:
+            q = q.filter(Crime.grupo_fato == grupo)
+        if semestre:
+            q = q.filter(Crime.year_month.in_(semester_months(semestre)))
+        elif ano:
+            q = q.filter(Crime.year_month.like(f"{ano}-%"))
+        if skip != 'sexo' and sexo:
+            q = q.filter(Crime.sexo_vitima.in_(sexo))
+        if skip != 'cor' and cor:
+            q = q.filter(Crime.cor_vitima.in_(cor))
+        if idade_min is not None:
+            q = q.filter(Crime.idade_vitima >= idade_min)
+        if idade_max is not None:
+            q = q.filter(Crime.idade_vitima <= idade_max)
+        return q
+
+    # Grupo options (apply all filters except grupo)
+    gq = apply_common(base_query(), skip='grupo')
+    gq = gq.with_entities(Crime.grupo_fato, func.count(Crime.id)).filter(
+        Crime.grupo_fato.isnot(None), Crime.grupo_fato != "",
+        Crime.grupo_fato.in_(["CRIMES", "CONTRAVENCOES"])
+    ).group_by(Crime.grupo_fato).order_by(func.count(Crime.id).desc())
+    grupo_opts = [{"value": r[0], "count": r[1]} for r in gq.all()]
+
+    # Tipo options (apply all filters except tipo)
+    tq = apply_common(base_query(), skip='tipo')
+    tq = tq.with_entities(Crime.tipo_enquadramento, func.count(Crime.id)).filter(
+        Crime.tipo_enquadramento.isnot(None), Crime.tipo_enquadramento != ""
+    ).group_by(Crime.tipo_enquadramento).order_by(func.count(Crime.id).desc())
+    tipo_opts = [{"value": r[0], "count": r[1]} for r in tq.all()]
+
+    # Sexo options (apply all filters except sexo)
+    sq = apply_common(base_query(), skip='sexo')
+    sq = sq.with_entities(Crime.sexo_vitima, func.count(Crime.id)).filter(
+        Crime.sexo_vitima.isnot(None), Crime.sexo_vitima != ""
+    ).group_by(Crime.sexo_vitima).order_by(func.count(Crime.id).desc())
+    sexo_opts = [{"value": r[0], "count": r[1]} for r in sq.all()]
+
+    # Cor options (apply all filters except cor)
+    cq = apply_common(base_query(), skip='cor')
+    cq = cq.with_entities(Crime.cor_vitima, func.count(Crime.id)).filter(
+        Crime.cor_vitima.isnot(None), Crime.cor_vitima != ""
+    ).group_by(Crime.cor_vitima).order_by(func.count(Crime.id).desc())
+    cor_opts = [{"value": r[0], "count": r[1]} for r in cq.all()]
+
+    return {"grupo": grupo_opts, "tipo": tipo_opts, "sexo": sexo_opts, "cor": cor_opts}
+
 @app.get("/api/location-stats")
 def location_stats(municipio: str, bairro: Optional[str] = None,
-    tipo: Optional[List[str]] = Query(None), semestre: Optional[str] = None,
+    tipo: Optional[List[str]] = Query(None), grupo: Optional[str] = None,
+    semestre: Optional[str] = None,
     ano: Optional[str] = None,
     idade_min: Optional[int] = None, idade_max: Optional[int] = None,
     sexo: Optional[List[str]] = Query(None), cor: Optional[List[str]] = Query(None),
@@ -224,6 +484,8 @@ def location_stats(municipio: str, bairro: Optional[str] = None,
         q = q.filter(Crime.year_month.like(f"{ano}-%"))
     if tipo:
         q = q.filter(Crime.tipo_enquadramento.in_(tipo))
+    if grupo:
+        q = q.filter(Crime.grupo_fato == grupo)
     if idade_min is not None: q = q.filter(Crime.idade_vitima >= idade_min)
     if idade_max is not None: q = q.filter(Crime.idade_vitima <= idade_max)
     if sexo: q = q.filter(Crime.sexo_vitima.in_(sexo))
@@ -342,21 +604,40 @@ def heatmap_states(tipo: Optional[List[str]] = Query(None),
     idade_min: Optional[int] = None, idade_max: Optional[int] = None,
     sexo: Optional[List[str]] = Query(None), cor: Optional[List[str]] = Query(None),
     db: Session = Depends(get_db)):
-    q = db.query(Crime.state, func.count(Crime.id).label("cnt")).filter(Crime.state.isnot(None))
-    if tipo: q = q.filter(Crime.tipo_enquadramento.in_(tipo))
-    if semestre: q = q.filter(Crime.year_month.in_(semester_months(semestre)))
-    elif ano: q = q.filter(Crime.year_month.like(f"{ano}-%"))
-    if idade_min is not None: q = q.filter(Crime.idade_vitima >= idade_min)
-    if idade_max is not None: q = q.filter(Crime.idade_vitima <= idade_max)
-    if sexo: q = q.filter(Crime.sexo_vitima.in_(sexo))
-    if cor: q = q.filter(Crime.cor_vitima.in_(cor))
-    rows = q.group_by(Crime.state).all()
-    results = []
-    for r in rows:
-        centroid = STATE_CENTROIDS.get(r.state)
-        if centroid:
-            results.append({"state": r.state, "latitude": centroid[0], "longitude": centroid[1], "weight": r.cnt})
-    return results
+    # Query 1: crimes table (detailed RS data)
+    q1 = db.query(Crime.state, func.count(Crime.id).label("cnt")).filter(Crime.state.isnot(None))
+    if tipo: q1 = q1.filter(Crime.tipo_enquadramento.in_(tipo))
+    if semestre: q1 = q1.filter(Crime.year_month.in_(semester_months(semestre)))
+    elif ano: q1 = q1.filter(Crime.year_month.like(f"{ano}-%"))
+    if idade_min is not None: q1 = q1.filter(Crime.idade_vitima >= idade_min)
+    if idade_max is not None: q1 = q1.filter(Crime.idade_vitima <= idade_max)
+    if sexo: q1 = q1.filter(Crime.sexo_vitima.in_(sexo))
+    if cor: q1 = q1.filter(Crime.cor_vitima.in_(cor))
+    crimes_by_state = {r.state: r.cnt for r in q1.group_by(Crime.state).all()}
+
+    # Query 2: staging table (all 27 states)
+    q2 = db.query(
+        CrimeStaging.state,
+        (func.coalesce(func.sum(CrimeStaging.occurrences), 0) +
+         func.coalesce(func.sum(CrimeStaging.victims), 0)).label("cnt")
+    ).filter(CrimeStaging.state.isnot(None))
+    if tipo: q2 = q2.filter(CrimeStaging.crime_type.in_(tipo))
+    if semestre:
+        year_str, sem = semestre.split('-')
+        q2 = q2.filter(CrimeStaging.year == int(year_str))
+        if sem == "S1": q2 = q2.filter(CrimeStaging.month.between(1, 6))
+        else: q2 = q2.filter(CrimeStaging.month.between(7, 12))
+    elif ano:
+        q2 = q2.filter(CrimeStaging.year == int(ano))
+    if sexo: q2 = q2.filter(CrimeStaging.sexo_vitima.in_(sexo))
+    staging_by_state = {r.state: int(r.cnt) for r in q2.group_by(CrimeStaging.state).all() if r.cnt}
+
+    # Merge: staging as base, crimes overrides for states it covers (avoids double-counting)
+    merged = {**staging_by_state, **crimes_by_state}
+
+    return [{"state": s, "latitude": c[0], "longitude": c[1], "weight": w}
+            for s, w in merged.items()
+            if (c := STATE_CENTROIDS.get(s))]
 
 @app.get("/api/captcha")
 def get_captcha():
@@ -438,6 +719,30 @@ def geocoding_status(db: Session = Depends(get_db)):
         "geocoding_rate_pct": rate,
     }
 
+@app.post("/api/admin/validate-geocache")
+def validate_geocache(db: Session = Depends(get_db)):
+    """Delete GeocodeCache entries where bairro coords are > 50km from their municipality centroid."""
+    from services.geocoder import _haversine_km, MAJOR_CITIES_RS, MAX_BAIRRO_DISTANCE_KM
+    cache_rows = db.query(GeocodeCache).filter(GeocodeCache.bairro != "").all()
+    # Build municipio centroid lookup
+    mun_centroids: dict[str, tuple[float, float]] = {}
+    for c in db.query(GeocodeCache).filter(GeocodeCache.bairro == "").all():
+        mun_centroids[c.municipio] = (c.latitude, c.longitude)
+    for mun, coords in MAJOR_CITIES_RS.items():
+        mun_centroids[mun] = coords
+    deleted = 0
+    for row in cache_rows:
+        centroid = mun_centroids.get(row.municipio)
+        if not centroid:
+            continue
+        dist = _haversine_km(row.latitude, row.longitude, centroid[0], centroid[1])
+        if dist > MAX_BAIRRO_DISTANCE_KM:
+            logging.info(f"Deleting geocache: {row.bairro}, {row.municipio} ({dist:.0f}km from centroid)")
+            db.delete(row)
+            deleted += 1
+    db.commit()
+    return {"message": f"Validated {len(cache_rows)} entries, deleted {deleted} outliers"}
+
 @app.post("/api/admin/check-updates")
 def check_updates():
     """Manually trigger SSP data check + ingestion + geocoding."""
@@ -477,6 +782,34 @@ def load_staging():
     thread = threading.Thread(target=_run, daemon=True)
     thread.start()
     return {"message": "Staging load started in background. Check /api/admin/staging-stats for progress."}
+
+@app.get("/api/admin/state-data-quality")
+def state_data_quality(db: Session = Depends(get_db)):
+    """Per-source, per-state data quality diagnostics."""
+    # Check if any row has BOTH occurrences > 0 AND victims > 0 (potential double-count)
+    double_count = db.query(func.count(CrimeStaging.id)).filter(
+        CrimeStaging.occurrences > 0, CrimeStaging.victims > 0
+    ).scalar() or 0
+    # Per-state breakdown from crimes table
+    crimes_by_state = {r[0]: r[1] for r in
+        db.query(Crime.state, func.count(Crime.id)).filter(Crime.state.isnot(None)).group_by(Crime.state).all()}
+    # Per-state, per-source from staging
+    staging_breakdown = db.query(
+        CrimeStaging.state, CrimeStaging.source,
+        func.count(CrimeStaging.id),
+        func.coalesce(func.sum(CrimeStaging.occurrences), 0),
+        func.coalesce(func.sum(CrimeStaging.victims), 0)
+    ).group_by(CrimeStaging.state, CrimeStaging.source).all()
+    staging_detail = {}
+    for state, source, rows, occ, vic in staging_breakdown:
+        staging_detail.setdefault(state, []).append({
+            "source": source, "rows": rows, "occurrences": int(occ), "victims": int(vic)
+        })
+    return {
+        "double_count_rows": double_count,
+        "crimes_table_by_state": crimes_by_state,
+        "staging_by_state_source": staging_detail,
+    }
 
 @app.get("/api/admin/staging-stats")
 def staging_stats(db: Session = Depends(get_db)):
