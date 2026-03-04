@@ -38,6 +38,12 @@ class MunicipioCount(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
 
+class LocationStatsResponse(BaseModel):
+    municipio: str
+    bairro: Optional[str] = None
+    total: int
+    crime_types: List[CrimeTypeCount]
+
 class StatsResponse(BaseModel):
     total_crimes: int
     total_municipios: int

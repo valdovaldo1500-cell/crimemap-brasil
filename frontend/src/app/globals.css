@@ -11,3 +11,8 @@ body{font-family:DM Sans,system-ui,sans-serif;background:var(--bg);color:var(--t
 .popup-detail{color:var(--t2);font-size:12px}
 .popup-detail strong{color:var(--t1)}
 .crime-dot-icon{background:transparent!important;border:none!important}
+.choropleth-label{background:transparent!important;border:none!important;box-shadow:none!important}
+.bubble-label{background:transparent!important;border:none!important;box-shadow:none!important;color:#fff!important;font-size:11px!important;font-weight:700!important;text-shadow:0 1px 3px rgba(0,0,0,0.9)!important}
+.popup-breakdown{width:100%;margin-top:8px;font-size:11px;color:var(--t2);border-collapse:collapse}
+.popup-breakdown td{padding:2px 0;border-bottom:1px solid var(--border)}
+.popup-breakdown td:first-child{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

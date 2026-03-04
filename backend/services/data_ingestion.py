@@ -114,6 +114,14 @@ def ingest_from_url(url, db=None):
         db.commit()
         raise
 
+def ingest_and_geocode(url, db=None):
+    """Ingest CSV from URL, then batch-geocode new bairros."""
+    count = ingest_from_url(url, db)
+    from services.geocoder import batch_geocode_new_bairros
+    batch_geocode_new_bairros(db)
+    return count
+
+
 KNOWN_URLS = [
     "https://www.ssp.rs.gov.br/upload/arquivos/202601/16132458-spj-dados-abertos-ocorrencias-jan-dez-2025-em-05-01-2026.zip",
     "https://www.ssp.rs.gov.br/upload/arquivos/202602/19140211-spj-dados-abertos-ocorrencias-jan-2026-em-05-02-2026.zip",

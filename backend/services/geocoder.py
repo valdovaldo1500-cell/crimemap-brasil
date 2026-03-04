@@ -72,7 +72,13 @@ class GeocoderService:
                 coords = (loc.latitude, loc.longitude)
                 if db: self._save_cache(db, mun, ba, coords[0], coords[1])
                 return coords
-            if ba: return self.geocode_location(municipio, "", db)
+            if ba:
+                if ba.upper() != "CENTRO":
+                    centro = self.geocode_location(municipio, "CENTRO", db)
+                    if centro:
+                        self._save_cache(db, mun, ba, centro[0], centro[1])
+                        return centro
+                return self.geocode_location(municipio, "", db)
         except (GeocoderTimedOut, GeocoderServiceError) as e:
             logger.warning(f"Geocoding failed {municipio}/{bairro}: {e}")
         return None
@@ -88,3 +94,46 @@ class GeocoderService:
                 db.commit()
         except Exception:
             db.rollback()
+
+
+def batch_geocode_new_bairros(db=None, municipio_filter=None, min_crimes=10):
+    """Geocode (municipio, bairro) pairs missing from cache. Returns (done, total)."""
+    import unicodedata
+    from database import Crime, GeocodeCache, SessionLocal
+    from sqlalchemy import func
+
+    def _normalize(s):
+        nfkd = unicodedata.normalize('NFD', s)
+        return ''.join(c for c in nfkd if unicodedata.category(c) != 'Mn').upper().strip()
+
+    if db is None:
+        db = SessionLocal()
+    q = db.query(Crime.municipio_fato, Crime.bairro).filter(
+        Crime.bairro.isnot(None), Crime.bairro != "")
+    if municipio_filter:
+        q = q.filter(Crime.municipio_fato.ilike(f"%{municipio_filter}%"))
+    q = q.group_by(Crime.municipio_fato, Crime.bairro).having(func.count(Crime.id) >= min_crimes)
+    seen: dict[tuple[str, str], tuple[str, str]] = {}
+    for r in q.all():
+        key = (_normalize(r.municipio_fato), _normalize(r.bairro))
+        if key not in seen:
+            seen[key] = (r.municipio_fato, r.bairro)
+    pairs = list(seen.values())
+    cache_rows = db.query(GeocodeCache).filter(GeocodeCache.bairro != "").all()
+    cached = {(_normalize(c.municipio), _normalize(c.bairro)) for c in cache_rows}
+    to_geocode = [(m, b) for m, b in pairs if (_normalize(m), _normalize(b)) not in cached]
+    total = len(to_geocode)
+    if total == 0:
+        return (0, 0)
+    geocoder = GeocoderService()
+    done = 0
+    for mun, bairro in to_geocode:
+        try:
+            geocoder.geocode_location(mun, bairro, db=db)
+            done += 1
+            if done % 50 == 0:
+                logger.info(f"Geocoded {done}/{total} bairros")
+        except Exception as e:
+            logger.warning(f"Failed to geocode {bairro}, {mun}: {e}")
+    logger.info(f"Batch geocoding complete: {done}/{total} bairros")
+    return (done, total)
