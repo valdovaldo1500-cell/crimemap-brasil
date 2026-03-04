@@ -1,13 +1,16 @@
-"""CrimeMap RS"""
-import os, logging, threading, unicodedata
+"""CrimeBrasil"""
+import os, logging, threading, unicodedata, hmac, hashlib, time, random, base64, json
 from typing import Optional, List
-from fastapi import FastAPI, Depends, Query
+from fastapi import FastAPI, Depends, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import func, distinct
-from database import init_db, get_db, Crime, GeocodeCache, SessionLocal
+from database import init_db, get_db, Crime, GeocodeCache, BugReport, CrimeStaging, SessionLocal
 from schemas import CrimeOut, HeatmapPoint, CrimeTypeCount, MunicipioCount, StatsResponse
 from services.geocoder import GeocoderService, batch_geocode_new_bairros
+
+CAPTCHA_SECRET = os.getenv("CAPTCHA_SECRET", "crimebrasil-captcha-2024")
 
 logging.basicConfig(level=logging.INFO)
 
@@ -22,7 +25,7 @@ def semester_months(semestre: str) -> list[str]:
     rng = range(1, 7) if sem == "S1" else range(7, 13)
     return [f"{year}-{m:02d}" for m in rng]
 
-app = FastAPI(title="CrimeMap RS", version="1.0.0")
+app = FastAPI(title="CrimeBrasil", version="2.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 @app.on_event("startup")
@@ -36,7 +39,7 @@ def shutdown():
     from services.scheduler import stop_scheduler
     stop_scheduler()
 
-def apply_filters(q, tipo=None, grupo=None, municipio=None, bairro=None, data_inicio=None, data_fim=None, ano=None, semestre=None):
+def apply_filters(q, tipo=None, grupo=None, municipio=None, bairro=None, data_inicio=None, data_fim=None, ano=None, semestre=None, idade_min=None, idade_max=None, sexo=None, cor=None, state=None):
     if tipo: q = q.filter(Crime.tipo_enquadramento.in_(tipo))
     if grupo: q = q.filter(Crime.grupo_fato == grupo)
     if municipio: q = q.filter(Crime.municipio_fato.ilike(f"%{municipio}%"))
@@ -47,6 +50,11 @@ def apply_filters(q, tipo=None, grupo=None, municipio=None, bairro=None, data_in
         q = q.filter(Crime.year_month.in_(semester_months(semestre)))
     elif ano:
         q = q.filter(Crime.year_month.like(f"{ano}-%"))
+    if idade_min is not None: q = q.filter(Crime.idade_vitima >= idade_min)
+    if idade_max is not None: q = q.filter(Crime.idade_vitima <= idade_max)
+    if sexo: q = q.filter(Crime.sexo_vitima.in_(sexo))
+    if cor: q = q.filter(Crime.cor_vitima.in_(cor))
+    if state: q = q.filter(Crime.state == state)
     return q
 
 @app.get("/api/crimes", response_model=List[CrimeOut])
@@ -63,6 +71,9 @@ def get_crimes(tipo: Optional[List[str]] = Query(None), grupo: Optional[str] = N
 def heatmap_municipios(tipo: Optional[List[str]] = Query(None), grupo: Optional[str] = None,
     data_inicio: Optional[str] = None, data_fim: Optional[str] = None,
     ano: Optional[str] = None, semestre: Optional[str] = None,
+    idade_min: Optional[int] = None, idade_max: Optional[int] = None,
+    sexo: Optional[List[str]] = Query(None), cor: Optional[List[str]] = Query(None),
+    state: Optional[str] = None,
     south: Optional[float] = None, west: Optional[float] = None,
     north: Optional[float] = None, east: Optional[float] = None,
     db: Session = Depends(get_db)):
@@ -78,6 +89,11 @@ def heatmap_municipios(tipo: Optional[List[str]] = Query(None), grupo: Optional[
     if data_fim: q = q.filter(Crime.data_fato <= data_fim)
     if semestre: q = q.filter(Crime.year_month.in_(semester_months(semestre)))
     elif ano: q = q.filter(Crime.year_month.like(f"{ano}-%"))
+    if idade_min is not None: q = q.filter(Crime.idade_vitima >= idade_min)
+    if idade_max is not None: q = q.filter(Crime.idade_vitima <= idade_max)
+    if sexo: q = q.filter(Crime.sexo_vitima.in_(sexo))
+    if cor: q = q.filter(Crime.cor_vitima.in_(cor))
+    if state: q = q.filter(Crime.state == state)
     if south is not None and north is not None:
         q = q.filter(Crime.latitude.between(south, north))
     if west is not None and east is not None:
@@ -90,6 +106,9 @@ def heatmap_municipios(tipo: Optional[List[str]] = Query(None), grupo: Optional[
 def heatmap_bairros(municipio: Optional[str] = None, tipo: Optional[List[str]] = Query(None),
     grupo: Optional[str] = None, data_inicio: Optional[str] = None,
     data_fim: Optional[str] = None, ano: Optional[str] = None, semestre: Optional[str] = None,
+    idade_min: Optional[int] = None, idade_max: Optional[int] = None,
+    sexo: Optional[List[str]] = Query(None), cor: Optional[List[str]] = Query(None),
+    state: Optional[str] = None,
     south: Optional[float] = None, west: Optional[float] = None,
     north: Optional[float] = None, east: Optional[float] = None,
     db: Session = Depends(get_db)):
@@ -104,11 +123,16 @@ def heatmap_bairros(municipio: Optional[str] = None, tipo: Optional[List[str]] =
     if data_fim: q = q.filter(Crime.data_fato <= data_fim)
     if semestre: q = q.filter(Crime.year_month.in_(semester_months(semestre)))
     elif ano: q = q.filter(Crime.year_month.like(f"{ano}-%"))
+    if idade_min is not None: q = q.filter(Crime.idade_vitima >= idade_min)
+    if idade_max is not None: q = q.filter(Crime.idade_vitima <= idade_max)
+    if sexo: q = q.filter(Crime.sexo_vitima.in_(sexo))
+    if cor: q = q.filter(Crime.cor_vitima.in_(cor))
+    if state: q = q.filter(Crime.state == state)
     if south is not None and north is not None:
         q = q.filter(Crime.latitude.between(south, north))
     if west is not None and east is not None:
         q = q.filter(Crime.longitude.between(west, east))
-    rows = q.group_by(Crime.municipio_fato, Crime.bairro).having(func.count(Crime.id) >= 10).all()
+    rows = q.group_by(Crime.municipio_fato, Crime.bairro).having(func.count(Crime.id) >= 5).all()
     # Load GeocodeCache with normalized keys
     cache_rows = db.query(GeocodeCache).filter(GeocodeCache.bairro != "").all()
     cache = {(normalize_name(c.municipio), normalize_name(c.bairro)): (c.latitude, c.longitude) for c in cache_rows}
@@ -140,6 +164,20 @@ def get_crime_types(db: Session = Depends(get_db)):
 def get_municipios(db: Session = Depends(get_db)):
     q = db.query(distinct(Crime.municipio_fato)).order_by(Crime.municipio_fato)
     return [r[0] for r in q.all() if r[0]]
+
+@app.get("/api/sexo-values")
+def get_sexo_values(db: Session = Depends(get_db)):
+    q = db.query(Crime.sexo_vitima, func.count(Crime.id)).filter(
+        Crime.sexo_vitima.isnot(None), Crime.sexo_vitima != ""
+    ).group_by(Crime.sexo_vitima).order_by(func.count(Crime.id).desc())
+    return [{"value": r[0], "count": r[1]} for r in q.all()]
+
+@app.get("/api/cor-values")
+def get_cor_values(db: Session = Depends(get_db)):
+    q = db.query(Crime.cor_vitima, func.count(Crime.id)).filter(
+        Crime.cor_vitima.isnot(None), Crime.cor_vitima != ""
+    ).group_by(Crime.cor_vitima).order_by(func.count(Crime.id).desc())
+    return [{"value": r[0], "count": r[1]} for r in q.all()]
 
 @app.get("/api/bairros")
 def get_bairros(municipio: Optional[str] = None, db: Session = Depends(get_db)):
@@ -173,7 +211,10 @@ def get_stats(tipo: Optional[List[str]] = Query(None),
 @app.get("/api/location-stats")
 def location_stats(municipio: str, bairro: Optional[str] = None,
     tipo: Optional[List[str]] = Query(None), semestre: Optional[str] = None,
-    ano: Optional[str] = None, db: Session = Depends(get_db)):
+    ano: Optional[str] = None,
+    idade_min: Optional[int] = None, idade_max: Optional[int] = None,
+    sexo: Optional[List[str]] = Query(None), cor: Optional[List[str]] = Query(None),
+    db: Session = Depends(get_db)):
     q = db.query(Crime).filter(Crime.municipio_fato.ilike(f"%{municipio}%"))
     if bairro:
         q = q.filter(Crime.bairro.ilike(f"%{bairro}%"))
@@ -183,6 +224,10 @@ def location_stats(municipio: str, bairro: Optional[str] = None,
         q = q.filter(Crime.year_month.like(f"{ano}-%"))
     if tipo:
         q = q.filter(Crime.tipo_enquadramento.in_(tipo))
+    if idade_min is not None: q = q.filter(Crime.idade_vitima >= idade_min)
+    if idade_max is not None: q = q.filter(Crime.idade_vitima <= idade_max)
+    if sexo: q = q.filter(Crime.sexo_vitima.in_(sexo))
+    if cor: q = q.filter(Crime.cor_vitima.in_(cor))
     total = q.count()
     breakdown = q.with_entities(Crime.tipo_enquadramento, func.count(Crime.id)) \
         .group_by(Crime.tipo_enquadramento).order_by(func.count(Crime.id).desc()).limit(10).all()
@@ -279,6 +324,120 @@ def geocode_bairros(municipio: Optional[str] = None, db: Session = Depends(get_d
     thread.start()
     return {"message": "Geocoding started in background"}
 
+STATE_CENTROIDS = {
+    "RS": (-30.03, -51.22), "SP": (-23.55, -46.63), "RJ": (-22.91, -43.17),
+    "MG": (-19.92, -43.94), "PR": (-25.43, -49.27), "SC": (-27.59, -48.55),
+    "BA": (-12.97, -38.51), "PE": (-8.05, -34.87), "CE": (-3.72, -38.53),
+    "PA": (-1.46, -48.50), "MA": (-2.53, -44.28), "GO": (-16.69, -49.25),
+    "AM": (-3.12, -60.02), "ES": (-20.32, -40.34), "PB": (-7.12, -34.84),
+    "RN": (-5.79, -35.21), "AL": (-9.67, -35.74), "PI": (-5.09, -42.80),
+    "MT": (-15.60, -56.10), "MS": (-20.44, -54.65), "SE": (-10.91, -37.07),
+    "RO": (-8.76, -63.90), "TO": (-10.18, -48.33), "AC": (-9.97, -67.81),
+    "AP": (0.03, -51.05), "RR": (2.82, -60.67), "DF": (-15.78, -47.93),
+}
+
+@app.get("/api/heatmap/states")
+def heatmap_states(tipo: Optional[List[str]] = Query(None),
+    ano: Optional[str] = None, semestre: Optional[str] = None,
+    idade_min: Optional[int] = None, idade_max: Optional[int] = None,
+    sexo: Optional[List[str]] = Query(None), cor: Optional[List[str]] = Query(None),
+    db: Session = Depends(get_db)):
+    q = db.query(Crime.state, func.count(Crime.id).label("cnt")).filter(Crime.state.isnot(None))
+    if tipo: q = q.filter(Crime.tipo_enquadramento.in_(tipo))
+    if semestre: q = q.filter(Crime.year_month.in_(semester_months(semestre)))
+    elif ano: q = q.filter(Crime.year_month.like(f"{ano}-%"))
+    if idade_min is not None: q = q.filter(Crime.idade_vitima >= idade_min)
+    if idade_max is not None: q = q.filter(Crime.idade_vitima <= idade_max)
+    if sexo: q = q.filter(Crime.sexo_vitima.in_(sexo))
+    if cor: q = q.filter(Crime.cor_vitima.in_(cor))
+    rows = q.group_by(Crime.state).all()
+    results = []
+    for r in rows:
+        centroid = STATE_CENTROIDS.get(r.state)
+        if centroid:
+            results.append({"state": r.state, "latitude": centroid[0], "longitude": centroid[1], "weight": r.cnt})
+    return results
+
+@app.get("/api/captcha")
+def get_captcha():
+    a, b = random.randint(1, 20), random.randint(1, 20)
+    answer = str(a + b)
+    ts = str(int(time.time()))
+    payload = f"{answer}:{ts}"
+    sig = hmac.new(CAPTCHA_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
+    token = base64.b64encode(f"{payload}:{sig}".encode()).decode()
+    return {"question": f"Quanto é {a} + {b}?", "token": token}
+
+class BugReportPayload(BaseModel):
+    description: str
+    email: Optional[str] = None
+    image: Optional[str] = None
+    captcha_token: str
+    captcha_answer: str
+
+@app.post("/api/bug-reports")
+def create_bug_report(payload: BugReportPayload, db: Session = Depends(get_db)):
+    # Validate captcha
+    try:
+        decoded = base64.b64decode(payload.captcha_token).decode()
+        parts = decoded.split(":")
+        if len(parts) != 3:
+            raise ValueError("Invalid token")
+        answer, ts, sig = parts
+        expected_sig = hmac.new(CAPTCHA_SECRET.encode(), f"{answer}:{ts}".encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(sig, expected_sig):
+            raise ValueError("Invalid signature")
+        if abs(time.time() - int(ts)) > 300:
+            raise HTTPException(status_code=400, detail="Captcha expirado, tente novamente")
+        if payload.captcha_answer.strip() != answer:
+            raise HTTPException(status_code=400, detail="Resposta do captcha incorreta")
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=400, detail="Captcha inválido")
+    # Save image if provided
+    image_path = ""
+    if payload.image and payload.image.startswith("data:image"):
+        bug_dir = os.path.join(os.path.dirname(__file__), "data", "bug-reports")
+        os.makedirs(bug_dir, exist_ok=True)
+        # Extract base64 data
+        header, b64data = payload.image.split(",", 1)
+        ext = "png" if "png" in header else "jpg"
+        fname = f"bug_{int(time.time())}_{random.randint(1000,9999)}.{ext}"
+        fpath = os.path.join(bug_dir, fname)
+        with open(fpath, "wb") as f:
+            f.write(base64.b64decode(b64data))
+        image_path = fname
+    report = BugReport(description=payload.description, email=payload.email or "", image_path=image_path)
+    db.add(report)
+    db.commit()
+    return {"message": "Bug reportado com sucesso", "id": report.id}
+
+@app.get("/api/admin/bug-reports")
+def list_bug_reports(db: Session = Depends(get_db)):
+    reports = db.query(BugReport).order_by(BugReport.created_at.desc()).all()
+    return [{"id": r.id, "description": r.description, "email": r.email,
+             "image_path": r.image_path, "created_at": str(r.created_at), "status": r.status} for r in reports]
+
+@app.get("/api/admin/geocoding-status")
+def geocoding_status(db: Session = Depends(get_db)):
+    """Return geocoding coverage statistics."""
+    total_bairro_pairs = db.query(Crime.municipio_fato, Crime.bairro).filter(
+        Crime.bairro.isnot(None), Crime.bairro != ""
+    ).distinct().count()
+    cached_count = db.query(GeocodeCache).filter(GeocodeCache.bairro != "").count()
+    with_coords = db.query(Crime).filter(Crime.latitude.isnot(None)).count()
+    without_coords = db.query(Crime).filter(Crime.latitude.is_(None)).count()
+    total = with_coords + without_coords
+    rate = round(with_coords / total * 100, 2) if total > 0 else 0
+    return {
+        "total_bairro_pairs": total_bairro_pairs,
+        "cached_geocodes": cached_count,
+        "crimes_with_coords": with_coords,
+        "crimes_without_coords": without_coords,
+        "geocoding_rate_pct": rate,
+    }
+
 @app.post("/api/admin/check-updates")
 def check_updates():
     """Manually trigger SSP data check + ingestion + geocoding."""
@@ -288,6 +447,54 @@ def check_updates():
     thread = threading.Thread(target=_run, daemon=True)
     thread.start()
     return {"message": "Update check started in background"}
+
+@app.post("/api/admin/ingest-rs-history")
+def ingest_rs_history():
+    """Ingest all RS historical occurrence data (2022-2026). Runs in background."""
+    def _run():
+        from services.data_ingestion import KNOWN_URLS, ingest_and_geocode
+        sess = SessionLocal()
+        try:
+            for url in KNOWN_URLS:
+                try:
+                    count = ingest_and_geocode(url, sess, state="RS")
+                    logging.info(f"RS ingested: {url} → {count} records")
+                except Exception as e:
+                    logging.error(f"RS ingest failed: {url} → {e}")
+        finally:
+            sess.close()
+    thread = threading.Thread(target=_run, daemon=True)
+    thread.start()
+    return {"message": "RS historical ingestion started in background (2022-2026)"}
+
+@app.post("/api/admin/load-staging")
+def load_staging():
+    """Trigger full staging data load (downloads + parsing). Runs in background."""
+    def _run():
+        from services.staging_loader import run_full_staging_load
+        results = run_full_staging_load()
+        logging.info(f"Staging load results: {results}")
+    thread = threading.Thread(target=_run, daemon=True)
+    thread.start()
+    return {"message": "Staging load started in background. Check /api/admin/staging-stats for progress."}
+
+@app.get("/api/admin/staging-stats")
+def staging_stats(db: Session = Depends(get_db)):
+    """Return row counts grouped by state and source."""
+    total = db.query(func.count(CrimeStaging.id)).scalar() or 0
+    by_source = db.query(
+        CrimeStaging.source, func.count(CrimeStaging.id)
+    ).group_by(CrimeStaging.source).all()
+    by_state = db.query(
+        CrimeStaging.state, func.count(CrimeStaging.id)
+    ).group_by(CrimeStaging.state).order_by(func.count(CrimeStaging.id).desc()).all()
+    distinct_states = db.query(func.count(distinct(CrimeStaging.state))).scalar() or 0
+    return {
+        "total_rows": total,
+        "distinct_states": distinct_states,
+        "by_source": {r[0]: r[1] for r in by_source},
+        "by_state": {r[0]: r[1] for r in by_state},
+    }
 
 if __name__ == "__main__":
     import uvicorn
