@@ -519,7 +519,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
                 // Clickable to toggle state selection — hover highlight
                 layer.bindTooltip(`<b>${name} (${sigla})</b><br>${compareMode ? 'Clique para comparar' : 'Clique para filtrar'}`, { sticky: true });
                 layer.on('mouseover', () => {
-                  (layer as any).setStyle({ fillOpacity: 0.5, color: '#3b82f6', weight: 2 });
+                  (layer as any).setStyle({ fillOpacity: 0.5, color: compareModeRef.current ? '#7c3aed' : '#3b82f6', weight: 2 });
                 });
                 layer.on('mouseout', () => {
                   (layer as any).setStyle({ fillOpacity: hasSelection && !isSelected ? 0.15 : 0.35, color: '#334155', weight: 1 });
