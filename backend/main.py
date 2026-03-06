@@ -685,8 +685,10 @@ def filter_options(request: Request,
         if has_non_rs:
             sexo_opts = []
             cor_opts = []
+            grupo_opts = []  # Grupo (CRIMES/CONTRAVENCOES) is RS-specific
 
-    return {"grupo": grupo_opts, "tipo": tipo_opts, "sexo": sexo_opts, "cor": cor_opts}
+    total = sum(t['count'] for t in tipo_opts)
+    return {"grupo": grupo_opts, "tipo": tipo_opts, "sexo": sexo_opts, "cor": cor_opts, "total": total}
 
 @app.get("/api/location-stats")
 @limiter.limit("60/minute")
