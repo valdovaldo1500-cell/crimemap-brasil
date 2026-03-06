@@ -14,7 +14,7 @@ from database import init_db, get_db, Crime, GeocodeCache, BugReport, CrimeStagi
 from schemas import CrimeOut, HeatmapPoint, BairroComponent, CrimeTypeCount, MunicipioCount, StatsResponse
 from services.geocoder import GeocoderService, batch_geocode_new_bairros
 from services.population import get_municipio_population, get_state_population, get_bairro_population, get_municipio_population_by_code
-from services.crime_categories import get_filter_info, get_compatible_types, get_max_granularity, STATE_QUALITY, PARTIAL_STATES
+from services.crime_categories import get_filter_info, get_compatible_types, get_max_granularity, STATE_QUALITY, PARTIAL_STATES, categorize_crime_types
 
 CAPTCHA_SECRET = os.getenv("CAPTCHA_SECRET", "crimebrasil-captcha-2024")
 
