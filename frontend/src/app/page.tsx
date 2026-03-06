@@ -164,6 +164,7 @@ export default function Home() {
     if (initialLoading) return;
     if (filterDebounceRef.current) clearTimeout(filterDebounceRef.current);
     filterDebounceRef.current = setTimeout(() => {
+      setFilterLoading(true);
       const params: any = {};
       if (selectedTypes.length) params.tipo = selectedTypes;
       if (selectedGrupo.length) params.grupo = selectedGrupo[0];
@@ -180,7 +181,10 @@ export default function Home() {
         setGrupoValues((opts.grupo || []).filter((g: any) => VALID_GRUPOS.includes(g.value)));
         setSexoValues(opts.sexo || []);
         setCorValues(opts.cor || []);
-      }).catch((e) => console.error('Filter options fetch failed:', e));
+        if (opts.total !== undefined) {
+          setStats((prev: any) => prev ? { ...prev, total_crimes: opts.total } : prev);
+        }
+      }).catch((e) => console.error('Filter options fetch failed:', e)).finally(() => setFilterLoading(false));
     }, 300);
   }, [selectedTypes, selectedGrupo, selectedYear, selectedPeriod, selectedSexo, selectedCor, idadeMin, idadeMax, initialLoading, selectedStates]);
 
