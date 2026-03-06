@@ -624,7 +624,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
           if (isRate && d.population) return (d.weight / d.population) * 100_000;
           return d.weight;
         });
-        const intensities2 = isRate ? absoluteRateIntensities(displayValues2) : quantileIntensities(displayValues2);
+        const intensities2 = quantileIntensities(displayValues2);
         // Build a map for quick lookup of intensity by data item
         const dvMap = new Map<any, number>();
         data.forEach((d: any, i: number) => dvMap.set(d, intensities2[i]));
