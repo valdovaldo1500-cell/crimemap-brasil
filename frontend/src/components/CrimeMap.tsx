@@ -451,7 +451,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
           setEmptyResult(true);
           if (statesGeoDataRef.current && viewMode === 'choropleth') {
             geoJsonRef.current = L.geoJSON(statesGeoDataRef.current, {
-              style: () => ({ fillColor: '#1e293b', fillOpacity: 0.2, color: '#1e293b', weight: 1 }),
+              style: () => ({ fillColor: compareModeRef.current ? '#2d1f4e' : '#1e293b', fillOpacity: 0.2, color: compareModeRef.current ? '#2d1f4e' : '#1e293b', weight: 1 }),
               onEachFeature: (feature, layer) => {
                 const sigla = feature?.properties?.sigla || '';
                 const name = feature?.properties?.name || '';
