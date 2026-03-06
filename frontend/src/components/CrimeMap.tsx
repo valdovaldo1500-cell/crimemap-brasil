@@ -485,13 +485,13 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
               const isSelected = hasSelection && selectedStates.includes(sigla);
               // States without detailed data (basic/none): render same as world background
               if (quality !== 'full' && quality !== 'partial') {
-                return { fillColor: '#0f172a', fillOpacity: 0.15, color: '#1e293b', weight: 0.3, interactive: false, className: 'state-disabled' };
+                return { fillColor: compareModeRef.current ? '#1a0a2e' : '#0f172a', fillOpacity: 0.15, color: compareModeRef.current ? '#2d1f4e' : '#1e293b', weight: 0.3, interactive: false, className: 'state-disabled' };
               }
               if (info && isSelected) {
-                return { fillColor: getColor(info.intensity), fillOpacity: 0.45, color: '#1e293b', weight: 1 };
+                return { fillColor: getColor(info.intensity, compareModeRef.current), fillOpacity: 0.45, color: '#1e293b', weight: 1 };
               }
               // Available states: muted blue to signal interactivity
-              return { fillColor: '#1e3a5f', fillOpacity: hasSelection && !isSelected ? 0.15 : 0.35, color: '#334155', weight: 1 };
+              return { fillColor: compareModeRef.current ? '#3d2160' : '#1e3a5f', fillOpacity: hasSelection && !isSelected ? 0.15 : 0.35, color: '#334155', weight: 1 };
             },
             onEachFeature: (feature, layer) => {
               const sigla = feature?.properties?.sigla || '';
