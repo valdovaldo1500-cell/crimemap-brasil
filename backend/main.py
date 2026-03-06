@@ -626,6 +626,35 @@ def filter_options(request: Request,
     ).group_by(Crime.tipo_enquadramento).order_by(func.count(Crime.id).desc())
     tipo_opts = [{"value": r[0], "count": r[1]} for r in tq.all()]
 
+    # Merge tipo from CrimeStaging for non-RS states
+    if selected_states:
+        non_rs_states = [s for s in selected_states if s not in ('RS', 'SP')]
+        if non_rs_states:
+            existing_values = {t['value'] for t in tipo_opts}
+            staging_q = db.query(
+                CrimeStaging.crime_type,
+                (func.coalesce(func.sum(CrimeStaging.occurrences), 0) +
+                 func.coalesce(func.sum(CrimeStaging.victims), 0)).label("cnt")
+            ).filter(
+                CrimeStaging.state.in_(non_rs_states),
+                CrimeStaging.crime_type.isnot(None),
+                CrimeStaging.crime_type != ""
+            )
+            if semestre:
+                year_str, sem_str = semestre.split('-')
+                month_range = list(range(1, 7) if sem_str == "S1" else range(7, 13))
+                staging_q = staging_q.filter(
+                    CrimeStaging.year == int(year_str),
+                    CrimeStaging.month.in_(month_range)
+                )
+            elif ano:
+                staging_q = staging_q.filter(CrimeStaging.year == int(ano))
+            staging_q = staging_q.group_by(CrimeStaging.crime_type)
+            for row in staging_q.all():
+                if row.crime_type not in existing_values:
+                    tipo_opts.append({"value": row.crime_type, "count": int(row.cnt)})
+                    existing_values.add(row.crime_type)
+
     # Sexo options (apply all filters except sexo)
     sq = apply_common(base_query(), skip='sexo')
     sq = sq.with_entities(Crime.sexo_vitima, func.count(Crime.id)).filter(
