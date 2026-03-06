@@ -671,6 +671,7 @@ export default function Home() {
               <input type="number" placeholder="Máx" value={idadeMax} onChange={e=>setIdadeMax(e.target.value)} min={0} max={120} className="w-1/2 bg-[#1a2234] border border-[#1e293b] rounded-lg px-3 py-2 text-sm" />
             </div>
           </div>
+          </div>
         </aside>)}
         <main className="flex-1 relative z-0">
           <CrimeMap center={center} zoom={zoom} filters={filters} viewMode={viewMode} rateMode={rateMode} aggregationOverride={aggregationOverride} selectedStates={selectedStates} onToggleState={toggleState} activeFilter={activeFilter} maxGranularity={maxGranularity} availableStates={availableStates} compareMode={compareMode} comparisonLocations={comparisonLocations} onCompareSelect={onCompareSelect} />
