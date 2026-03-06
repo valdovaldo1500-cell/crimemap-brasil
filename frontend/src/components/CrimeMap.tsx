@@ -14,7 +14,7 @@ interface Props {
   maxGranularity?: 'monthly' | 'yearly';
   availableStates?: { sigla: string; quality: string }[];
   compareMode?: boolean;
-  comparisonLocations?: { municipio: string; bairro?: string; displayName: string }[];
+  comparisonLocations?: { municipio: string; bairro?: string; state?: string; displayName: string }[];
   onCompareSelect?: (location: { municipio: string; bairro?: string; state?: string; displayName: string }) => void;
 }
 
