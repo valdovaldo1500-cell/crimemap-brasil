@@ -742,7 +742,8 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
                 const key = (props.municipio_normalized || '') + '|' + (props.name_normalized || '');
                 const info = bairroLookup[key];
                 if (info) {
-                  return { fillColor: getColor(info.intensity, compareModeRef.current), fillOpacity: 0.35, color: compareModeRef.current ? '#2d1f4e' : '#1e293b', weight: 1 };
+                  const isCompareSelected = compareModeRef.current && comparisonLocationsRef.current?.some(l => l.bairro && normalizeGeoName(l.municipio || '') === (props.municipio_normalized || '') && normalizeGeoName(l.bairro || '') === (props.name_normalized || ''));
+                  return { fillColor: getColor(info.intensity, compareModeRef.current), fillOpacity: isCompareSelected ? 0.55 : 0.35, color: isCompareSelected ? '#a78bfa' : (compareModeRef.current ? '#2d1f4e' : '#1e293b'), weight: isCompareSelected ? 3 : 1 };
                 }
                 return { fillColor: compareModeRef.current ? '#2d1f4e' : '#1e293b', fillOpacity: 0.1, color: compareModeRef.current ? '#2d1f4e' : '#1e293b', weight: 0.5 };
               },
