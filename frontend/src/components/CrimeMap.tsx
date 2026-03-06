@@ -253,7 +253,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
         if (mapRef.current && !brazilOutlineRef.current) {
           brazilOutlineRef.current = L.geoJSON(data, {
             style: () => ({
-              fillColor: '#0f172a',
+              fillColor: compareModeRef.current ? '#1a0a2e' : '#0f172a',
               fillOpacity: 0.3,
               color: '#475569',
               weight: 2,
