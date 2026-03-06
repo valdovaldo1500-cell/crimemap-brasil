@@ -680,7 +680,8 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
               const name = normalizeGeoName(feature?.properties?.name || '');
               const info = lookup[name];
               if (info) {
-                return { fillColor: getColor(info.intensity, compareModeRef.current), fillOpacity: 0.45, color: compareModeRef.current ? '#2d1f4e' : '#1e293b', weight: 1 };
+                const isCompareSelected = compareModeRef.current && comparisonLocationsRef.current?.some(l => l.municipio && normalizeGeoName(l.municipio) === name && !l.bairro);
+                return { fillColor: getColor(info.intensity, compareModeRef.current), fillOpacity: isCompareSelected ? 0.6 : 0.45, color: isCompareSelected ? '#a78bfa' : (compareModeRef.current ? '#2d1f4e' : '#1e293b'), weight: isCompareSelected ? 3 : 1 };
               }
               return { fillColor: compareModeRef.current ? '#2d1f4e' : '#1e293b', fillOpacity: 0.2, color: compareModeRef.current ? '#2d1f4e' : '#1e293b', weight: 1 };
             },
