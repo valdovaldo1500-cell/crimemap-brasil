@@ -809,7 +809,8 @@ def state_stats(request: Request,
         crime_types = [{"tipo_enquadramento": r.crime_type, "count": r.cnt} for r in rows if r.cnt > 0]
     pop = get_state_population(state)
     # Fix #9: return None instead of 0 so frontend never divides by zero
-    return {"state": state, "total": total, "population": pop if pop else None, "crime_types": crime_types}
+    crime_categories = categorize_crime_types(crime_types)
+    return {"state": state, "total": total, "population": pop if pop else None, "crime_types": crime_types, "crime_categories": crime_categories}
 
 @app.get("/api/years")
 @limiter.limit("120/minute")
