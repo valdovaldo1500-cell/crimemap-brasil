@@ -613,6 +613,7 @@ export default function Home() {
               <button onClick={() => { setSelectedStates([]); setActiveFilter(null); }} className="mt-1 text-[10px] text-[#3b82f6] hover:text-[#60a5fa]">Limpar seleção</button>
             )}
           </div>
+          <div className={filterLoading ? 'opacity-50 pointer-events-none transition-opacity' : 'transition-opacity'}>
           <div>
             <h3 className="text-xs uppercase tracking-wider text-[#94a3b8] mb-2">Tipo de Crime</h3>
             <input value={crimeTypeSearch} onChange={e=>setCrimeTypeSearch(e.target.value)} placeholder="Buscar tipo..." className="w-full bg-[#1a2234] border border-[#1e293b] rounded-lg px-3 py-1.5 text-sm text-[#f1f5f9] placeholder-[#475569] focus:outline-none focus:border-[#3b82f6] mb-2" />
