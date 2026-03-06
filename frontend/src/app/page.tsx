@@ -592,6 +592,7 @@ export default function Home() {
             {/* Fix #12: min touch target on close button */}
             <button onClick={() => setShowFilters(false)} className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-[#1a2234] border border-[#1e293b] text-[#94a3b8] text-sm" aria-label="Fechar filtros">✕</button>
           </div>
+          <div className={filterLoading ? 'opacity-50 pointer-events-none transition-opacity' : 'transition-opacity'}>
           <div>
             <h3 className="text-xs uppercase tracking-wider text-[#94a3b8] mb-2">Estados</h3>
             <div className="space-y-0.5 max-h-48 overflow-y-auto">
