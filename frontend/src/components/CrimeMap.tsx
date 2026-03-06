@@ -468,7 +468,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
           if (isRate && d.population) return (d.weight / d.population) * 100_000;
           return d.weight;
         });
-        const intensities = isRate ? absoluteRateIntensities(displayValues) : quantileIntensities(displayValues);
+        const intensities = quantileIntensities(displayValues);
         const stateLookup: Record<string, {weight:number, intensity:number, population:number|null, crime_types?:any[]}> = {};
         data.forEach((d:any, i:number) => {
           stateLookup[d.state] = { weight: d.weight, intensity: intensities[i], population: d.population || null, crime_types: d.crime_types };
