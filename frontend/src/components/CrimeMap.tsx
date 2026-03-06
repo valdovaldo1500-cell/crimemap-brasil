@@ -768,7 +768,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
             const key = munKey + '|' + bairroKey;
             if (matchedKeys.has(key)) return;
             const intensity = dvMap.get(d) ?? 0.5;
-            const color = getColor(intensity);
+            const color = getColor(intensity, compareModeRef.current);
             const label = d.bairro ? d.bairro + ', ' + d.municipio : d.municipio;
             const zoom = mapRef.current?.getZoom() || 13;
             const zoomScale = Math.max(0.4, Math.min(1.0, (zoom - 10) / 5));
