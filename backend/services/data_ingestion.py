@@ -22,7 +22,7 @@ def download_file(url, dest_dir=DATA_DIR):
     fp = os.path.join(dest_dir, fn)
     if os.path.exists(fp): return fp
     logger.info(f"Downloading {url}...")
-    r = requests.get(url, timeout=120, verify=False)
+    r = requests.get(url, timeout=120)
     r.raise_for_status()
     with open(fp, "wb") as f: f.write(r.content)
     return fp

@@ -70,9 +70,9 @@ class CrimeStaging(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     source = Column(String, index=True)
     state = Column(String, index=True)
-    municipio = Column(String)
+    municipio = Column(String, index=True)
     cod_ibge = Column(Integer)
-    crime_type = Column(String)
+    crime_type = Column(String, index=True)
     year = Column(Integer, index=True)
     month = Column(Integer)
     occurrences = Column(Integer, default=0)
@@ -81,6 +81,8 @@ class CrimeStaging(Base):
     extra_json = Column(String)
     __table_args__ = (
         Index('idx_staging_state_year_month', 'state', 'year', 'month'),
+        Index('idx_staging_municipio', 'municipio'),
+        Index('idx_staging_crime_type', 'crime_type'),
     )
 
 def init_db():
@@ -101,6 +103,20 @@ def init_db():
         cols_tables = insp.get_table_names()
         if 'bug_reports' not in cols_tables:
             BugReport.__table__.create(engine, checkfirst=True)
+        # Ensure additional indexes exist (idempotent — safe to run every startup)
+        db.execute(text(
+            "CREATE INDEX IF NOT EXISTS idx_crimes_year "
+            "ON crimes (substr(year_month, 1, 4))"
+        ))
+        db.execute(text(
+            "CREATE INDEX IF NOT EXISTS idx_staging_municipio "
+            "ON crimes_staging (municipio)"
+        ))
+        db.execute(text(
+            "CREATE INDEX IF NOT EXISTS idx_staging_crime_type "
+            "ON crimes_staging (crime_type)"
+        ))
+        db.commit()
     except Exception as e:
         db.rollback()
         import logging

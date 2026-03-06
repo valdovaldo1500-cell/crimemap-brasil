@@ -13,6 +13,7 @@ import json
 import logging
 import requests
 import pandas as pd
+from datetime import datetime
 from database import CrimeStaging, SessionLocal
 
 logger = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ SINESP_VDE_URLS = {
         f"https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/"
         f"estatistica/download/dnsp-base-de-dados/bancovde-{year}.xlsx/@@download/file"
     )
-    for year in range(2015, 2027)
+    for year in range(2015, datetime.now().year + 1)
 }
 
 RJ_ISP_MUNICIPAL_URL = "https://www.ispdados.rj.gov.br/Arquivos/BaseMunicipioMensal.csv"
@@ -70,7 +71,7 @@ def download_file(url: str, filename: str | None = None, retries: int = 3) -> st
     for attempt in range(1, retries + 1):
         try:
             logger.info(f"Downloading {url} → {filename} (attempt {attempt}/{retries})...")
-            resp = requests.get(url, timeout=300, verify=False, stream=True,
+            resp = requests.get(url, timeout=300, stream=True,
                                 headers={"User-Agent": "CrimeBrasil/1.0"})
             resp.raise_for_status()
             tmp = dest + ".tmp"
@@ -320,21 +321,32 @@ def load_sinesp_uf(db, xlsx_path: str) -> dict[str, int]:
 # ── RJ ISP Municipal ─────────────────────────────────────────────────────────
 
 # Crime type columns in RJ ISP CSVs (columns to unpivot)
+# Excludes admin/geographic columns (apf, aaapai, cmp, cmba, aisp, risp)
+# and summary columns (registro_ocorrencias, cvli, letalidade_violenta, total_roubos, total_furtos)
 RJ_CRIME_COLUMNS = [
     "hom_doloso", "lesao_corp_morte", "latrocinio", "hom_por_interv_policial",
     "tentat_hom", "lesao_corp_dolosa", "estupro", "hom_culposo",
-    "lesao_corp_culposa", "roubo_transeunte", "roubo_corp_am_am",
+    "lesao_corp_culposa", "feminicidio", "tentativa_feminicidio",
+    "roubo_transeunte", "roubo_corp_am_am",
     "roubo_em_coletivo", "roubo_veiculo", "roubo_carga", "roubo_celular",
     "roubo_conducao_saque", "roubo_bicicleta", "roubo_comercio",
-    "roubo_residencia", "furto_veiculos", "furto_transeunte", "furto_coletivo",
-    "furto_celular", "furto_bicicleta", "sequestro", "extorsao",
+    "roubo_residencia", "roubo_rua", "roubo_banco", "roubo_cx_eletronico",
+    "roubo_apos_saque", "outros_roubos",
+    "furto_veiculos", "furto_transeunte", "furto_coletivo",
+    "furto_celular", "furto_bicicleta", "outros_furtos",
+    "sequestro", "extorsao",
     "sequestro_relampago", "estelionato", "apreensao_drogas",
     "posse_drogas", "trafico_drogas", "recuperacao_veiculos",
     "ameaca", "pessoas_desaparecidas", "encontro_cadaver",
     "encontro_ossada", "pol_militares_mortos_serv",
-    "pol_civis_mortos_serv", "registro_ocorrencias", "apf",
-    "aaapai", "cmp", "cmba", "aisp", "risp",
+    "pol_civis_mortos_serv",
 ]
+# Admin/geographic columns to NEVER treat as crime types
+RJ_ADMIN_COLUMNS = {
+    "apf", "aaapai", "cmp", "cmba", "aisp", "risp",
+    "registro_ocorrencias", "cvli", "letalidade_violenta",
+    "total_roubos", "total_furtos",
+}
 
 
 def load_rj_municipal(db, csv_path: str) -> int:
@@ -356,20 +368,26 @@ def load_rj_municipal(db, csv_path: str) -> int:
     df.columns = [c.strip().lower() for c in df.columns]
 
     # Find municipality and date columns
+    # RJ ISP uses 'fmun' for municipality name and 'fmun_cod' for IBGE code
     mun_col = None
+    ibge_col = None
     for c in df.columns:
-        if "munic" in c and "cod" not in c:
+        cl = c.lower()
+        if cl == "fmun":
             mun_col = c
-            break
+        elif cl == "fmun_cod" or (cl.startswith("cod") and "mun" in cl):
+            ibge_col = c
+        elif "munic" in cl and "cod" not in cl and mun_col is None:
+            mun_col = c
 
-    month_col = next((c for c in df.columns if c in ("mes", "mês", "mes_ano")), None)
-    year_col = next((c for c in df.columns if c in ("ano", "year")), None)
+    month_col = next((c for c in df.columns if c in ("mes", "mês", "mes_ano", "mes_fato")), None)
+    year_col = next((c for c in df.columns if c in ("ano", "year", "ano_fato")), None)
 
-    # Find which crime columns exist in the dataframe
-    crime_cols = [c for c in RJ_CRIME_COLUMNS if c in df.columns]
+    # Find which crime columns exist in the dataframe, excluding admin columns
+    crime_cols = [c for c in RJ_CRIME_COLUMNS if c in df.columns and c not in RJ_ADMIN_COLUMNS]
     if not crime_cols:
         # Try matching without exact case
-        crime_cols = [c for c in df.columns if any(
+        crime_cols = [c for c in df.columns if c not in RJ_ADMIN_COLUMNS and any(
             rc in c for rc in ["hom_", "roubo_", "furto_", "estupro", "latrocinio",
                                 "lesao_", "sequestro", "extorsao", "trafico_", "ameaca"]
         )]
@@ -380,10 +398,15 @@ def load_rj_municipal(db, csv_path: str) -> int:
 
     logger.info(f"  Found {len(crime_cols)} crime columns, {len(df)} rows to unpivot")
 
+    logger.info(f"  Municipality column: {mun_col}, IBGE column: {ibge_col}")
+
     count = 0
     batch = []
     for _, row in df.iterrows():
         municipio = str(row.get(mun_col, "")).strip() if mun_col else None
+        if municipio and municipio.lower() == "nan":
+            municipio = None
+        cod_ibge = _safe_int(row.get(ibge_col)) if ibge_col else None
         year = _safe_int(row.get(year_col)) if year_col else None
         month = _safe_int(row.get(month_col)) if month_col else None
 
@@ -395,6 +418,7 @@ def load_rj_municipal(db, csv_path: str) -> int:
                 source="rj_isp_municipal",
                 state="RJ",
                 municipio=municipio,
+                cod_ibge=cod_ibge,
                 crime_type=crime_col,
                 year=year,
                 month=month,
@@ -435,15 +459,24 @@ def load_rj_cisp(db, csv_path: str) -> int:
 
     df.columns = [c.strip().lower() for c in df.columns]
 
-    # Find key columns
+    # Find key columns — CISP also uses fmun for municipality
     cisp_col = next((c for c in df.columns if "cisp" in c), None)
-    mun_col = next((c for c in df.columns if "munic" in c and "cod" not in c), None)
-    month_col = next((c for c in df.columns if c in ("mes", "mês", "mes_ano")), None)
-    year_col = next((c for c in df.columns if c in ("ano", "year")), None)
+    mun_col = None
+    ibge_col = None
+    for c in df.columns:
+        cl = c.lower()
+        if cl == "fmun":
+            mun_col = c
+        elif cl == "fmun_cod" or (cl.startswith("cod") and "mun" in cl):
+            ibge_col = c
+        elif "munic" in cl and "cod" not in cl and mun_col is None:
+            mun_col = c
+    month_col = next((c for c in df.columns if c in ("mes", "mês", "mes_ano", "mes_fato")), None)
+    year_col = next((c for c in df.columns if c in ("ano", "year", "ano_fato")), None)
 
-    crime_cols = [c for c in RJ_CRIME_COLUMNS if c in df.columns]
+    crime_cols = [c for c in RJ_CRIME_COLUMNS if c in df.columns and c not in RJ_ADMIN_COLUMNS]
     if not crime_cols:
-        crime_cols = [c for c in df.columns if any(
+        crime_cols = [c for c in df.columns if c not in RJ_ADMIN_COLUMNS and any(
             rc in c for rc in ["hom_", "roubo_", "furto_", "estupro", "latrocinio",
                                 "lesao_", "sequestro", "extorsao", "trafico_", "ameaca"]
         )]
@@ -458,6 +491,9 @@ def load_rj_cisp(db, csv_path: str) -> int:
     batch = []
     for _, row in df.iterrows():
         municipio = str(row.get(mun_col, "")).strip() if mun_col else None
+        if municipio and municipio.lower() == "nan":
+            municipio = None
+        cod_ibge = _safe_int(row.get(ibge_col)) if ibge_col else None
         year = _safe_int(row.get(year_col)) if year_col else None
         month = _safe_int(row.get(month_col)) if month_col else None
 
@@ -475,6 +511,7 @@ def load_rj_cisp(db, csv_path: str) -> int:
                 source="rj_isp_cisp",
                 state="RJ",
                 municipio=municipio,
+                cod_ibge=cod_ibge,
                 crime_type=crime_col,
                 year=year,
                 month=month,
@@ -499,9 +536,59 @@ def load_rj_cisp(db, csv_path: str) -> int:
 
 # ── SINESP VDE (gov.br, newer data 2015-2026) ────────────────────────────────
 
+# Only import these crime-relevant event types from VDE data.
+# Forms 1,2,3,7 use total_vitima as count; Forms 4,6,8,9 use total as count.
+SINESP_VDE_CRIME_EVENTS = {
+    # Form 1 — violent crimes against persons (use total_vitima)
+    "Homicídio doloso",
+    "Feminicídio",
+    "Tentativa de homicídio",
+    "Tentativa de feminicídio",
+    "Lesão corporal seguida de morte",
+    "Roubo seguido de morte (latrocínio)",
+    # Form 2 — deaths by intervention (use total_vitima)
+    "Morte por intervenção de Agente do Estado",
+    # Form 3 — sexual crimes (use total_vitima)
+    "Estupro",
+    "Estupro de vulnerável",
+    # Form 4 — property crimes (use total)
+    "Furto de veículo",
+    "Roubo a instituição financeira",
+    "Roubo de carga",
+    "Roubo de veículo",
+    # Form 7 — drug trafficking (use total_vitima for victim count)
+    "Tráfico de drogas",
+}
+
+# Events that use total_vitima (victim count) instead of total (occurrence count)
+SINESP_VDE_VICTIM_EVENTS = {
+    "Homicídio doloso", "Feminicídio", "Tentativa de homicídio",
+    "Tentativa de feminicídio", "Lesão corporal seguida de morte",
+    "Roubo seguido de morte (latrocínio)",
+    "Morte por intervenção de Agente do Estado",
+    "Estupro", "Estupro de vulnerável",
+    "Tráfico de drogas",
+}
+
+# Normalize VDE event names for matching (strip accents)
+def _normalize_evento(s: str) -> str:
+    import unicodedata
+    nfkd = unicodedata.normalize('NFD', s)
+    return ''.join(c for c in nfkd if unicodedata.category(c) != 'Mn').strip()
+
+_VDE_CRIME_EVENTS_NORM = {_normalize_evento(e): e for e in SINESP_VDE_CRIME_EVENTS}
+_VDE_VICTIM_EVENTS_NORM = {_normalize_evento(e) for e in SINESP_VDE_VICTIM_EVENTS}
+
+
 def load_sinesp_vde(db, xlsx_path: str, year: int) -> int:
     """Parse SINESP VDE yearly XLSX → staging rows.
     These files have UF-level crime data with columns varying by year.
+
+    Fixed column detection:
+    - crime_type: 'evento' column (not 'tipo_crime')
+    - year: parsed from 'data_referencia' datetime (not 'ano')
+    - month: set to None (VDE is yearly data only)
+    - count: 'total' for property crimes, 'total_vitima' for violent/sexual crimes
     """
     logger.info(f"Loading SINESP VDE {year} data from {xlsx_path}...")
     try:
@@ -515,21 +602,33 @@ def load_sinesp_vde(db, xlsx_path: str, year: int) -> int:
         df = pd.read_excel(xl, sheet_name=sheet)
         df.columns = [str(c).strip() for c in df.columns]
 
-        # Find UF column
+        # Flexible column detection for VDE files
         col_map = {}
         for c in df.columns:
             cl = c.lower().replace("í", "i").replace("ê", "e").replace("ó", "o")
             if cl == "uf" or (cl.startswith("sigla") and "uf" in cl):
                 col_map["state"] = c
-            elif "tipo" in cl and "crime" in cl:
+            # VDE uses 'evento' instead of 'tipo_crime'
+            elif cl == "evento" or cl == "evento_ssp":
                 col_map["crime_type"] = c
+            elif "tipo" in cl and "crime" in cl:
+                col_map["crime_type"] = col_map.get("crime_type", c)
+            # VDE uses 'data_referencia' datetime instead of 'ano'/'mes'
+            elif "data" in cl and "referencia" in cl:
+                col_map["data_referencia"] = c
             elif cl == "ano":
                 col_map["year"] = c
             elif cl in ("mes", "mês"):
                 col_map["month"] = c
+            # VDE uses 'total' for property crime occurrence count
+            elif cl == "total":
+                col_map["total"] = c
+            # VDE uses 'total_vitima' for violent crime victim count
+            elif cl == "total_vitima" or cl == "total_vitimas":
+                col_map["total_vitima"] = c
             elif "ocorr" in cl:
                 col_map["ocorrencias"] = c
-            elif ("vitima" in cl or "vítima" in cl) and "sexo" not in cl:
+            elif ("vitima" in cl or "vítima" in cl) and "sexo" not in cl and "total" not in cl:
                 col_map["vitimas"] = c
             elif "sexo" in cl:
                 col_map["sexo"] = c
@@ -537,21 +636,79 @@ def load_sinesp_vde(db, xlsx_path: str, year: int) -> int:
                 col_map["municipio"] = c
             elif "cod" in cl and "ibge" in cl:
                 col_map["cod_ibge"] = c
+            elif cl == "formulario" or cl == "form":
+                col_map["formulario"] = c
 
         if "state" not in col_map:
             logger.warning(f"  VDE {year} sheet '{sheet}': no UF column in {list(df.columns)}, skipping")
             continue
 
+        logger.info(f"  VDE {year} sheet '{sheet}': columns mapped: {col_map}")
+
         count = 0
+        skipped_non_crime = 0
         batch = []
         for _, row in df.iterrows():
             state = str(row.get(col_map.get("state", ""), "")).strip().upper()
             if not state or len(state) != 2:
                 continue
 
-            crime_type = str(row.get(col_map.get("crime_type", ""), "")).strip()
-            if not crime_type or crime_type == "nan":
-                crime_type = None
+            # Get crime type from 'evento' or 'tipo_crime' column
+            crime_type_raw = str(row.get(col_map.get("crime_type", ""), "")).strip()
+            if not crime_type_raw or crime_type_raw == "nan":
+                crime_type_raw = None
+
+            # Filter non-crime events — only keep actual crime types
+            if crime_type_raw:
+                crime_norm = _normalize_evento(crime_type_raw)
+                canonical = _VDE_CRIME_EVENTS_NORM.get(crime_norm)
+                if canonical is None:
+                    skipped_non_crime += 1
+                    continue
+                crime_type = canonical
+                is_victim_event = crime_norm in _VDE_VICTIM_EVENTS_NORM
+            else:
+                continue  # Skip rows with no event type
+
+            # Parse year from data_referencia (datetime) or ano column
+            row_year = year
+            if "data_referencia" in col_map:
+                dr = row.get(col_map["data_referencia"])
+                if pd.notna(dr):
+                    if hasattr(dr, 'year'):
+                        row_year = dr.year
+                    else:
+                        # Try parsing "YYYY-MM-DD" or "YYYY"
+                        dr_str = str(dr).strip()
+                        yr = _safe_int(dr_str[:4])
+                        if yr:
+                            row_year = yr
+            elif "year" in col_map:
+                row_year = _safe_int(row.get(col_map["year"], year)) or year
+
+            # VDE data is yearly only — month is always None
+            row_month = None
+            if "month" in col_map:
+                row_month = _safe_int(row.get(col_map["month"]))
+
+            # Select count column based on event type
+            if is_victim_event and "total_vitima" in col_map:
+                count_val = _safe_int(row.get(col_map["total_vitima"], 0)) or 0
+                occ = 0
+                vic = count_val
+            elif "total" in col_map:
+                count_val = _safe_int(row.get(col_map["total"], 0)) or 0
+                occ = count_val
+                vic = 0
+            elif "ocorrencias" in col_map:
+                occ = _safe_int(row.get(col_map["ocorrencias"], 0)) or 0
+                vic = _safe_int(row.get(col_map.get("vitimas", ""), 0)) or 0
+            else:
+                occ = 0
+                vic = _safe_int(row.get(col_map.get("vitimas", ""), 0)) or 0
+
+            if occ == 0 and vic == 0:
+                continue
 
             sexo = str(row.get(col_map.get("sexo", ""), "")).strip()
             if sexo == "nan":
@@ -563,10 +720,10 @@ def load_sinesp_vde(db, xlsx_path: str, year: int) -> int:
                 municipio=str(row.get(col_map.get("municipio", ""), "")).strip() or None,
                 cod_ibge=_safe_int(row.get(col_map.get("cod_ibge", ""), None)),
                 crime_type=crime_type,
-                year=_safe_int(row.get(col_map.get("year", ""), year)) or year,
-                month=_safe_int(row.get(col_map.get("month", ""), None)),
-                occurrences=_safe_int(row.get(col_map.get("ocorrencias", ""), 0)) or 0,
-                victims=_safe_int(row.get(col_map.get("vitimas", ""), 0)) or 0,
+                year=row_year,
+                month=row_month,
+                occurrences=occ,
+                victims=vic,
                 sexo_vitima=sexo if sexo else None,
             )
             batch.append(rec)
@@ -580,7 +737,7 @@ def load_sinesp_vde(db, xlsx_path: str, year: int) -> int:
             db.bulk_save_objects(batch)
             db.commit()
         total_count += count
-        logger.info(f"  VDE {year} sheet '{sheet}': {count} rows")
+        logger.info(f"  VDE {year} sheet '{sheet}': {count} rows loaded, {skipped_non_crime} non-crime events skipped")
 
     logger.info(f"SINESP VDE {year}: {total_count} total rows loaded")
     return total_count
@@ -591,7 +748,7 @@ def load_sinesp_vde(db, xlsx_path: str, year: int) -> int:
 def _discover_mg_urls() -> list[str]:
     """Discover MG violent crime CSV URLs via CKAN API."""
     try:
-        resp = requests.get(MG_VIOLENT_DATASET_URL, timeout=30, verify=False)
+        resp = requests.get(MG_VIOLENT_DATASET_URL, timeout=30)
         resp.raise_for_status()
         data = resp.json()
         resources = data.get("result", {}).get("resources", [])
@@ -601,6 +758,42 @@ def _discover_mg_urls() -> list[str]:
     except Exception as e:
         logger.warning(f"MG CKAN API discovery failed: {e}")
         return []
+
+
+_MG_CANONICAL_NAMES = {
+    "Estupro De Vulneravel Consumado": "Estupro De Vulnerável Consumado",
+    "Estupro De Vulneravel Tentado": "Estupro De Vulnerável Tentado",
+    "Extorsao Consumado": "Extorsão Consumado",
+    "Extorsao Tentado": "Extorsão Tentado",
+    "Extorsao Mediante Sequestro Consumado": "Extorsão Mediante Sequestro Consumado",
+    "Extorsao Mediante Sequestro Tentado": "Extorsão Mediante Sequestro Tentado",
+    "Homicidio Consumado (Registros)": "Homicídio Consumado (Registros)",
+    "Homicidio Tentado": "Homicídio Tentado",
+    "Feminicidio Consumado (Registros)": "Feminicídio Consumado (Registros)",
+    "Feminicidio Tentado": "Feminicídio Tentado",
+    "Sequestro E Carcere Privado Consumado": "Sequestro E Cárcere Privado Consumado",
+    "Sequestro E Carcere Privado Tentado": "Sequestro E Cárcere Privado Tentado",
+    "Lesao Corporal Consumado": "Lesão Corporal Consumado",
+    "Lesao Corporal Tentado": "Lesão Corporal Tentado",
+}
+
+
+def _fix_mg_encoding(s: str) -> str:
+    """Fix mojibake in MG crime type names.
+
+    MG CSVs are often ISO-8859-1 but sometimes get double-encoded.
+    Try re-encoding latin-1→utf-8 to fix, then normalize to title case.
+    Finally, apply canonical name mapping to merge accent-free variants.
+    """
+    if not s or s == "nan":
+        return s
+    try:
+        fixed = s.encode('latin-1').decode('utf-8')
+    except (UnicodeDecodeError, UnicodeEncodeError):
+        fixed = s
+    # Normalize to title case (e.g., "HOMICIDIO CONSUMADO" → "Homicidio Consumado")
+    result = fixed.strip().title()
+    return _MG_CANONICAL_NAMES.get(result, result)
 
 
 def load_mg_violent(db, csv_path: str) -> int:
@@ -631,12 +824,18 @@ def load_mg_violent(db, csv_path: str) -> int:
         if "rmbh" in df.columns and pd.notna(row.get("rmbh")):
             extra["rmbh"] = str(row["rmbh"]).strip()
 
+        # Fix encoding mojibake in crime type names
+        raw_natureza = str(row.get("natureza", "")).strip()
+        crime_type = _fix_mg_encoding(raw_natureza) if raw_natureza else None
+        if crime_type and crime_type.lower() == "nan":
+            crime_type = None
+
         rec = CrimeStaging(
             source="mg_violent",
             state="MG",
             municipio=str(row.get("municipio", "")).strip() or None,
             cod_ibge=_safe_int(row.get("cod_municipio")),
-            crime_type=str(row.get("natureza", "")).strip() or None,
+            crime_type=crime_type,
             year=_safe_int(row.get("ano")),
             month=_safe_int(row.get("mes")),
             occurrences=_safe_int(row.get("registros")) or 0,
@@ -726,6 +925,22 @@ def run_full_staging_load() -> dict:
                 logger.warning(f"MG violent crimes {i} failed: {e}")
                 results[f"mg_violent_{i}"] = f"SKIPPED: {e}"
 
+        # Deduplicate: for states with dedicated importers (RJ from ISP),
+        # SINESP VDE data overlaps. Prefer dedicated importers.
+        # Keep MG VDE since it adds property crime types MG Violent lacks.
+        try:
+            vde_rj_deleted = db.query(CrimeStaging).filter(
+                CrimeStaging.source.like("sinesp_vde%"),
+                CrimeStaging.state == "RJ"
+            ).delete(synchronize_session=False)
+            db.commit()
+            if vde_rj_deleted:
+                logger.info(f"Dedup: removed {vde_rj_deleted} SINESP VDE rows for RJ (ISP data preferred)")
+                results["_dedup_rj_vde"] = vde_rj_deleted
+        except Exception as e:
+            logger.warning(f"Dedup step failed: {e}")
+            db.rollback()
+
         # Summary
         total = sum(v for v in results.values() if isinstance(v, int))
         results["_total"] = total
@@ -741,6 +956,19 @@ def run_full_staging_load() -> dict:
         db.close()
 
     return results
+
+
+def refresh_staging_data() -> dict:
+    """Delete cached files in data/staging/ to force fresh download, then run full staging load."""
+    import glob
+    if os.path.exists(DATA_DIR):
+        for f in glob.glob(os.path.join(DATA_DIR, "*")):
+            try:
+                os.remove(f)
+                logger.info(f"Deleted cached file: {os.path.basename(f)}")
+            except OSError as e:
+                logger.warning(f"Failed to delete {f}: {e}")
+    return run_full_staging_load()
 
 
 if __name__ == "__main__":

@@ -1,14 +1,23 @@
-version: '3.8'
 services:
   backend:
     build: ./backend
     ports: ["8000:8000"]
-    volumes: ["./backend/data:/app/data"]
+    volumes: ["./backend/data:/app/data", "./frontend/public/geo:/app/geo:ro"]
     environment: {DATABASE_URL: "sqlite:///./data/crimemap.db"}
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/years"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
   frontend:
     build: ./frontend
     ports: ["3001:3000"]
     depends_on: [backend]
     environment: {NEXT_PUBLIC_API_URL: "http://localhost:8000"}
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

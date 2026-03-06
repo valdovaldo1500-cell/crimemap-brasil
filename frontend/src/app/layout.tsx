@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'CrimeMap RS - Mapa de Ocorrências',
-  description: 'Mapa interativo de ocorrências criminais no Rio Grande do Sul',
+  title: 'Crime Brasil — Mapa de Ocorrências Criminais',
+  description: 'Mapa interativo de ocorrências criminais no Brasil',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
