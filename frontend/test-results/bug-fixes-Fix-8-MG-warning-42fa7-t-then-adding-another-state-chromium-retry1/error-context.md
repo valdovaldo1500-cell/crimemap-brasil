@@ -1,0 +1,108 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - generic [ref=e6]: BR
+          - generic [ref=e7]:
+            - heading "Crime Brasil" [level=1] [ref=e8]
+            - paragraph [ref=e9]: crimebrasil.com.br
+        - textbox "Buscar cidade ou bairro..." [ref=e11]
+        - generic [ref=e12]:
+          - generic [ref=e13]:
+            - generic [ref=e14]:
+              - button "2026" [ref=e15] [cursor=pointer]
+              - button "2025" [ref=e16] [cursor=pointer]
+              - button "2024" [ref=e17] [cursor=pointer]
+              - button "2023" [ref=e18] [cursor=pointer]
+              - button "2022" [ref=e19] [cursor=pointer]
+            - generic [ref=e20]:
+              - button "Ano" [ref=e21] [cursor=pointer]
+              - button "Jan-Jun" [ref=e22] [cursor=pointer]
+          - group "Modo de visualização" [ref=e23]:
+            - button "Visualização em pontos" [ref=e24] [cursor=pointer]: Pontos
+            - button "Visualização em regiões" [ref=e25] [cursor=pointer]: Regiões
+          - button "Ativar comparação" [ref=e26] [cursor=pointer]: Comparar
+          - group "Modo de taxa" [ref=e27]:
+            - button "Taxa por 100 mil habitantes" [ref=e28] [cursor=pointer]: /100K hab.
+            - button "Total absoluto" [ref=e29] [cursor=pointer]: Total
+          - group "Nível de agregação" [ref=e30]:
+            - button "Agregação automática" [ref=e31] [cursor=pointer]: Auto
+            - button "Estados" [ref=e32] [cursor=pointer]
+            - button "Municípios" [ref=e33] [cursor=pointer]
+            - button "Bairros" [ref=e34] [cursor=pointer]
+          - button "Filtros" [active] [ref=e35] [cursor=pointer]
+    - generic [ref=e36]:
+      - region "Filtros" [ref=e37]:
+        - generic:
+          - generic:
+            - heading "Estados" [level=3]
+            - generic:
+              - generic:
+                - checkbox "RJ Completo"
+                - generic: RJ
+                - generic: Completo
+              - generic:
+                - checkbox "RS Completo"
+                - generic: RS
+                - generic: Completo
+              - generic:
+                - checkbox "MG Parcial"
+                - generic: MG
+                - generic: Parcial
+          - generic:
+            - heading "Tipo de Crime" [level=3]
+            - textbox "Buscar tipo..."
+          - generic:
+            - heading "Grupo" [level=3]
+          - generic:
+            - heading "Sexo da Vítima" [level=3]
+          - generic:
+            - heading "Cor da Vítima" [level=3]
+          - generic:
+            - heading "Idade da Vítima" [level=3]
+            - generic:
+              - spinbutton
+              - spinbutton
+      - main [ref=e38]:
+        - generic "Mapa de criminalidade do Brasil" [ref=e39]:
+          - generic [ref=e40]:
+            - generic:
+              - generic:
+                - img
+            - generic [ref=e41]:
+              - button "Zoom in" [ref=e42] [cursor=pointer]: +
+              - button "Zoom out" [ref=e43] [cursor=pointer]: −
+          - generic:
+            - generic:
+              - generic: Carregando...
+          - generic [ref=e44]:
+            - generic [ref=e45]: Estados
+            - generic [ref=e46]:
+              - generic [ref=e49]: Baixo
+              - generic [ref=e52]: Médio
+              - generic [ref=e55]: Alto
+              - generic [ref=e58]: Crítico
+          - img
+        - generic [ref=e59]:
+          - button "Reportar Bug" [ref=e60] [cursor=pointer]
+          - button "Como usar" [ref=e61] [cursor=pointer]
+          - button "Novidades" [ref=e62] [cursor=pointer]
+          - button "Fontes" [ref=e63] [cursor=pointer]
+          - link "Contato" [ref=e64] [cursor=pointer]:
+            - /url: mailto:contato@crimebrasil.com.br
+        - generic [ref=e65]:
+          - generic [ref=e66]:
+            - paragraph [ref=e67]: 2,988,997
+            - paragraph [ref=e68]: Ocorrências
+          - generic [ref=e69]:
+            - paragraph [ref=e70]: "499"
+            - paragraph [ref=e71]: Municípios
+          - generic [ref=e72]:
+            - paragraph [ref=e73]: "2026"
+            - paragraph [ref=e74]: Período
+  - alert [ref=e75]
+```
