@@ -721,12 +721,14 @@ export default function Home() {
                             if (a === 0 && b === 0) return <><div className="text-center font-mono">—</div><div className="text-center font-mono">—</div></>;
                             const diffA = b > 0 ? ((a - b) / b) * 100 : (a > 0 ? 100 : 0);
                             const diffB = a > 0 ? ((b - a) / a) * 100 : (b > 0 ? 100 : 0);
+                            const ratioA = a > 0 && b > 0 ? (a / b).toFixed(1) : null;
+                            const ratioB = a > 0 && b > 0 ? (b / a).toFixed(1) : null;
                             return <>
                               <div className={`text-center font-mono ${a > b ? 'text-red-400' : a < b ? 'text-green-400' : ''}`}>
-                                {a > b ? `+${diffA.toFixed(0)}%` : a < b ? `${diffA.toFixed(0)}%` : '='}
+                                {a > b ? `+${diffA.toFixed(0)}%` : a < b ? `${diffA.toFixed(0)}%` : '='}{ratioA ? ` (${ratioA}x)` : ''}
                               </div>
                               <div className={`text-center font-mono ${b > a ? 'text-red-400' : b < a ? 'text-green-400' : ''}`}>
-                                {b > a ? `+${diffB.toFixed(0)}%` : b < a ? `${diffB.toFixed(0)}%` : '='}
+                                {b > a ? `+${diffB.toFixed(0)}%` : b < a ? `${diffB.toFixed(0)}%` : '='}{ratioB ? ` (${ratioB}x)` : ''}
                               </div>
                             </>;
                           })()}
