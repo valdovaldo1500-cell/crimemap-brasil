@@ -672,13 +672,14 @@ def filter_options(request: Request,
     states = selected_states or []
     if states:
         from services.crime_categories import get_compatible_types
-        # Always include RS so we get RS-equivalent types (filter-options queries RS data)
         states_with_rs = list(set(states + ['RS']))
         compatible = get_compatible_types(states_with_rs)
         if compatible:
-            rs_types = set(compatible.get('RS', []))
-            if rs_types:
-                tipo_opts = [t for t in tipo_opts if t['value'] in rs_types]
+            all_compat = set()
+            for types in compatible.values():
+                all_compat.update(types)
+            if all_compat:
+                tipo_opts = [t for t in tipo_opts if t['value'] in all_compat]
 
         has_non_rs = any(s != 'RS' for s in states)
         if has_non_rs:
