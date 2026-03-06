@@ -384,7 +384,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
   };
 
   const addPolygonHover = (layer: L.Layer) => {
-    layer.on('mouseover', () => (layer as any).setStyle({ fillOpacity: 0.85, weight: 2, color: '#3b82f6' }));
+    layer.on('mouseover', () => (layer as any).setStyle({ fillOpacity: 0.85, weight: 2, color: compareModeRef.current ? '#7c3aed' : '#3b82f6' }));
     layer.on('mouseout', () => geoJsonRef.current?.resetStyle(layer as L.Path));
   };
 
