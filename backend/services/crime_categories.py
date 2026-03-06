@@ -218,6 +218,33 @@ def get_max_granularity(selected_states: list[str]) -> str:
     return "monthly"
 
 
+def categorize_crime_types(crime_types: list[dict]) -> list[dict]:
+    """Group raw crime types into canonical categories for cross-state comparison.
+
+    Maps state-specific type names (e.g. RS "AMEACA", MG "Homicídio Consumado")
+    to canonical category labels (e.g. "Violência contra pessoa").
+    """
+    reverse_map = {}
+    for cat_name, cat in CRIME_CATEGORIES.items():
+        label = cat["label"]
+        for key in cat:
+            if key.endswith("_types"):
+                for t in cat[key]:
+                    reverse_map[t] = label
+
+    category_counts = {}
+    for ct in crime_types:
+        tipo = ct.get("tipo_enquadramento", "")
+        count = ct.get("count", 0)
+        category = reverse_map.get(tipo, "Outros")
+        category_counts[category] = category_counts.get(category, 0) + count
+
+    return sorted(
+        [{"category": k, "count": v} for k, v in category_counts.items()],
+        key=lambda x: x["count"], reverse=True
+    )
+
+
 def get_filter_info(selected_states: list[str]) -> dict:
     """Get complete filter info for the selected states.
 
