@@ -30,7 +30,13 @@ function formatCount(n: number): string {
 }
 
 // Fix #16: changed #22c55e to #16a34a (darker green, better contrast)
-function getColor(intensity: number): string {
+function getColor(intensity: number, purple = false): string {
+  if (purple) {
+    if (intensity > 0.9) return '#9333ea';  // purple-600
+    if (intensity > 0.7) return '#7c3aed';  // violet-600
+    if (intensity > 0.4) return '#6d28d9';  // violet-700
+    return '#4c1d95';                       // violet-900
+  }
   if (intensity > 0.9) return '#ef4444';   // Red (critical) — top 10%
   if (intensity > 0.7) return '#f97316';   // Orange (high) — next 20%
   if (intensity > 0.4) return '#eab308';   // Yellow (medium) — next 30%
