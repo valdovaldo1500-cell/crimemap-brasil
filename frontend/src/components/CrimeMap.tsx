@@ -185,7 +185,15 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
     // Fix #17: rateMode change is purely client-side — re-render from cache, no re-fetch
     setMapVersion(v => v + 1);
   }, [rateMode]);
-  useEffect(() => { compareModeRef.current = compareMode; }, [compareMode]);
+  useEffect(() => {
+    compareModeRef.current = compareMode;
+    if (mapRef.current) {
+      const tilePane = mapRef.current.getPane('tilePane');
+      if (tilePane) {
+        tilePane.style.filter = compareMode ? 'hue-rotate(220deg) saturate(1.4)' : '';
+      }
+    }
+  }, [compareMode]);
   useEffect(() => { onCompareSelectRef.current = onCompareSelect; }, [onCompareSelect]);
   useEffect(() => { filtersRef.current = filters; }, [filters]);
 
