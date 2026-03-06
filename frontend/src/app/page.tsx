@@ -726,6 +726,35 @@ export default function Home() {
                         </div>
                         {/* Crime type breakdown comparison */}
                         {(() => {
+                          // Use canonical categories for cross-state comparison
+                          const useCats = comparisonStats.every((s: any) => s.crime_categories?.length > 0);
+                          if (useCats) {
+                            const allCats = new Set<string>();
+                            comparisonStats.forEach((s: any) => (s.crime_categories || []).forEach((cc: any) => allCats.add(cc.category)));
+                            const catArr = Array.from(allCats).slice(0, 8);
+                            const getCatCount = (stats: any, cat: string) => {
+                              const cc = (stats.crime_categories || []).find((c: any) => c.category === cat);
+                              return cc ? cc.count : 0;
+                            };
+                            return catArr.map(cat => {
+                              const c0 = getCatCount(comparisonStats[0], cat);
+                              const c1 = getCatCount(comparisonStats[1], cat);
+                              const diff = c0 > 0 ? (((c1 - c0) / c0) * 100) : 0;
+                              return (
+                                <div key={cat} className="grid grid-cols-3 gap-1 text-[10px]">
+                                  <div className="text-[#94a3b8] truncate" title={cat}>{cat}</div>
+                                  <div className="text-center font-mono">{c0.toLocaleString()}</div>
+                                  <div className="text-center font-mono">
+                                    {c1.toLocaleString()}
+                                    {c0 > 0 && <span className={`ml-1 ${diff > 0 ? 'text-red-400' : diff < 0 ? 'text-green-400' : 'text-[#94a3b8]'}`}>
+                                      {diff > 0 ? '+' : ''}{diff.toFixed(0)}%
+                                    </span>}
+                                  </div>
+                                </div>
+                              );
+                            });
+                          }
+                          // Fallback to raw crime types (same-state comparison)
                           const allTypes = new Set<string>();
                           comparisonStats.forEach(s => (s.crime_types || []).forEach((ct: any) => allTypes.add(ct.tipo_enquadramento)));
                           const typeArr = Array.from(allTypes).slice(0, 8);
