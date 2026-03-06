@@ -733,9 +733,9 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
                 const key = (props.municipio_normalized || '') + '|' + (props.name_normalized || '');
                 const info = bairroLookup[key];
                 if (info) {
-                  return { fillColor: getColor(info.intensity), fillOpacity: 0.35, color: '#1e293b', weight: 1 };
+                  return { fillColor: getColor(info.intensity, compareModeRef.current), fillOpacity: 0.35, color: compareModeRef.current ? '#2d1f4e' : '#1e293b', weight: 1 };
                 }
-                return { fillColor: '#1e293b', fillOpacity: 0.1, color: '#1e293b', weight: 0.5 };
+                return { fillColor: compareModeRef.current ? '#2d1f4e' : '#1e293b', fillOpacity: 0.1, color: compareModeRef.current ? '#2d1f4e' : '#1e293b', weight: 0.5 };
               },
               onEachFeature: (feature, layer) => {
                 const props = feature?.properties || {};
