@@ -708,17 +708,21 @@ export default function Home() {
                         )}
                         <div className="grid grid-cols-3 gap-1 text-xs">
                           <div className="text-[#94a3b8]">Diferença</div>
-                          <div className="col-span-2 text-center font-mono">
-                            {(() => {
-                              const a = comparisonStats[0].total || 0;
-                              const b = comparisonStats[1].total || 0;
-                              if (a === 0 && b === 0) return '—';
-                              const base = Math.max(a, b);
-                              const diff = ((a - b) / base) * 100;
-                              const cls = diff > 0 ? 'text-red-400' : diff < 0 ? 'text-green-400' : '';
-                              return <span className={cls}>{diff > 0 ? '+' : ''}{diff.toFixed(1)}%</span>;
-                            })()}
-                          </div>
+                          {(() => {
+                            const a = comparisonStats[0].total || 0;
+                            const b = comparisonStats[1].total || 0;
+                            if (a === 0 && b === 0) return <><div className="text-center font-mono">—</div><div className="text-center font-mono">—</div></>;
+                            const diffA = b > 0 ? ((a - b) / b) * 100 : (a > 0 ? 100 : 0);
+                            const diffB = a > 0 ? ((b - a) / a) * 100 : (b > 0 ? 100 : 0);
+                            return <>
+                              <div className={`text-center font-mono ${a > b ? 'text-red-400' : a < b ? 'text-green-400' : ''}`}>
+                                {a > b ? `+${diffA.toFixed(0)}%` : a < b ? `${diffA.toFixed(0)}%` : '='}
+                              </div>
+                              <div className={`text-center font-mono ${b > a ? 'text-red-400' : b < a ? 'text-green-400' : ''}`}>
+                                {b > a ? `+${diffB.toFixed(0)}%` : b < a ? `${diffB.toFixed(0)}%` : '='}
+                              </div>
+                            </>;
+                          })()}
                         </div>
                         {/* Crime type breakdown comparison */}
                         {(() => {
