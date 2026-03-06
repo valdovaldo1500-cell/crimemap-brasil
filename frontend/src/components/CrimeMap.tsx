@@ -538,7 +538,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
           // Dot mode for states — only show states with detailed data
           data.filter((d:any) => { const q = qualityMap[d.state]; return q === 'full' || q === 'partial'; }).forEach((d:any) => {
             const intensity = stateLookup[d.state]?.intensity ?? 0;
-            const color = getColor(intensity);
+            const color = getColor(intensity, compareModeRef.current);
             const size = Math.round(36 + intensity * 30);
             const fontSize = Math.round(11 + intensity * 5);
             const icon = L.divIcon({
