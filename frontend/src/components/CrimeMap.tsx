@@ -783,7 +783,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
           // Dot mode: numbered markers
           data.forEach((d:any) => {
             const intensity = dvMap.get(d) ?? 0.5;
-            const color = getColor(intensity);
+            const color = getColor(intensity, compareModeRef.current);
             const label = d.bairro ? d.bairro + ', ' + d.municipio : d.municipio;
             const geoKey = normalizeGeoName(d.municipio || '');
             // Use bairro GeoJSON centroid when available, then municipality centroid, then raw coords
