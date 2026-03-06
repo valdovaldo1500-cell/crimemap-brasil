@@ -489,6 +489,12 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
               if (quality !== 'full' && quality !== 'partial') {
                 return { fillColor: compareModeRef.current ? '#1a0a2e' : '#0f172a', fillOpacity: 0.15, color: compareModeRef.current ? '#2d1f4e' : '#1e293b', weight: 0.3, interactive: false, className: 'state-disabled' };
               }
+              const isCompareSelected = compareModeRef.current && comparisonLocationsRef.current?.some(l => !l.municipio && l.state === sigla);
+              if (isCompareSelected) {
+                return info
+                  ? { fillColor: getColor(info.intensity, compareModeRef.current), fillOpacity: 0.6, color: '#a78bfa', weight: 3 }
+                  : { fillColor: '#3d2160', fillOpacity: 0.5, color: '#a78bfa', weight: 3 };
+              }
               if (info && isSelected) {
                 return { fillColor: getColor(info.intensity, compareModeRef.current), fillOpacity: 0.45, color: '#1e293b', weight: 1 };
               }
