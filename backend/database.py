@@ -1,6 +1,6 @@
 import os
 from sqlalchemy import (create_engine, Column, Integer, String, Float,
-    Index, DateTime, func)
+    Index, DateTime, func, event)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -8,6 +8,17 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./data/crimemap.db")
 engine = create_engine(DATABASE_URL,
     connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
     echo=False)
+
+if "sqlite" in DATABASE_URL:
+    @event.listens_for(engine, "connect")
+    def _set_sqlite_pragma(dbapi_conn, connection_record):
+        cursor = dbapi_conn.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA cache_size=-256000")   # 256 MB
+        cursor.execute("PRAGMA mmap_size=2147483648")  # 2 GB
+        cursor.execute("PRAGMA temp_store=MEMORY")
+        cursor.close()
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -35,7 +46,13 @@ class Crime(Base):
     __table_args__ = (
         Index('idx_mun_bairro', 'municipio_fato', 'bairro'),
         Index('idx_tipo_data', 'tipo_enquadramento', 'data_fato'),
-        Index('idx_lat_lng', 'latitude', 'longitude'),)
+        Index('idx_lat_lng', 'latitude', 'longitude'),
+        Index('idx_state_tipo', 'state', 'tipo_enquadramento'),
+        Index('idx_state_grupo', 'state', 'grupo_fato'),
+        Index('idx_state_sexo', 'state', 'sexo_vitima'),
+        Index('idx_state_cor', 'state', 'cor_vitima'),
+        Index('idx_state_ym_tipo', 'state', 'year_month', 'tipo_enquadramento'),
+    )
 
 class GeocodeCache(Base):
     __tablename__ = "geocode_cache"
@@ -83,6 +100,7 @@ class CrimeStaging(Base):
         Index('idx_staging_state_year_month', 'state', 'year', 'month'),
         Index('idx_staging_municipio', 'municipio'),
         Index('idx_staging_crime_type', 'crime_type'),
+        Index('idx_staging_state_type_counts', 'state', 'crime_type', 'occurrences', 'victims'),
     )
 
 def init_db():

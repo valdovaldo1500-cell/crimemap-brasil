@@ -2,6 +2,7 @@
 import os, logging, re, threading, unicodedata, hmac, hashlib, time, random, base64, json
 import os as _os, json as _json
 from typing import Optional, List
+from functools import lru_cache
 from fastapi import FastAPI, Depends, Query, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -19,6 +20,19 @@ from services.crime_categories import get_filter_info, get_compatible_types, get
 CAPTCHA_SECRET = os.getenv("CAPTCHA_SECRET", "crimebrasil-captcha-2024")
 
 logging.basicConfig(level=logging.INFO)
+
+# Simple TTL cache for expensive query results
+_query_cache: dict[str, tuple[float, any]] = {}
+_CACHE_TTL = 120  # seconds
+
+def _cache_get(key: str):
+    entry = _query_cache.get(key)
+    if entry and time.time() - entry[0] < _CACHE_TTL:
+        return entry[1]
+    return None
+
+def _cache_set(key: str, value):
+    _query_cache[key] = (time.time(), value)
 
 def normalize_name(s: str) -> str:
     """Strip accents and uppercase — works for Brazilian Portuguese."""
@@ -143,6 +157,22 @@ app.add_middleware(
 @app.on_event("startup")
 def startup():
     init_db()
+    # Ensure composite indices exist on existing databases (idempotent)
+    from database import engine
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        for stmt in [
+            "CREATE INDEX IF NOT EXISTS idx_state_tipo ON crimes(state, tipo_enquadramento)",
+            "CREATE INDEX IF NOT EXISTS idx_state_grupo ON crimes(state, grupo_fato)",
+            "CREATE INDEX IF NOT EXISTS idx_state_sexo ON crimes(state, sexo_vitima)",
+            "CREATE INDEX IF NOT EXISTS idx_state_cor ON crimes(state, cor_vitima)",
+            "CREATE INDEX IF NOT EXISTS idx_state_ym_tipo ON crimes(state, year_month, tipo_enquadramento)",
+            "CREATE INDEX IF NOT EXISTS idx_staging_state_type_counts ON crimes_staging(state, crime_type, occurrences, victims)",
+        ]:
+            conn.execute(text(stmt))
+        conn.commit()
+        conn.execute(text("ANALYZE"))
+        conn.commit()
     from services.scheduler import start_scheduler
     start_scheduler(interval_days=7)
 
@@ -587,6 +617,13 @@ def filter_options(request: Request,
     """Return available filter options with counts, applying cross-filtering."""
     validate_semestre(semestre)
     validate_age_filters(idade_min, idade_max)
+
+    # Check response cache
+    cache_key = f"filter_options:{tipo}:{grupo}:{semestre}:{ano}:{idade_min}:{idade_max}:{sexo}:{cor}:{selected_states}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+
     def base_query():
         return db.query(Crime)
 
@@ -613,17 +650,17 @@ def filter_options(request: Request,
 
     # Grupo options (apply all filters except grupo)
     gq = apply_common(base_query(), skip='grupo')
-    gq = gq.with_entities(Crime.grupo_fato, func.count(Crime.id)).filter(
+    gq = gq.with_entities(Crime.grupo_fato, func.count()).filter(
         Crime.grupo_fato.isnot(None), Crime.grupo_fato != "",
         Crime.grupo_fato.in_(["CRIMES", "CONTRAVENCOES"])
-    ).group_by(Crime.grupo_fato).order_by(func.count(Crime.id).desc())
+    ).group_by(Crime.grupo_fato).order_by(func.count().desc())
     grupo_opts = [{"value": r[0], "count": r[1]} for r in gq.all()]
 
     # Tipo options (apply all filters except tipo)
     tq = apply_common(base_query(), skip='tipo')
-    tq = tq.with_entities(Crime.tipo_enquadramento, func.count(Crime.id)).filter(
+    tq = tq.with_entities(Crime.tipo_enquadramento, func.count()).filter(
         Crime.tipo_enquadramento.isnot(None), Crime.tipo_enquadramento != ""
-    ).group_by(Crime.tipo_enquadramento).order_by(func.count(Crime.id).desc())
+    ).group_by(Crime.tipo_enquadramento).order_by(func.count().desc())
     tipo_opts = [{"value": r[0], "count": r[1]} for r in tq.all()]
 
     # Merge tipo from CrimeStaging for non-RS states
@@ -657,16 +694,16 @@ def filter_options(request: Request,
 
     # Sexo options (apply all filters except sexo)
     sq = apply_common(base_query(), skip='sexo')
-    sq = sq.with_entities(Crime.sexo_vitima, func.count(Crime.id)).filter(
+    sq = sq.with_entities(Crime.sexo_vitima, func.count()).filter(
         Crime.sexo_vitima.isnot(None), Crime.sexo_vitima != ""
-    ).group_by(Crime.sexo_vitima).order_by(func.count(Crime.id).desc())
+    ).group_by(Crime.sexo_vitima).order_by(func.count().desc())
     sexo_opts = [{"value": r[0], "count": r[1]} for r in sq.all()]
 
     # Cor options (apply all filters except cor)
     cq = apply_common(base_query(), skip='cor')
-    cq = cq.with_entities(Crime.cor_vitima, func.count(Crime.id)).filter(
+    cq = cq.with_entities(Crime.cor_vitima, func.count()).filter(
         Crime.cor_vitima.isnot(None), Crime.cor_vitima != ""
-    ).group_by(Crime.cor_vitima).order_by(func.count(Crime.id).desc())
+    ).group_by(Crime.cor_vitima).order_by(func.count().desc())
     cor_opts = [{"value": r[0], "count": r[1]} for r in cq.all()]
 
     states = selected_states or []
@@ -688,7 +725,9 @@ def filter_options(request: Request,
             grupo_opts = []  # Grupo (CRIMES/CONTRAVENCOES) is RS-specific
 
     total = sum(t['count'] for t in tipo_opts)
-    return {"grupo": grupo_opts, "tipo": tipo_opts, "sexo": sexo_opts, "cor": cor_opts, "total": total}
+    result = {"grupo": grupo_opts, "tipo": tipo_opts, "sexo": sexo_opts, "cor": cor_opts, "total": total}
+    _cache_set(cache_key, result)
+    return result
 
 @app.get("/api/location-stats")
 @limiter.limit("60/minute")
@@ -1092,6 +1131,12 @@ def heatmap_states(request: Request,
     validate_semestre(semestre)
     validate_age_filters(idade_min, idade_max)
 
+    # Check response cache
+    cache_key = f"heatmap_states:{tipo}:{ano}:{semestre}:{idade_min}:{idade_max}:{sexo}:{cor}:{selected_states}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+
     # Auto-filter: when partial state (MG) is combined with others, apply compatible types
     effective_tipo = tipo
     if selected_states and not tipo:
@@ -1107,7 +1152,7 @@ def heatmap_states(request: Request,
                     effective_tipo = list(all_types)
 
     # Query 1: crimes table (detailed RS data)
-    q1 = db.query(Crime.state, func.count(Crime.id).label("cnt")).filter(Crime.state.isnot(None))
+    q1 = db.query(Crime.state, func.count().label("cnt")).filter(Crime.state.isnot(None))
     if effective_tipo: q1 = q1.filter(Crime.tipo_enquadramento.in_(effective_tipo))
     if semestre: q1 = q1.filter(Crime.year_month.in_(semester_months(semestre)))
     elif ano: q1 = q1.filter(Crime.year_month.like(f"{ano}-%"))
@@ -1151,7 +1196,7 @@ def heatmap_states(request: Request,
     state_crime_types: dict[str, list[dict]] = {}
     for state_code in merged:
         if state_code in crimes_states:
-            bq = db.query(Crime.tipo_enquadramento, func.count(Crime.id).label("cnt")).filter(Crime.state == state_code)
+            bq = db.query(Crime.tipo_enquadramento, func.count().label("cnt")).filter(Crime.state == state_code)
             if effective_tipo: bq = bq.filter(Crime.tipo_enquadramento.in_(effective_tipo))
             if semestre: bq = bq.filter(Crime.year_month.in_(semester_months(semestre)))
             elif ano: bq = bq.filter(Crime.year_month.like(f"{ano}-%"))
@@ -1159,7 +1204,7 @@ def heatmap_states(request: Request,
             if idade_max is not None: bq = bq.filter(Crime.idade_vitima <= idade_max)
             if sexo: bq = bq.filter(Crime.sexo_vitima.in_(sexo))
             if cor: bq = bq.filter(Crime.cor_vitima.in_(cor))
-            rows = bq.group_by(Crime.tipo_enquadramento).order_by(func.count(Crime.id).desc()).limit(5).all()
+            rows = bq.group_by(Crime.tipo_enquadramento).order_by(func.count().desc()).limit(5).all()
             state_crime_types[state_code] = [{"tipo": r[0], "count": r[1]} for r in rows if r[1] > 0]
         else:
             sq = db.query(
@@ -1178,11 +1223,13 @@ def heatmap_states(request: Request,
             rows = sq.group_by(CrimeStaging.crime_type).order_by(desc(literal_column("cnt"))).limit(5).all()
             state_crime_types[state_code] = [{"tipo": r.crime_type, "count": int(r.cnt)} for r in rows if r.cnt > 0]
 
-    return [{"state": s, "latitude": c[0], "longitude": c[1], "weight": w,
+    result = [{"state": s, "latitude": c[0], "longitude": c[1], "weight": w,
              "population": _safe_pop(s),
              "crime_types": state_crime_types.get(s, [])}
             for s, w in merged.items()
             if (c := STATE_CENTROIDS.get(s))]
+    _cache_set(cache_key, result)
+    return result
 
 @app.get("/api/state-filter-info")
 def state_filter_info(

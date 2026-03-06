@@ -30,14 +30,21 @@ test('Fix 1: clicking state polygon toggles selection (no popup at state level)'
   await page.waitForSelector('.leaflet-overlay-pane path', { timeout: 15_000 });
   await page.waitForTimeout(5000);
 
-  // Find a clickable state polygon with actual area
+  // Find a clickable state polygon with actual area (must be interactive — only RS, RJ, MG)
   const clickablePathIndex = await page.evaluate(() => {
-    const paths = document.querySelectorAll('.leaflet-overlay-pane path');
-    for (let i = 0; i < paths.length; i++) {
-      const d = paths[i].getAttribute('d') || '';
+    const allPaths = document.querySelectorAll('.leaflet-overlay-pane path');
+    const interactivePaths = document.querySelectorAll('.leaflet-overlay-pane path.leaflet-interactive');
+    // Build a set of interactive path indices within the full path list
+    for (const ip of interactivePaths) {
+      const d = ip.getAttribute('d') || '';
       if (d.length > 20 && d.includes('L')) {
-        const rect = paths[i].getBoundingClientRect();
-        if (rect.width > 10 && rect.height > 10) return i;
+        const rect = ip.getBoundingClientRect();
+        if (rect.width > 10 && rect.height > 10) {
+          // Find its index in the full path list
+          for (let i = 0; i < allPaths.length; i++) {
+            if (allPaths[i] === ip) return i;
+          }
+        }
       }
     }
     return -1;
@@ -46,10 +53,9 @@ test('Fix 1: clicking state polygon toggles selection (no popup at state level)'
   if (clickablePathIndex >= 0) {
     // Click a state polygon — should toggle selection, NOT show popup
     await page.locator('.leaflet-overlay-pane path').nth(clickablePathIndex).click({ force: true });
-    await page.waitForTimeout(3000);
 
-    // Verify: at least one polygon should now be colored (state selected)
-    const hasColored = await page.evaluate(() => {
+    // Wait for at least one polygon to become colored (state selected + data loaded)
+    const hasColored = await page.waitForFunction(() => {
       const paths = document.querySelectorAll('.leaflet-overlay-pane path');
       const coloredFills = ['#ef4444', '#f97316', '#eab308', '#16a34a'];
       for (const p of paths) {
@@ -57,7 +63,7 @@ test('Fix 1: clicking state polygon toggles selection (no popup at state level)'
         if (coloredFills.includes(fill)) return true;
       }
       return false;
-    });
+    }, { timeout: 15_000 }).then(() => true).catch(() => false);
     expect(hasColored).toBe(true);
 
     // No popup should appear (state clicks toggle, not show popup)
