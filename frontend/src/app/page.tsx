@@ -64,6 +64,7 @@ export default function Home() {
   const [center, setCenter] = useState<[number,number]>([-14.24,-51.93]);
   const [zoom, setZoom] = useState(4);
   const [showFilters, setShowFilters] = useState(false);
+  const [filterLoading, setFilterLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'dots' | 'choropleth'>('choropleth');
   const [rateMode, setRateMode] = useState<'rate' | 'absolute'>('rate');
   const [aggregationOverride, setAggregationOverride] = useState<'auto'|'estados'|'municipios'|'bairros'>('auto');
