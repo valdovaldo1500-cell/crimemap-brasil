@@ -47,6 +47,7 @@ function quantileIntensities(values: number[]): number[] {
   if (values.length === 0) return [];
   if (values.length === 1) return [0.5];
   const sorted = [...values].sort((a, b) => a - b);
+  if (sorted[0] === sorted[sorted.length - 1]) return values.map(() => 0.5);
   return values.map(v => {
     let lo = 0, hi = sorted.length;
     while (lo < hi) {
