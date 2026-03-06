@@ -845,7 +845,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
     } catch (e) { console.error('Load error:', e); } finally { if (thisLoadId === loadIdRef.current) setLoading(false); }
   // Fix #17: rateMode intentionally excluded from deps — rate is client-side only
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentZoom, zoomLevel, filters, mapVersion, viewMode, aggregationOverride, selectedStates, availableStates]);
+  }, [currentZoom, zoomLevel, filters, mapVersion, viewMode, aggregationOverride, selectedStates, availableStates, compareMode]);
   useEffect(() => { loadData(); }, [loadData]);
 
   return (
