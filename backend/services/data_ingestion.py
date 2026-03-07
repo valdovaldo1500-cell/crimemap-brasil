@@ -19,11 +19,23 @@ def download_file(url, dest_dir=DATA_DIR):
     fn = url.split("/")[-1]
     fp = os.path.join(dest_dir, fn)
     if os.path.exists(fp): return fp
-    logger.info(f"Downloading {url}...")
-    r = requests.get(url, timeout=120, verify=False)
-    r.raise_for_status()
-    with open(fp, "wb") as f: f.write(r.content)
-    return fp
+    headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"}
+    for attempt in range(3):
+        try:
+            logger.info(f"Downloading {url} (attempt {attempt+1}/3)...")
+            r = requests.get(url, timeout=300, verify=False, headers=headers, stream=True)
+            r.raise_for_status()
+            with open(fp, "wb") as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            return fp
+        except Exception as e:
+            logger.warning(f"Download attempt {attempt+1} failed: {e}")
+            if os.path.exists(fp):
+                os.remove(fp)
+            if attempt == 2:
+                raise
+            time.sleep(5 * (attempt + 1))
 
 def extract_csv(zip_path):
     if zip_path.endswith(".csv"): return zip_path
