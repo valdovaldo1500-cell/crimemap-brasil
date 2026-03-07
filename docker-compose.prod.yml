@@ -5,6 +5,7 @@ services:
     volumes: ["./backend/data:/app/data", "./frontend/public/geo:/app/geo:ro"]
     environment:
       DATABASE_URL: "sqlite:///./data/crimemap.db"
+      CAPTCHA_SECRET: "${CAPTCHA_SECRET}"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/stats')"]
