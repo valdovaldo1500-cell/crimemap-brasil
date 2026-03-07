@@ -1,4 +1,4 @@
-import os, csv, logging, zipfile, tempfile
+import os, csv, logging, zipfile, tempfile, time
 import requests
 from database import Crime, DataSource, GeocodeCache, SessionLocal, init_db
 from services.geocoder import GeocoderService, MAJOR_CITIES_RS
