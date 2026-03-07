@@ -802,9 +802,30 @@ def location_stats(request: Request,
         pop = get_bairro_population(municipio, bairro, lookup_state)
     if pop is None:
         pop = get_municipio_population(municipio, lookup_state)
+    crime_categories = categorize_crime_types(crime_types)
     return {"municipio": municipio, "bairro": bairro, "total": total,
         "population": pop if pop else None,
-        "crime_types": crime_types}
+        "crime_types": crime_types, "crime_categories": crime_categories}
+
+@app.get("/api/system-info")
+@limiter.limit("60/minute")
+def system_info(request: Request, db: Session = Depends(get_db)):
+    crimes_munis = db.query(distinct(Crime.municipio_fato)).all()
+    staging_munis = db.query(distinct(CrimeStaging.municipio)).filter(
+        CrimeStaging.state.in_(["RS", "RJ", "MG"])
+    ).all()
+    all_munis = set(m[0] for m in crimes_munis if m[0]) | set(m[0] for m in staging_munis if m[0])
+    crimes_dates = db.query(func.min(Crime.data_fato), func.max(Crime.data_fato)).first()
+    staging_range = db.query(
+        func.min(CrimeStaging.year), func.max(CrimeStaging.year)
+    ).filter(CrimeStaging.state.in_(["RS", "RJ", "MG"])).first()
+    start_year = min(int(crimes_dates[0][:4]) if crimes_dates and crimes_dates[0] else 9999, staging_range[0] or 9999)
+    end_year = max(int(crimes_dates[1][:4]) if crimes_dates and crimes_dates[1] else 0, staging_range[1] or 0)
+    return {
+        "total_municipios": len(all_munis),
+        "period_start_year": start_year,
+        "period_end_year": end_year,
+    }
 
 @app.get("/api/state-stats")
 @limiter.limit("60/minute")

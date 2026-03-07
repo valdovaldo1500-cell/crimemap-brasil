@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { fetchStats, fetchCrimeTypes, fetchSemesters, fetchAutocomplete, fetchSexoValues, fetchCorValues, fetchGrupoValues, fetchFilterOptions, fetchCaptcha, submitBugReport, fetchAvailableStates, fetchStateFilterInfo, fetchLocationStats, fetchStateStats } from '@/lib/api';
+import { fetchStats, fetchCrimeTypes, fetchSemesters, fetchAutocomplete, fetchSexoValues, fetchCorValues, fetchGrupoValues, fetchFilterOptions, fetchCaptcha, submitBugReport, fetchAvailableStates, fetchStateFilterInfo, fetchLocationStats, fetchStateStats, fetchSystemInfo } from '@/lib/api';
 import { calcRate, formatRate } from '@/lib/rates';
 const CrimeMap = dynamic(() => import('@/components/CrimeMap'), { ssr: false });
 
@@ -112,6 +112,9 @@ export default function Home() {
   const [comparisonLocations, setComparisonLocations] = useState<any[]>([]);
   const [comparisonStats, setComparisonStats] = useState<any[]>([]);
 
+  // System-wide static info
+  const [systemInfo, setSystemInfo] = useState<any>(null);
+
   const CHANGELOG = [
     {
       date: '2026-03-06',
@@ -155,6 +158,7 @@ export default function Home() {
         setCorValues(opts.cor || []);
       }),
       fetchAvailableStates().then(setAvailableStates).catch(() => {}),
+      fetchSystemInfo().then(setSystemInfo).catch(() => {}),
     ]).finally(() => setInitialLoading(false));
   }, []);
 
@@ -415,8 +419,8 @@ export default function Home() {
       <header className="border-b border-[#1e293b] bg-[#111827]/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-[1800px] mx-auto px-4 py-2 md:py-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 md:gap-3 shrink-0">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-amber-500 flex items-center justify-center text-white font-bold text-xs">BR</div>
-            <div className="hidden sm:block"><h1 className="text-lg font-bold">Crime Brasil</h1><p className="text-[10px] text-[#94a3b8] uppercase tracking-widest">crimebrasil.com.br</p></div>
+            <img src="/logo.svg" alt="Crime Brasil" className="h-8 sm:h-9" />
+            <p className="hidden sm:block text-[10px] text-[#94a3b8] uppercase tracking-widest">crimebrasil.com.br</p>
           </div>
           <div className="flex-1 max-w-md mx-2 md:mx-8 relative" ref={searchRef}>
             <input
@@ -497,11 +501,6 @@ export default function Home() {
               <button onClick={()=>setViewMode('dots')} aria-label="Visualização em pontos" className={`px-3 py-2.5 text-sm ${viewMode==='dots'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>Pontos</button>
               <button onClick={()=>setViewMode('choropleth')} aria-label="Visualização em regiões" className={`px-3 py-2.5 text-sm ${viewMode==='choropleth'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>Regiões</button>
             </div>
-            <button
-              onClick={() => { const entering = !compareMode; setCompareMode(entering); if (entering) setSelectedStates([]); setComparisonLocations([]); setComparisonStats([]); }}
-              aria-label={compareMode ? 'Desativar comparação' : 'Ativar comparação'}
-              className={`px-3 py-2.5 rounded-xl border text-sm ${compareMode ? 'bg-[#7c3aed] text-white border-[#7c3aed]' : 'bg-[#1a2234] border-[#1e293b] text-[#94a3b8] hover:bg-[#1e293b] hover:text-[#f1f5f9]'}`}
-            >Comparar</button>
             <div className="flex rounded-xl border border-[#1e293b] overflow-hidden" role="group" aria-label="Modo de taxa">
               <button onClick={()=>setRateMode('rate')} aria-label="Taxa por 100 mil habitantes" className={`px-3 py-2.5 text-sm ${rateMode==='rate'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>/100K hab.</button>
               <button onClick={()=>setRateMode('absolute')} aria-label="Total absoluto" className={`px-3 py-2.5 text-sm ${rateMode==='absolute'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>Total</button>
@@ -675,6 +674,15 @@ export default function Home() {
         </aside>)}
         <main className="flex-1 relative z-0">
           <CrimeMap center={center} zoom={zoom} filters={filters} viewMode={viewMode} rateMode={rateMode} aggregationOverride={aggregationOverride} selectedStates={selectedStates} onToggleState={toggleState} activeFilter={activeFilter} maxGranularity={maxGranularity} availableStates={availableStates} compareMode={compareMode} comparisonLocations={comparisonLocations} onCompareSelect={onCompareSelect} />
+          {/* Floating compare button on map */}
+          <button
+            onClick={() => { const entering = !compareMode; setCompareMode(entering); if (entering) setSelectedStates([]); setComparisonLocations([]); setComparisonStats([]); }}
+            aria-label={compareMode ? 'Desativar comparação' : 'Ativar comparação'}
+            className={`absolute top-4 left-[170px] z-[1000] hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium shadow-lg transition-colors ${compareMode ? 'bg-[#7c3aed] text-white border border-[#7c3aed]' : 'bg-[#111827]/90 backdrop-blur-xl border border-[#1e293b] text-[#94a3b8] hover:bg-[#1e293b] hover:text-[#f1f5f9]'}`}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+            Comparar
+          </button>
           {/* Comparison mode panel */}
           {compareMode && (
             <div className="absolute top-4 right-14 z-[1001] w-80">
@@ -806,7 +814,7 @@ export default function Home() {
             </div>
           )}
           {/* Bottom-right utility links */}
-          <div className="absolute bottom-12 right-4 z-[1000] hidden md:flex items-center gap-3">
+          <div className="absolute bottom-2 right-2 md:bottom-4 md:right-4 z-[1000] hidden md:flex items-center gap-3">
             <button onClick={openBugReport} className="text-[10px] text-[#64748b] hover:text-[#94a3b8] transition-colors">Reportar Bug</button>
             <button onClick={() => setShowHelp(true)} className="text-[10px] text-[#64748b] hover:text-[#94a3b8] transition-colors">Como usar</button>
             <button onClick={() => setShowChangelog(true)} className="text-[10px] text-[#64748b] hover:text-[#94a3b8] transition-colors">Novidades</button>
@@ -819,11 +827,11 @@ export default function Home() {
                 <div><div className="h-8 w-20 bg-[#1e293b] rounded animate-pulse mb-1" /><div className="h-3 w-16 bg-[#1e293b] rounded animate-pulse" /></div>
                 <div><div className="h-8 w-14 bg-[#1e293b] rounded animate-pulse mb-1" /><div className="h-3 w-16 bg-[#1e293b] rounded animate-pulse" /></div>
               </>
-            ) : stats && (
+            ) : (
               <>
-                <div><p className="text-lg md:text-2xl font-bold font-mono text-red-400">{stats.total_crimes?.toLocaleString()}</p><p className="text-[8px] md:text-[10px] text-[#94a3b8] uppercase tracking-wider">Ocorrências</p></div>
-                <div><p className="text-lg md:text-2xl font-bold font-mono text-amber-400">{stats.total_municipios}</p><p className="text-[8px] md:text-[10px] text-[#94a3b8] uppercase tracking-wider">Municípios</p></div>
-                <div><p className="text-lg md:text-2xl font-bold font-mono text-blue-400">{selectedYear ? (selectedPeriod === 'ano' ? selectedYear : formatSemester(`${selectedYear}-${selectedPeriod}`)) : 'Todos'}</p><p className="text-[8px] md:text-[10px] text-[#94a3b8] uppercase tracking-wider">Período</p></div>
+                {stats && <div><p className="text-lg md:text-2xl font-bold font-mono text-red-400">{stats.total_crimes?.toLocaleString()}</p><p className="text-[8px] md:text-[10px] text-[#94a3b8] uppercase tracking-wider">Ocorrências</p></div>}
+                <div><p className="text-lg md:text-2xl font-bold font-mono text-amber-400">{systemInfo?.total_municipios ?? '—'}</p><p className="text-[8px] md:text-[10px] text-[#94a3b8] uppercase tracking-wider">Municípios</p><p className="text-[7px] md:text-[8px] text-[#64748b]">no sistema</p></div>
+                <div><p className="text-lg md:text-2xl font-bold font-mono text-blue-400">{systemInfo ? `${systemInfo.period_start_year}–${systemInfo.period_end_year}` : '—'}</p><p className="text-[8px] md:text-[10px] text-[#94a3b8] uppercase tracking-wider">Dados disponíveis</p></div>
               </>
             )}
           </div>

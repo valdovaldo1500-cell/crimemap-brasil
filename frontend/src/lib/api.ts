@@ -250,3 +250,13 @@ export async function fetchStateFilterInfo(selectedStates: string[]) {
     throw new Error(`fetchStateFilterInfo failed: ${err.message}`);
   }
 }
+
+export async function fetchSystemInfo() {
+  try {
+    const res = await fetch(`${API}/api/system-info`);
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    return res.json();
+  } catch (err: any) {
+    throw new Error(`fetchSystemInfo failed: ${err.message}`);
+  }
+}

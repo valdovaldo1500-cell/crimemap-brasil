@@ -486,21 +486,22 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
               const info = stateLookup[sigla];
               const quality = qualityMap[sigla] || 'none';
               const isSelected = hasSelection && selectedStates.includes(sigla);
+              const usePurple = compareModeRef.current && (comparisonLocationsRef.current?.length ?? 0) < 2;
               // States without detailed data (basic/none): render same as world background
               if (quality !== 'full' && quality !== 'partial') {
-                return { fillColor: compareModeRef.current ? '#1a0a2e' : '#0f172a', fillOpacity: 0.15, color: compareModeRef.current ? '#2d1f4e' : '#1e293b', weight: 0.3, interactive: false, className: 'state-disabled' };
+                return { fillColor: usePurple ? '#1a0a2e' : '#0f172a', fillOpacity: 0.15, color: usePurple ? '#2d1f4e' : '#1e293b', weight: 0.3, interactive: false, className: 'state-disabled' };
               }
               const isCompareSelected = compareModeRef.current && comparisonLocationsRef.current?.some(l => !l.municipio && l.state === sigla);
               if (isCompareSelected) {
                 return info
-                  ? { fillColor: getColor(info.intensity, compareModeRef.current), fillOpacity: 0.6, color: '#a78bfa', weight: 3 }
+                  ? { fillColor: getColor(info.intensity, usePurple), fillOpacity: 0.6, color: '#a78bfa', weight: 3 }
                   : { fillColor: '#3d2160', fillOpacity: 0.5, color: '#a78bfa', weight: 3 };
               }
               if (info && isSelected) {
-                return { fillColor: getColor(info.intensity, compareModeRef.current), fillOpacity: 0.45, color: '#1e293b', weight: 1 };
+                return { fillColor: getColor(info.intensity, usePurple), fillOpacity: 0.45, color: '#1e293b', weight: 1 };
               }
               // Available states: muted blue to signal interactivity
-              return { fillColor: compareModeRef.current ? '#3d2160' : '#1e3a5f', fillOpacity: hasSelection && !isSelected ? 0.15 : 0.35, color: '#334155', weight: 1 };
+              return { fillColor: usePurple ? '#3d2160' : '#1e3a5f', fillOpacity: hasSelection && !isSelected ? 0.15 : 0.35, color: '#334155', weight: 1 };
             },
             onEachFeature: (feature, layer) => {
               const sigla = feature?.properties?.sigla || '';
@@ -528,7 +529,8 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
                 // Clickable to toggle state selection — hover highlight
                 layer.bindTooltip(`<b>${name} (${sigla})</b><br>${compareMode ? 'Clique para comparar' : 'Clique para filtrar'}`, { sticky: true });
                 layer.on('mouseover', () => {
-                  (layer as any).setStyle({ fillOpacity: 0.5, color: compareModeRef.current ? '#7c3aed' : '#3b82f6', weight: 2 });
+                  const usePurple = compareModeRef.current && (comparisonLocationsRef.current?.length ?? 0) < 2;
+                  (layer as any).setStyle({ fillOpacity: 0.5, color: usePurple ? '#7c3aed' : '#3b82f6', weight: 2 });
                 });
                 layer.on('mouseout', () => {
                   (layer as any).setStyle({ fillOpacity: hasSelection && !isSelected ? 0.15 : 0.35, color: '#334155', weight: 1 });
@@ -572,7 +574,10 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
             });
             if (disabledFeatures.length > 0) {
               L.geoJSON({ ...statesGeoDataRef.current, features: disabledFeatures }, {
-                style: () => ({ fillColor: compareModeRef.current ? '#1a0a2e' : '#0f172a', fillOpacity: 0.15, color: compareModeRef.current ? '#2d1f4e' : '#1e293b', weight: 0.3, interactive: false, className: 'state-disabled' }),
+                style: () => {
+                  const usePurple = compareModeRef.current && (comparisonLocationsRef.current?.length ?? 0) < 2;
+                  return { fillColor: usePurple ? '#1a0a2e' : '#0f172a', fillOpacity: 0.15, color: usePurple ? '#2d1f4e' : '#1e293b', weight: 0.3, interactive: false, className: 'state-disabled' };
+                },
                 interactive: false,
               }).addTo(mapRef.current!);
             }
@@ -681,10 +686,12 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
               const name = normalizeGeoName(feature?.properties?.name || '');
               const info = lookup[name];
               if (info) {
+                const usePurple = compareModeRef.current && (comparisonLocationsRef.current?.length ?? 0) < 2;
                 const isCompareSelected = compareModeRef.current && comparisonLocationsRef.current?.some(l => l.municipio && normalizeGeoName(l.municipio) === name && !l.bairro);
-                return { fillColor: getColor(info.intensity, compareModeRef.current), fillOpacity: isCompareSelected ? 0.6 : 0.45, color: isCompareSelected ? '#a78bfa' : (compareModeRef.current ? '#2d1f4e' : '#1e293b'), weight: isCompareSelected ? 3 : 1 };
+                return { fillColor: getColor(info.intensity, usePurple), fillOpacity: isCompareSelected ? 0.6 : 0.45, color: isCompareSelected ? '#a78bfa' : (usePurple ? '#2d1f4e' : '#1e293b'), weight: isCompareSelected ? 3 : 1 };
               }
-              return { fillColor: compareModeRef.current ? '#2d1f4e' : '#1e293b', fillOpacity: 0.2, color: compareModeRef.current ? '#2d1f4e' : '#1e293b', weight: 1 };
+              const usePurpleNoData = compareModeRef.current && (comparisonLocationsRef.current?.length ?? 0) < 2;
+              return { fillColor: usePurpleNoData ? '#2d1f4e' : '#1e293b', fillOpacity: 0.2, color: usePurpleNoData ? '#2d1f4e' : '#1e293b', weight: 1 };
             },
             onEachFeature: (feature, layer) => {
               const name = normalizeGeoName(feature?.properties?.name || '');
@@ -743,10 +750,12 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
                 const key = (props.municipio_normalized || '') + '|' + (props.name_normalized || '');
                 const info = bairroLookup[key];
                 if (info) {
+                  const usePurple = compareModeRef.current && (comparisonLocationsRef.current?.length ?? 0) < 2;
                   const isCompareSelected = compareModeRef.current && comparisonLocationsRef.current?.some(l => l.bairro && normalizeGeoName(l.municipio || '') === (props.municipio_normalized || '') && normalizeGeoName(l.bairro || '') === (props.name_normalized || ''));
-                  return { fillColor: getColor(info.intensity, compareModeRef.current), fillOpacity: isCompareSelected ? 0.55 : 0.35, color: isCompareSelected ? '#a78bfa' : (compareModeRef.current ? '#2d1f4e' : '#1e293b'), weight: isCompareSelected ? 3 : 1 };
+                  return { fillColor: getColor(info.intensity, usePurple), fillOpacity: isCompareSelected ? 0.55 : 0.35, color: isCompareSelected ? '#a78bfa' : (usePurple ? '#2d1f4e' : '#1e293b'), weight: isCompareSelected ? 3 : 1 };
                 }
-                return { fillColor: compareModeRef.current ? '#2d1f4e' : '#1e293b', fillOpacity: 0.1, color: compareModeRef.current ? '#2d1f4e' : '#1e293b', weight: 0.5 };
+                const usePurpleNoData = compareModeRef.current && (comparisonLocationsRef.current?.length ?? 0) < 2;
+                return { fillColor: usePurpleNoData ? '#2d1f4e' : '#1e293b', fillOpacity: 0.1, color: usePurpleNoData ? '#2d1f4e' : '#1e293b', weight: 0.5 };
               },
               onEachFeature: (feature, layer) => {
                 const props = feature?.properties || {};
@@ -910,7 +919,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
           ))}
         </div>
       </div>
-      {(nonRsInfo || activeFilter || compareMode || (selectedStates.length === 0 && zoomLevel === 'states' && !loading && !emptyResult)) && (
+      {(nonRsInfo || activeFilter || compareMode) && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-[1000] pointer-events-none flex flex-col items-center gap-2">
           {nonRsInfo && (
             <div className="bg-[#111827]/90 backdrop-blur-sm rounded-xl px-5 py-2 shadow-lg border border-amber-500/30">
@@ -931,11 +940,13 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
               </span>
             </div>
           )}
-          {selectedStates.length === 0 && zoomLevel === 'states' && !loading && !emptyResult && !compareMode && (
-            <div className="bg-[#111827]/90 backdrop-blur-sm rounded-xl px-5 py-2 shadow-lg border border-blue-500/30">
-              <span className="text-xs text-[#94a3b8]">Clique em um estado para começar</span>
-            </div>
-          )}
+        </div>
+      )}
+      {selectedStates.length === 0 && zoomLevel === 'states' && !loading && !emptyResult && !compareMode && (
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1000] pointer-events-none">
+          <div className="bg-[#111827]/90 backdrop-blur-sm rounded-xl px-5 py-2 shadow-lg border border-blue-500/30">
+            <span className="text-xs text-[#94a3b8]">Clique em um estado para começar</span>
+          </div>
         </div>
       )}
       {/* Hidden SVG with hatch pattern for disabled states */}
