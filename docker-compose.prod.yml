@@ -7,10 +7,11 @@ services:
       DATABASE_URL: "sqlite:///./data/crimemap.db"
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/years"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8000/api/years"]
       interval: 30s
       timeout: 10s
       retries: 3
+    networks: [default, coolify]
 
   frontend:
     build: ./frontend
@@ -18,10 +19,11 @@ services:
     depends_on: [backend]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000"]
       interval: 30s
       timeout: 10s
       retries: 3
+    networks: [default, coolify]
     labels:
       - traefik.enable=true
       - traefik.http.routers.crimemap-http.rule=Host(`crimebrasil.com.br`)
@@ -33,3 +35,7 @@ services:
       - traefik.http.routers.crimemap-https.tls.certresolver=letsencrypt
       - traefik.http.services.crimemap.loadbalancer.server.port=3000
       - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
+
+networks:
+  coolify:
+    external: true
