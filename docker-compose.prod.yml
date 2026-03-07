@@ -1,0 +1,26 @@
+services:
+  backend:
+    build: ./backend
+    expose: ["8000"]
+    volumes: ["./backend/data:/app/data", "./frontend/public/geo:/app/geo:ro"]
+    environment:
+      DATABASE_URL: "sqlite:///./data/crimemap.db"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/years"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build: ./frontend
+    expose: ["3000"]
+    depends_on: [backend]
+    environment:
+      NEXT_PUBLIC_API_URL: "https://crimebrasil.com.br"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
