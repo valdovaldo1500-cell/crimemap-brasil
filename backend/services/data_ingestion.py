@@ -21,7 +21,6 @@ def download_file(url, dest_dir=DATA_DIR):
     fn = url.split("/")[-1]
     fp = os.path.join(dest_dir, fn)
     if os.path.exists(fp): return fp
-<<<<<<< HEAD
     headers = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"}
     for attempt in range(3):
         try:
@@ -39,13 +38,6 @@ def download_file(url, dest_dir=DATA_DIR):
             if attempt == 2:
                 raise
             time.sleep(5 * (attempt + 1))
-=======
-    logger.info(f"Downloading {url}...")
-    r = requests.get(url, timeout=120)
-    r.raise_for_status()
-    with open(fp, "wb") as f: f.write(r.content)
-    return fp
->>>>>>> feature/choropleth-mode
 
 def extract_csv(zip_path):
     if zip_path.endswith(".csv"): return zip_path
