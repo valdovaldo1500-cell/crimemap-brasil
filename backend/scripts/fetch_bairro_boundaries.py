@@ -1,0 +1,401 @@
+#!/usr/bin/env python3
+"""Fetch bairro (admin_level=10) boundaries from OSM Overpass for Brazilian states.
+
+Produces frontend/public/geo/{state}-bairros.geojson with polygon geometries
+and normalized name properties for choropleth matching.
+
+Usage:
+    python backend/scripts/fetch_bairro_boundaries.py           # RS only (default)
+    python backend/scripts/fetch_bairro_boundaries.py rs rj mg  # multiple states
+    python backend/scripts/fetch_bairro_boundaries.py all       # RS, RJ, MG
+"""
+import json, os, sys, time, unicodedata
+import requests
+
+OVERPASS_URLS = [
+    "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+    "https://overpass-api.de/api/interpreter",
+    "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.openstreetmap.ru/api/interpreter",
+]
+OVERPASS_URL = OVERPASS_URLS[0]
+
+# State configurations: OSM name, IBGE code, admin_level for bairros
+STATE_CONFIG = {
+    "rs": {"osm_name": "Rio Grande do Sul", "ibge_code": 43},
+    "rj": {"osm_name": "Rio de Janeiro", "ibge_code": 33},
+    "mg": {"osm_name": "Minas Gerais", "ibge_code": 31},
+}
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
+GEO_DIR = os.path.join(PROJECT_ROOT, "frontend", "public", "geo")
+
+
+def normalize_name(s: str) -> str:
+    """Strip accents and uppercase — matches backend/main.py:normalize_name."""
+    nfkd = unicodedata.normalize("NFD", s)
+    return "".join(c for c in nfkd if unicodedata.category(c) != "Mn").upper().strip()
+
+
+def round_coords(coords, precision=5):
+    """Recursively round coordinate arrays to given decimal places."""
+    if isinstance(coords[0], (int, float)):
+        return [round(coords[0], precision), round(coords[1], precision)]
+    return [round_coords(c, precision) for c in coords]
+
+
+def stitch_ways(members):
+    """Stitch outer way segments into closed rings."""
+    segments = []
+    for m in members:
+        if m.get("role") != "outer" or "geometry" not in m:
+            continue
+        seg = [(round(n["lon"], 5), round(n["lat"], 5)) for n in m["geometry"]]
+        if len(seg) >= 2:
+            segments.append(seg)
+
+    if not segments:
+        return []
+
+    rings = []
+    while segments:
+        ring = list(segments.pop(0))
+        changed = True
+        while changed:
+            changed = False
+            for i, seg in enumerate(segments):
+                if ring[-1] == seg[0]:
+                    ring.extend(seg[1:])
+                    segments.pop(i)
+                    changed = True
+                    break
+                elif ring[-1] == seg[-1]:
+                    ring.extend(reversed(seg[:-1]))
+                    segments.pop(i)
+                    changed = True
+                    break
+                elif ring[0] == seg[-1]:
+                    ring = seg[:-1] + ring
+                    segments.pop(i)
+                    changed = True
+                    break
+                elif ring[0] == seg[0]:
+                    ring = list(reversed(seg[1:])) + ring
+                    segments.pop(i)
+                    changed = True
+                    break
+
+        if ring[0] != ring[-1]:
+            ring.append(ring[0])
+        if len(ring) >= 4:
+            rings.append(ring)
+
+    return rings
+
+
+def point_in_polygon(px, py, polygon):
+    """Ray-casting point-in-polygon test. polygon is [[lon,lat], ...]."""
+    n = len(polygon)
+    inside = False
+    j = n - 1
+    for i in range(n):
+        xi, yi = polygon[i]
+        xj, yj = polygon[j]
+        if ((yi > py) != (yj > py)) and (px < (xj - xi) * (py - yi) / (yj - yi) + xi):
+            inside = not inside
+        j = i
+    return inside
+
+
+def load_municipio_polygons(state_sigla):
+    """Load municipio GeoJSON for point-in-polygon parent determination."""
+    path = os.path.join(GEO_DIR, f"{state_sigla}-municipios.geojson")
+    if not os.path.exists(path):
+        print(f"Warning: {path} not found, skipping parent municipality assignment")
+        return {}
+    with open(path) as f:
+        data = json.load(f)
+    result = {}
+    for feat in data["features"]:
+        name = feat["properties"].get("name", "")
+        geom = feat["geometry"]
+        if geom["type"] == "Polygon":
+            result[name] = geom["coordinates"]
+        elif geom["type"] == "MultiPolygon":
+            largest = max(geom["coordinates"], key=lambda p: len(p[0]))
+            result[name] = largest
+    return result
+
+
+def find_parent_municipio(centroid_lon, centroid_lat, muni_polys):
+    """Find which municipio polygon contains the given point."""
+    for name, rings in muni_polys.items():
+        if not rings:
+            continue
+        outer = rings[0]
+        if point_in_polygon(centroid_lon, centroid_lat, outer):
+            return name
+    return None
+
+
+def polygon_centroid(ring):
+    """Compute centroid of a polygon ring [[lon,lat], ...]."""
+    n = len(ring) - 1
+    if n <= 0:
+        return ring[0] if ring else (0, 0)
+    cx = sum(p[0] for p in ring[:n]) / n
+    cy = sum(p[1] for p in ring[:n]) / n
+    return (cx, cy)
+
+
+def supplement_with_ibge(features, ibge_code):
+    """Supplement OSM bairro features with IBGE neighborhood data from geobr."""
+    try:
+        import geobr
+        import geopandas as gpd
+    except ImportError:
+        print("geobr/geopandas not installed — skipping IBGE supplement")
+        return features
+
+    print(f"\nFetching IBGE neighborhood boundaries via geobr (code_state={ibge_code})...")
+    try:
+        gdf = geobr.read_neighborhood(year=2010)
+    except Exception as e:
+        print(f"Failed to fetch IBGE data: {e}")
+        return features
+
+    state_gdf = gdf[gdf["code_state"] == ibge_code].copy()
+    print(f"Got {len(state_gdf)} IBGE neighborhoods for state {ibge_code}")
+
+    existing = set()
+    for f in features:
+        props = f["properties"]
+        key = (props.get("municipio_normalized", ""), props.get("name_normalized", ""))
+        existing.add(key)
+
+    added = 0
+    for _, row in state_gdf.iterrows():
+        name = row.get("name_neighborhood", "")
+        mun_name = row.get("name_muni", "")
+        # Guard against NaN (pandas float) values
+        if not isinstance(name, str) or not isinstance(mun_name, str):
+            continue
+        name = name.strip()
+        mun_name = mun_name.strip()
+        if not name or not mun_name:
+            continue
+        name_norm = normalize_name(name)
+        mun_norm = normalize_name(mun_name)
+        if (mun_norm, name_norm) in existing:
+            continue
+        geom = row.geometry
+        if geom is None or geom.is_empty:
+            continue
+        try:
+            from shapely.geometry import mapping
+            geojson_geom = mapping(geom)
+            geojson_geom["coordinates"] = round_coords(geojson_geom["coordinates"])
+        except Exception:
+            continue
+
+        feature = {
+            "type": "Feature",
+            "properties": {
+                "name": name,
+                "name_normalized": name_norm,
+                "municipio": mun_name,
+                "municipio_normalized": mun_norm,
+            },
+            "geometry": geojson_geom,
+        }
+        features.append(feature)
+        existing.add((mun_norm, name_norm))
+        added += 1
+
+    print(f"Added {added} IBGE neighborhoods not in OSM data")
+    return features
+
+
+def overpass_request(query, timeout_secs=600):
+    """Send query to Overpass API (GET preferred, POST fallback), trying mirror URLs."""
+    last_exc = None
+    for url in OVERPASS_URLS:
+        # Try GET first (avoids some 504s on certain load balancers)
+        for method in ("get", "post"):
+            try:
+                if method == "get":
+                    resp = requests.get(url, params={"data": query}, timeout=timeout_secs)
+                else:
+                    resp = requests.post(url, data={"data": query}, timeout=timeout_secs)
+                resp.raise_for_status()
+                return resp.json()
+            except Exception as exc:
+                last_exc = exc
+                if method == "get":
+                    continue  # try POST before moving to next URL
+                print(f"  Overpass URL {url} (GET+POST) failed: {exc}")
+                time.sleep(5)
+    raise last_exc
+
+
+def fetch_state_bairros(state_sigla):
+    """Fetch and write bairro boundaries for a single state."""
+    config = STATE_CONFIG[state_sigla]
+    osm_name = config["osm_name"]
+    ibge_code = config["ibge_code"]
+    output_path = os.path.join(GEO_DIR, f"{state_sigla}-bairros.geojson")
+
+    print(f"\n{'='*60}")
+    print(f"Fetching bairro boundaries for {osm_name} ({state_sigla.upper()})...")
+    print(f"Phase 1: fetching relation IDs + tags (lightweight)...")
+
+    # Phase 1: get all relation IDs and tags (no geometry — small response)
+    id_query = f"""
+[out:json][timeout:120];
+area["name"="{osm_name}"][admin_level=4]->.state;
+rel(area.state)[admin_level=10][boundary=administrative];
+out tags;
+"""
+    data = overpass_request(id_query, timeout_secs=180)
+    id_elements = data.get("elements", [])
+    print(f"Got {len(id_elements)} relations (tags only)")
+
+    # Build map of relation_id -> tags for later lookup
+    tags_by_id = {el["id"]: el.get("tags", {}) for el in id_elements if el.get("type") == "relation"}
+    rel_ids = list(tags_by_id.keys())
+
+    # Phase 2: fetch geometry in batches to avoid 504
+    BATCH_SIZE = 50
+    elements = []
+    print(f"Phase 2: fetching geometry in batches of {BATCH_SIZE}...")
+    for batch_start in range(0, len(rel_ids), BATCH_SIZE):
+        batch = rel_ids[batch_start:batch_start + BATCH_SIZE]
+        id_list = ",".join(str(i) for i in batch)
+        geom_query = f"""
+[out:json][timeout:120];
+rel(id:{id_list});
+out geom;
+"""
+        batch_num = batch_start // BATCH_SIZE + 1
+        total_batches = (len(rel_ids) + BATCH_SIZE - 1) // BATCH_SIZE
+        print(f"  Batch {batch_num}/{total_batches} ({len(batch)} relations)...")
+        batch_data = overpass_request(geom_query, timeout_secs=180)
+        batch_elements = batch_data.get("elements", [])
+        # Re-attach tags from phase 1 (geometry response may omit some tags)
+        for el in batch_elements:
+            if el.get("id") in tags_by_id:
+                el["tags"] = {**el.get("tags", {}), **tags_by_id[el["id"]]}
+        elements.extend(batch_elements)
+        # Brief pause between batches to respect rate limits
+        if batch_start + BATCH_SIZE < len(rel_ids):
+            time.sleep(2)
+
+    print(f"Total elements with geometry: {len(elements)}")
+
+    muni_polys = load_municipio_polygons(state_sigla)
+    print(f"Loaded {len(muni_polys)} municipio polygons for parent assignment")
+
+    features = []
+    skipped = 0
+
+    for el in elements:
+        if el.get("type") != "relation":
+            continue
+
+        tags = el.get("tags", {})
+        name = tags.get("name", "")
+        if not name:
+            skipped += 1
+            continue
+
+        members = el.get("members", [])
+        rings = stitch_ways(members)
+        if not rings:
+            skipped += 1
+            continue
+
+        if len(rings) == 1:
+            geometry = {"type": "Polygon", "coordinates": round_coords(rings)}
+        else:
+            geometry = {"type": "MultiPolygon", "coordinates": round_coords([[r] for r in rings])}
+
+        municipio = tags.get("addr:city", "") or tags.get("is_in:city", "")
+        if not municipio:
+            is_in = tags.get("is_in", "")
+            if is_in:
+                parts = [p.strip() for p in is_in.split(",")]
+                if parts:
+                    municipio = parts[0]
+
+        if not municipio and muni_polys:
+            cx, cy = polygon_centroid(rings[0])
+            parent = find_parent_municipio(cx, cy, muni_polys)
+            if parent:
+                municipio = parent
+
+        name_normalized = normalize_name(name)
+        municipio_normalized = normalize_name(municipio) if municipio else ""
+
+        feature = {
+            "type": "Feature",
+            "properties": {
+                "name": name,
+                "name_normalized": name_normalized,
+                "municipio": municipio,
+                "municipio_normalized": municipio_normalized,
+            },
+            "geometry": geometry,
+        }
+        features.append(feature)
+
+    print(f"OSM features: {len(features)}, skipped: {skipped}")
+
+    # Supplement with IBGE data
+    features = supplement_with_ibge(features, ibge_code)
+
+    geojson = {"type": "FeatureCollection", "features": features}
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    with open(output_path, "w") as f:
+        json.dump(geojson, f, separators=(",", ":"))
+
+    file_size = os.path.getsize(output_path)
+    print(f"\nDone! Wrote {len(features)} bairro features to {output_path}")
+    print(f"File size: {file_size / 1024:.0f} KB")
+
+    with_muni = sum(1 for f in features if f["properties"]["municipio"])
+    without_muni = len(features) - with_muni
+    print(f"With parent municipality: {with_muni}")
+    print(f"Without parent municipality: {without_muni}")
+
+    return len(features)
+
+
+def main():
+    args = sys.argv[1:] if len(sys.argv) > 1 else ["rs"]
+
+    if "all" in args:
+        states = list(STATE_CONFIG.keys())
+    else:
+        states = [s.lower() for s in args]
+        invalid = [s for s in states if s not in STATE_CONFIG]
+        if invalid:
+            print(f"Unknown states: {invalid}. Available: {list(STATE_CONFIG.keys())}")
+            sys.exit(1)
+
+    total = 0
+    for state in states:
+        count = fetch_state_bairros(state)
+        total += count
+        # Rate limit between requests
+        if state != states[-1]:
+            print("\nWaiting 30s between Overpass requests (rate limiting)...")
+            time.sleep(30)
+
+    print(f"\n{'='*60}")
+    print(f"All done! Total bairro features across {len(states)} state(s): {total}")
+
+
+if __name__ == "__main__":
+    main()

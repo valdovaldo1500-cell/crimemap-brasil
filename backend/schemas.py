@@ -21,12 +21,18 @@ class CrimeOut(BaseModel):
     class Config:
         from_attributes = True
 
+class BairroComponent(BaseModel):
+    bairro: str
+    weight: int
+
 class HeatmapPoint(BaseModel):
     latitude: float
     longitude: float
     weight: int
     municipio: Optional[str] = None
     bairro: Optional[str] = None
+    population: Optional[int] = None
+    components: Optional[List[BairroComponent]] = None
 
 class CrimeTypeCount(BaseModel):
     tipo_enquadramento: str
@@ -38,9 +44,16 @@ class MunicipioCount(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
 
+class LocationStatsResponse(BaseModel):
+    municipio: str
+    bairro: Optional[str] = None
+    total: int
+    crime_types: List[CrimeTypeCount]
+
 class StatsResponse(BaseModel):
     total_crimes: int
     total_municipios: int
+    total_population: Optional[int] = None
     period_start: str
     period_end: str
     top_crime_types: List[CrimeTypeCount]

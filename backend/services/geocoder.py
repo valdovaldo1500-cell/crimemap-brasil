@@ -1,7 +1,15 @@
-import time, logging
+import math, time, logging
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut, GeocoderServiceError
 logger = logging.getLogger(__name__)
+
+def _haversine_km(lat1, lon1, lat2, lon2):
+    """Haversine distance between two lat/lng points in kilometers."""
+    R = 6371
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
+    return R * 2 * math.asin(math.sqrt(a))
 
 MAJOR_CITIES_RS = {
     "PORTO ALEGRE":(-30.0346,-51.2177),"CAXIAS DO SUL":(-29.1681,-51.1794),
@@ -43,6 +51,8 @@ MAJOR_CITIES_RS = {
 }
 
 
+MAX_BAIRRO_DISTANCE_KM = 50
+
 class GeocoderService:
     def __init__(self):
         self.geolocator = Nominatim(user_agent="crimemap-rs-v1", timeout=10)
@@ -51,6 +61,29 @@ class GeocoderService:
     def _rate_limit(self):
         self._req += 1
         time.sleep(1.1)
+
+    def _get_municipality_centroid(self, mun, db=None):
+        """Get municipality centroid from MAJOR_CITIES_RS or GeocodeCache (bairro='')."""
+        if mun in MAJOR_CITIES_RS:
+            return MAJOR_CITIES_RS[mun]
+        if db:
+            from database import GeocodeCache
+            cached = db.query(GeocodeCache).filter(
+                GeocodeCache.municipio == mun, GeocodeCache.bairro == "").first()
+            if cached:
+                return (cached.latitude, cached.longitude)
+        return None
+
+    def _validate_distance(self, lat, lng, mun, db=None):
+        """Return True if coords are within MAX_BAIRRO_DISTANCE_KM of municipality centroid."""
+        centroid = self._get_municipality_centroid(mun, db)
+        if not centroid:
+            return True  # no centroid to validate against
+        dist = _haversine_km(lat, lng, centroid[0], centroid[1])
+        if dist > MAX_BAIRRO_DISTANCE_KM:
+            logger.warning(f"Geocode for {mun} at ({lat},{lng}) is {dist:.0f}km from centroid — rejecting")
+            return False
+        return True
 
     def geocode_location(self, municipio, bairro="", db=None):
         from database import GeocodeCache
@@ -70,9 +103,23 @@ class GeocoderService:
             loc = self.geolocator.geocode(q)
             if loc:
                 coords = (loc.latitude, loc.longitude)
+                # Validate bairro geocode is near the municipality
+                if ba and not self._validate_distance(coords[0], coords[1], mun, db):
+                    # Use municipality centroid instead
+                    centroid = self._get_municipality_centroid(mun, db)
+                    if centroid:
+                        coords = centroid
+                        if db: self._save_cache(db, mun, ba, coords[0], coords[1])
+                        return coords
                 if db: self._save_cache(db, mun, ba, coords[0], coords[1])
                 return coords
-            if ba: return self.geocode_location(municipio, "", db)
+            if ba:
+                if ba.upper() != "CENTRO":
+                    centro = self.geocode_location(municipio, "CENTRO", db)
+                    if centro:
+                        self._save_cache(db, mun, ba, centro[0], centro[1])
+                        return centro
+                return self.geocode_location(municipio, "", db)
         except (GeocoderTimedOut, GeocoderServiceError) as e:
             logger.warning(f"Geocoding failed {municipio}/{bairro}: {e}")
         return None
@@ -88,3 +135,46 @@ class GeocoderService:
                 db.commit()
         except Exception:
             db.rollback()
+
+
+def batch_geocode_new_bairros(db=None, municipio_filter=None, min_crimes=10):
+    """Geocode (municipio, bairro) pairs missing from cache. Returns (done, total)."""
+    import unicodedata
+    from database import Crime, GeocodeCache, SessionLocal
+    from sqlalchemy import func
+
+    def _normalize(s):
+        nfkd = unicodedata.normalize('NFD', s)
+        return ''.join(c for c in nfkd if unicodedata.category(c) != 'Mn').upper().strip()
+
+    if db is None:
+        db = SessionLocal()
+    q = db.query(Crime.municipio_fato, Crime.bairro).filter(
+        Crime.bairro.isnot(None), Crime.bairro != "")
+    if municipio_filter:
+        q = q.filter(Crime.municipio_fato.ilike(f"%{municipio_filter}%"))
+    q = q.group_by(Crime.municipio_fato, Crime.bairro).having(func.count(Crime.id) >= min_crimes)
+    seen: dict[tuple[str, str], tuple[str, str]] = {}
+    for r in q.all():
+        key = (_normalize(r.municipio_fato), _normalize(r.bairro))
+        if key not in seen:
+            seen[key] = (r.municipio_fato, r.bairro)
+    pairs = list(seen.values())
+    cache_rows = db.query(GeocodeCache).filter(GeocodeCache.bairro != "").all()
+    cached = {(_normalize(c.municipio), _normalize(c.bairro)) for c in cache_rows}
+    to_geocode = [(m, b) for m, b in pairs if (_normalize(m), _normalize(b)) not in cached]
+    total = len(to_geocode)
+    if total == 0:
+        return (0, 0)
+    geocoder = GeocoderService()
+    done = 0
+    for mun, bairro in to_geocode:
+        try:
+            geocoder.geocode_location(mun, bairro, db=db)
+            done += 1
+            if done % 50 == 0:
+                logger.info(f"Geocoded {done}/{total} bairros")
+        except Exception as e:
+            logger.warning(f"Failed to geocode {bairro}, {mun}: {e}")
+    logger.info(f"Batch geocoding complete: {done}/{total} bairros")
+    return (done, total)

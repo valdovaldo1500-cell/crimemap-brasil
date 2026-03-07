@@ -5,10 +5,16 @@ services:
     volumes: ["./backend/data:/app/data", "./frontend/public/geo:/app/geo:ro"]
     environment:
       DATABASE_URL: "sqlite:///./data/crimemap.db"
+<<<<<<< HEAD
       CAPTCHA_SECRET: "${CAPTCHA_SECRET}"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/stats')"]
+=======
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/years"]
+>>>>>>> feature/choropleth-mode
       interval: 30s
       timeout: 10s
       retries: 3
@@ -20,11 +26,16 @@ services:
     depends_on: [backend]
     restart: unless-stopped
     healthcheck:
+<<<<<<< HEAD
       test: ["CMD", "wget", "-qO-", "http://localhost:3000"]
+=======
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+>>>>>>> feature/choropleth-mode
       interval: 30s
       timeout: 10s
       retries: 3
     networks: [default, coolify]
+<<<<<<< HEAD
     labels:
       - traefik.enable=true
       - traefik.http.routers.crimemap-http.rule=Host(`crimebrasil.com.br`)
@@ -36,6 +47,8 @@ services:
       - traefik.http.routers.crimemap-https.tls.certresolver=letsencrypt
       - traefik.http.services.crimemap.loadbalancer.server.port=3000
       - traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https
+=======
+>>>>>>> feature/choropleth-mode
 
 networks:
   coolify:
