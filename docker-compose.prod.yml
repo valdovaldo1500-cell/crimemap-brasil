@@ -16,8 +16,6 @@ services:
     build: ./frontend
     expose: ["3000"]
     depends_on: [backend]
-    environment:
-      NEXT_PUBLIC_API_URL: "https://crimebrasil.com.br"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]
