@@ -498,7 +498,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
                   : { fillColor: '#3d2160', fillOpacity: 0.5, color: '#a78bfa', weight: 3 };
               }
               if (info && isSelected) {
-                return { fillColor: getColor(info.intensity, usePurple), fillOpacity: 0.45, color: '#1e293b', weight: 1 };
+                return { fillColor: getColor(info.intensity, usePurple), fillOpacity: 0.45, color: '#475569', weight: 1.5 };
               }
               // Available states: muted blue to signal interactivity
               return { fillColor: usePurple ? '#3d2160' : '#1e3a5f', fillOpacity: hasSelection && !isSelected ? 0.15 : 0.35, color: '#334155', weight: 1 };
