@@ -332,8 +332,10 @@ def heatmap_municipios(request: Request,
             weight=int(r.cnt), municipio=mun_name,
             population=get_municipio_population(mun_name, r.state)))
 
-    # Merge: crimes (RS) + staging (non-RS), no overlap since we filtered state != "RS" in staging
-    return crimes_results + staging_results
+    # Merge: crimes data takes priority over staging for same municipality
+    crimes_munis = {r.municipio for r in crimes_results}
+    deduped_staging = [r for r in staging_results if r.municipio not in crimes_munis]
+    return crimes_results + deduped_staging
 
 @app.get("/api/heatmap/bairros", response_model=List[HeatmapPoint])
 @limiter.limit("60/minute")
