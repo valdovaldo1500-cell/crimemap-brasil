@@ -1562,7 +1562,7 @@ def check_updates():
 def ingest_rs_history(force: bool = False):
     """Ingest all RS historical occurrence data (2022-2026). Runs in background."""
     def _run():
-        from services.data_ingestion import KNOWN_URLS, ingest_and_geocode
+        from services.data_ingestion import KNOWN_URLS, ingest_from_url
         from database import DataSource as DS
         sess = SessionLocal()
         try:
@@ -1577,7 +1577,10 @@ def ingest_rs_history(force: bool = False):
                         sess.commit()
                         logging.info(f"RS force reset: {fn} (deleted {deleted} old records)")
                 try:
-                    count = ingest_and_geocode(url, sess, state="RS")
+                    # Use ingest_from_url (not ingest_and_geocode) to skip slow
+                    # per-file batch geocoding (Nominatim 1.1s/req rate limit).
+                    # Existing geo_cache handles most coords during CSV parsing.
+                    count = ingest_from_url(url, sess, state="RS")
                     logging.info(f"RS ingested: {url} → {count} records")
                 except Exception as e:
                     logging.error(f"RS ingest failed: {url} → {e}")
