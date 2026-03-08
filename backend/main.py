@@ -556,10 +556,14 @@ def heatmap_bairros(request: Request,
                 if assigned[j]:
                     continue
                 # Check if point j is within 0.3 km of ANY point already in this cluster.
-                # Don't merge "Bairro desconhecido" with named bairros
-                seed_is_desconhecido = pts[cluster[0]].bairro == 'Bairro desconhecido'
-                j_is_desconhecido = pts[j].bairro == 'Bairro desconhecido'
-                if seed_is_desconhecido != j_is_desconhecido:
+                # Never cluster-merge polygon-matched bairros — they have their own boundaries
+                seed_bairro = normalize_name(pts[cluster[0]].bairro or "")
+                j_bairro = normalize_name(pts[j].bairro or "")
+                seed_mun = normalize_name(pts[cluster[0]].municipio or "")
+                j_mun = normalize_name(pts[j].municipio or "")
+                seed_has_poly = (seed_mun, seed_bairro) in polygon_matched_keys
+                j_has_poly = (j_mun, j_bairro) in polygon_matched_keys
+                if seed_has_poly or j_has_poly:
                     continue
                 for ci in cluster:
                     if _haversine_km(pts[ci].latitude, pts[ci].longitude,
