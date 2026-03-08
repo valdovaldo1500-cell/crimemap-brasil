@@ -62,7 +62,7 @@ Started in `main.py` startup event, stopped in shutdown.
 | `/api/admin/load-staging` | POST | Trigger full staging load (uses cached files) |
 | `/api/admin/refresh-staging` | POST | Delete cached files + re-download + re-load staging |
 | `/api/admin/check-updates` | POST | Manually trigger SSP data check + ingestion |
-| `/api/admin/ingest-rs-history` | POST | Ingest all RS historical data (2022-2026) |
+| `/api/admin/ingest-rs-history` | POST | Ingest all RS historical data (2022-2026). Use `?force=true` to re-ingest files already marked as ingested |
 | `/api/admin/geocode-bairros` | POST | Batch geocode bairros missing from cache |
 | `/api/admin/validate-geocache` | POST | Delete geocache entries > 50km from municipality |
 | `/api/admin/staging-stats` | GET | Row counts grouped by state and source |
