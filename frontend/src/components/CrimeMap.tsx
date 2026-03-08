@@ -572,7 +572,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
               L.geoJSON({ ...statesGeoDataRef.current, features: disabledFeatures }, {
                 style: () => {
                   const usePurple = compareModeRef.current && (comparisonLocationsRef.current?.length ?? 0) < 2;
-                  return { fillColor: usePurple ? '#1a0a2e' : '#0f172a', fillOpacity: 0.08, color: '#1e293b', weight: 0.3, interactive: false };
+                  return { fillOpacity: 0, weight: 0, stroke: false, interactive: false };
                 },
                 interactive: false,
               }).addTo(mapRef.current!);
