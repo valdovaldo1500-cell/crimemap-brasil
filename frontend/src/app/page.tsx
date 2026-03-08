@@ -465,31 +465,33 @@ export default function Home() {
           </div>
           <div className="hidden md:flex items-center gap-2">
             {years.length > 0 && (
-              <div className="flex flex-col gap-1">
-                <div className="flex rounded-xl border border-[#1e293b] overflow-hidden">
+              <div className="flex items-center gap-1">
+                <select
+                  value={selectedYear}
+                  onChange={e => onSelectYear(e.target.value)}
+                  className="bg-[#1a2234] border border-[#1e293b] rounded-xl px-3 py-2 text-sm text-[#f1f5f9] cursor-pointer appearance-none pr-8"
+                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
+                >
                   {years.map(yr => (
-                    <button key={yr} onClick={() => onSelectYear(yr)}
-                      className={`px-3 py-1.5 text-sm ${selectedYear === yr ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>
-                      {yr}
-                    </button>
+                    <option key={yr} value={yr}>{yr}</option>
                   ))}
-                </div>
+                </select>
                 <div className="flex rounded-xl border border-[#1e293b] overflow-hidden">
                   <button onClick={() => setSelectedPeriod('ano')}
-                    className={`px-2.5 py-1 text-xs ${selectedPeriod === 'ano' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>
+                    className={`px-2.5 py-2 text-xs ${selectedPeriod === 'ano' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>
                     Ano
                   </button>
                   {availablePeriods.includes('S1') && (
                     <button onClick={() => maxGranularity === 'monthly' && setSelectedPeriod('S1')}
                       title={maxGranularity === 'yearly' ? 'Filtro por semestre indisponível — dados do SINESP são anuais' : ''}
-                      className={`px-2.5 py-1 text-xs ${selectedPeriod === 'S1' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'} ${maxGranularity === 'yearly' ? 'opacity-40 cursor-not-allowed' : ''}`}>
+                      className={`px-2.5 py-2 text-xs ${selectedPeriod === 'S1' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'} ${maxGranularity === 'yearly' ? 'opacity-40 cursor-not-allowed' : ''}`}>
                       Jan-Jun
                     </button>
                   )}
                   {availablePeriods.includes('S2') && (
                     <button onClick={() => maxGranularity === 'monthly' && setSelectedPeriod('S2')}
                       title={maxGranularity === 'yearly' ? 'Filtro por semestre indisponível — dados do SINESP são anuais' : ''}
-                      className={`px-2.5 py-1 text-xs ${selectedPeriod === 'S2' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'} ${maxGranularity === 'yearly' ? 'opacity-40 cursor-not-allowed' : ''}`}>
+                      className={`px-2.5 py-2 text-xs ${selectedPeriod === 'S2' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'} ${maxGranularity === 'yearly' ? 'opacity-40 cursor-not-allowed' : ''}`}>
                       Jul-Dez
                     </button>
                   )}
