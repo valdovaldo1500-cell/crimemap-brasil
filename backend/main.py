@@ -449,8 +449,15 @@ def heatmap_bairros(request: Request,
     unknown_bucket: dict[str, dict] = {}  # keyed by mun_norm
     results = []
     for key, m in merged.items():
-        mun_norm = key[0]
-        lat, lng = cache.get(key, (m['lat'], m['lng']))
+        mun_norm, bairro_norm = key
+        # Prefer polygon centroid > geocode cache > crime average
+        poly_c = BAIRRO_POLYGON_CENTROIDS.get(mun_norm, {})
+        poly_fc = BAIRRO_POLYGON_CENTROIDS_FUZZY.get(mun_norm, {})
+        poly_coord = poly_c.get(bairro_norm) or poly_fc.get(normalize_fuzzy(bairro_norm))
+        if poly_coord:
+            lat, lng = poly_coord
+        else:
+            lat, lng = cache.get(key, (m['lat'], m['lng']))
         centroid = mun_centroids.get(mun_norm)
         # Validate bairro coords against municipality centroid; snap if too far (cross-city geocoding error)
         if centroid and _haversine_km(lat, lng, centroid[0], centroid[1]) > 30:
