@@ -46,7 +46,10 @@ def normalize_fuzzy(s: str) -> str:
 
 def _load_bairro_polygons():
     """Load rs-bairros.geojson into a spatial index keyed by municipio."""
-    path = _os.path.join(_os.path.dirname(__file__), "..", "frontend", "public", "geo", "rs-bairros.geojson")
+    # Try local backend/geo/ first (baked into Docker image), then legacy paths
+    path = _os.path.join(_os.path.dirname(__file__), "geo", "rs-bairros.geojson")
+    if not _os.path.exists(path):
+        path = _os.path.join(_os.path.dirname(__file__), "..", "frontend", "public", "geo", "rs-bairros.geojson")
     if not _os.path.exists(path):
         path = "/app/geo/rs-bairros.geojson"
     if not _os.path.exists(path):
