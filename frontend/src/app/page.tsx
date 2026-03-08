@@ -532,11 +532,15 @@ export default function Home() {
             {years.length > 0 && (
               <div className="space-y-2">
                 <span className="text-[10px] text-[#94a3b8] uppercase tracking-wider">Ano</span>
-                <div className="flex flex-wrap gap-1">
+                <select
+                  value={selectedYear}
+                  onChange={e => onSelectYear(e.target.value)}
+                  className="w-full bg-[#1a2234] border border-[#1e293b] rounded-xl px-3 py-2 text-sm text-[#f1f5f9] cursor-pointer"
+                >
                   {years.map(yr => (
-                    <button key={yr} onClick={() => { onSelectYear(yr); }} className={`px-3 py-1.5 text-sm rounded-lg ${selectedYear === yr ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8]'}`}>{yr}</button>
+                    <option key={yr} value={yr}>{yr}</option>
                   ))}
-                </div>
+                </select>
                 <div className="flex flex-wrap gap-1">
                   <button onClick={() => setSelectedPeriod('ano')} className={`px-2.5 py-1 text-xs rounded-lg ${selectedPeriod === 'ano' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8]'}`}>Ano</button>
                   {availablePeriods.includes('S1') && <button onClick={() => setSelectedPeriod('S1')} className={`px-2.5 py-1 text-xs rounded-lg ${selectedPeriod === 'S1' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8]'}`}>Jan-Jun</button>}
