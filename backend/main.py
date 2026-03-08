@@ -73,28 +73,16 @@ def _load_bairro_polygons():
 
 BAIRRO_POLYGON_INDEX = _load_bairro_polygons()
 
-def _compute_polygon_centroids():
-    """Compute centroid of each bairro polygon for coordinate lookup."""
-    centroids = {}
-    fuzzy = {}
-    for mun_norm, polys in BAIRRO_POLYGON_INDEX.items():
-        mun_c = {}
-        mun_f = {}
-        for name_norm, display_name, rings in polys:
-            if rings:
-                ring = rings[0]
-                n = len(ring)
-                if n > 0:
-                    coord = (sum(p[1] for p in ring) / n, sum(p[0] for p in ring) / n)
-                    mun_c[name_norm] = coord
-                    fk = normalize_fuzzy(name_norm)
-                    if fk not in mun_f:
-                        mun_f[fk] = coord
-        centroids[mun_norm] = mun_c
-        fuzzy[mun_norm] = mun_f
-    return centroids, fuzzy
+def _load_bairro_centroids():
+    """Load pre-computed bairro polygon centroids from JSON (Docker-safe, no GeoJSON needed)."""
+    path = _os.path.join(_os.path.dirname(__file__), "bairro_centroids.json")
+    if not _os.path.exists(path):
+        return {}
+    with open(path) as f:
+        raw = _json.load(f)
+    return {mun: {b: tuple(coord) for b, coord in bairros.items()} for mun, bairros in raw.items()}
 
-BAIRRO_POLYGON_CENTROIDS, BAIRRO_POLYGON_CENTROIDS_FUZZY = _compute_polygon_centroids()
+BAIRRO_CENTROIDS = _load_bairro_centroids()
 
 def _point_in_polygon(px, py, polygon):
     """Ray-casting PIP test. polygon is [[lon,lat], ...]."""
@@ -450,10 +438,9 @@ def heatmap_bairros(request: Request,
     results = []
     for key, m in merged.items():
         mun_norm, bairro_norm = key
-        # Prefer polygon centroid > geocode cache > crime average
-        poly_c = BAIRRO_POLYGON_CENTROIDS.get(mun_norm, {})
-        poly_fc = BAIRRO_POLYGON_CENTROIDS_FUZZY.get(mun_norm, {})
-        poly_coord = poly_c.get(bairro_norm) or poly_fc.get(normalize_fuzzy(bairro_norm))
+        # Prefer pre-computed polygon centroid > geocode cache > crime average
+        mun_centroids_poly = BAIRRO_CENTROIDS.get(mun_norm, {})
+        poly_coord = mun_centroids_poly.get(bairro_norm) or mun_centroids_poly.get(normalize_fuzzy(bairro_norm))
         if poly_coord:
             lat, lng = poly_coord
         else:
