@@ -824,6 +824,19 @@ def location_stats(request: Request,
         "population": pop if pop else None,
         "crime_types": crime_types, "crime_categories": crime_categories}
 
+def _normalize_muni(name: str) -> str:
+    """Normalize municipality name for dedup counting."""
+    nfkd = unicodedata.normalize('NFD', name)
+    stripped = ''.join(c for c in nfkd if unicodedata.category(c) != 'Mn')
+    return stripped.upper().replace('-', ' ').strip()
+
+def _is_garbage_muni(name: str) -> bool:
+    """Filter out garbage municipality entries."""
+    if not name or ';' in name:
+        return True
+    cleaned = name.strip().upper()
+    return cleaned in ('', '-', 'NAO INFORMADO', 'NÃO INFORMADO', 'IGNORADO', 'NAO IDENTIFICADO')
+
 @app.get("/api/system-info")
 @limiter.limit("60/minute")
 def system_info(request: Request, db: Session = Depends(get_db)):
@@ -831,7 +844,13 @@ def system_info(request: Request, db: Session = Depends(get_db)):
     staging_munis = db.query(distinct(CrimeStaging.municipio)).filter(
         CrimeStaging.state.in_(["RS", "RJ", "MG"])
     ).all()
-    all_munis = set(m[0] for m in crimes_munis if m[0]) | set(m[0] for m in staging_munis if m[0])
+    normalized = set()
+    for (m,) in crimes_munis:
+        if m and not _is_garbage_muni(m):
+            normalized.add(_normalize_muni(m))
+    for (m,) in staging_munis:
+        if m and not _is_garbage_muni(m):
+            normalized.add(_normalize_muni(m))
     crimes_dates = db.query(func.min(Crime.data_fato), func.max(Crime.data_fato)).first()
     staging_range = db.query(
         func.min(CrimeStaging.year), func.max(CrimeStaging.year)
@@ -839,7 +858,7 @@ def system_info(request: Request, db: Session = Depends(get_db)):
     start_year = min(int(crimes_dates[0][-4:]) if crimes_dates and crimes_dates[0] else 9999, staging_range[0] or 9999)
     end_year = max(int(crimes_dates[1][-4:]) if crimes_dates and crimes_dates[1] else 0, staging_range[1] or 0)
     return {
-        "total_municipios": len(all_munis),
+        "total_municipios": len(normalized),
         "period_start_year": start_year,
         "period_end_year": end_year,
     }
