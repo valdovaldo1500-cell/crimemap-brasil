@@ -89,6 +89,29 @@ Started in `main.py` startup event, stopped in shutdown.
 
 ## Common Tasks
 
+### Fresh deployment / server migration checklist
+After deploying to a new server or resetting the database, run these steps **in order**:
+
+1. **Load staging data** (RJ, MG, SINESP — municipality-level aggregates):
+   ```bash
+   curl -X POST https://crimebrasil.com.br/api/admin/refresh-staging
+   ```
+2. **Ingest RS historical data** (bairro-level detail, 2022-2026, ~3M records):
+   ```bash
+   curl -X POST "https://crimebrasil.com.br/api/admin/ingest-rs-history?force=true"
+   ```
+   This downloads ~500MB of ZIP files from SSP/RS and takes 10-15 minutes.
+   Without this step, only the latest RS year has bairro/municipality detail — older years fall back to SINESP staging (state/municipality level only, no bairros).
+3. **Verify** all years have data:
+   ```bash
+   for yr in 2022 2023 2024 2025 2026; do
+     echo -n "$yr: "
+     curl -s "https://crimebrasil.com.br/api/heatmap/states?ano=$yr&selected_states=RS" \
+       | python3 -c "import json,sys; d=json.load(sys.stdin); print(d[0]['weight'] if d else 'EMPTY')"
+   done
+   ```
+   Each year should show 500K+ (not ~16K which means only SINESP staging).
+
 ### Add a new state with detailed data
 1. Create ingestion logic in `services/data_ingestion.py` or new service
 2. Add state to `crime_categories.py` STATE_QUALITY and type mappings
@@ -98,9 +121,9 @@ Started in `main.py` startup event, stopped in shutdown.
 
 ### Re-import all staging data
 ```bash
-curl -X POST localhost:8000/api/admin/refresh-staging
+curl -X POST https://crimebrasil.com.br/api/admin/refresh-staging
 # Monitor progress:
-watch -n 5 'curl -s localhost:8000/api/admin/staging-stats | python3 -m json.tool'
+watch -n 5 'curl -s https://crimebrasil.com.br/api/admin/staging-stats | python3 -m json.tool'
 ```
 
 ### Run E2E tests
