@@ -251,6 +251,21 @@ export async function fetchStateFilterInfo(selectedStates: string[]) {
   }
 }
 
+export async function fetchDataAvailability(p: any = {}) {
+  const params = new URLSearchParams();
+  Object.entries(p).forEach(([k, v]) => {
+    if (Array.isArray(v)) v.forEach(val => params.append(k, String(val)));
+    else if (v !== undefined && v !== null) params.set(k, String(v));
+  });
+  try {
+    const res = await fetch(`${API}/api/data-availability?${params}`);
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    return res.json();
+  } catch (err: any) {
+    throw new Error(`fetchDataAvailability failed: ${err.message}`);
+  }
+}
+
 export async function fetchSystemInfo() {
   try {
     const res = await fetch(`${API}/api/system-info`);

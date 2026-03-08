@@ -346,18 +346,32 @@ def heatmap_bairros(request: Request,
     idade_min: Optional[int] = None, idade_max: Optional[int] = None,
     sexo: Optional[List[str]] = Query(None), cor: Optional[List[str]] = Query(None),
     state: Optional[str] = None,
+    selected_states: Optional[List[str]] = Query(None),
     south: Optional[float] = None, west: Optional[float] = None,
     north: Optional[float] = None, east: Optional[float] = None,
     db: Session = Depends(get_db)):
     validate_semestre(semestre)
     validate_age_filters(idade_min, idade_max)
     validate_bounds(south, north, west, east)
+
+    # Auto-filter: when partial state (MG) is combined with others, apply compatible types
+    effective_tipo = tipo
+    if selected_states and not tipo:
+        has_partial = any(s in PARTIAL_STATES for s in selected_states)
+        if has_partial and len(selected_states) > 1:
+            compatible = get_compatible_types(selected_states)
+            if compatible:
+                all_types = set()
+                for types in compatible.values():
+                    all_types.update(types)
+                if all_types:
+                    effective_tipo = list(all_types)
     q = db.query(Crime.municipio_fato, Crime.bairro,
         func.count(Crime.id).label("cnt"),
         func.avg(Crime.latitude).label("lat"), func.avg(Crime.longitude).label("lng")
     ).filter(Crime.latitude.isnot(None), Crime.bairro.isnot(None), Crime.bairro != "")
     if municipio: q = q.filter(Crime.municipio_fato.ilike(f"%{municipio}%"))
-    if tipo: q = q.filter(Crime.tipo_enquadramento.in_(tipo))
+    if effective_tipo: q = q.filter(Crime.tipo_enquadramento.in_(effective_tipo))
     if grupo: q = q.filter(Crime.grupo_fato == grupo)
     if data_inicio: q = q.filter(Crime.data_fato >= data_inicio)
     if data_fim: q = q.filter(Crime.data_fato <= data_fim)
@@ -368,14 +382,22 @@ def heatmap_bairros(request: Request,
     if sexo: q = q.filter(Crime.sexo_vitima.in_(sexo))
     if cor: q = q.filter(Crime.cor_vitima.in_(cor))
     if state: q = q.filter(Crime.state == state)
+    if selected_states: q = q.filter(Crime.state.in_(selected_states))
     if south is not None and north is not None:
         q = q.filter(Crime.latitude.between(south, north))
     if west is not None and east is not None:
         q = q.filter(Crime.longitude.between(west, east))
     rows = q.group_by(Crime.municipio_fato, Crime.bairro).having(func.count(Crime.id) >= 5).all()
-    # Load GeocodeCache with normalized keys
-    cache_rows = db.query(GeocodeCache).filter(GeocodeCache.bairro != "").all()
-    cache = {(normalize_name(c.municipio), normalize_name(c.bairro)): (c.latitude, c.longitude) for c in cache_rows}
+    # Build targeted GeocodeCache lookup — only fetch rows matching result municipios (not full table scan)
+    result_municipios = list({r.municipio_fato for r in rows if r.municipio_fato})
+    cache: dict[tuple[str, str], tuple[float, float]] = {}
+    if result_municipios:
+        cache_q = db.query(GeocodeCache).filter(GeocodeCache.bairro != "")
+        if len(result_municipios) <= 50:
+            norm_munis = [normalize_name(m) for m in result_municipios]
+            cache_q = cache_q.filter(GeocodeCache.municipio.in_(norm_munis))
+        cache_rows = cache_q.all()
+        cache = {(normalize_name(c.municipio), normalize_name(c.bairro)): (c.latitude, c.longitude) for c in cache_rows}
     # Merge rows by normalized bairro name + fuzzy (no hardcoded aliases)
     merged: dict[tuple[str, str], dict] = {}
     fuzzy_key_map: dict[tuple[str, str], tuple[str, str]] = {}
@@ -548,6 +570,65 @@ def heatmap_bairros(request: Request,
                 population=merged_pop,
                 components=all_components,
             ))
+
+    # --- Staging fallback: add municipality-level data for RJ/MG ---
+    # At bairro zoom, RS has per-bairro data but RJ/MG only have municipality aggregates.
+    # Include them as level="municipio" so the frontend renders municipality polygons instead.
+    staging_states = []
+    if selected_states:
+        staging_states = [s for s in selected_states if s in ("RJ", "MG")]
+    elif not state:
+        # No state filter: include RJ/MG if viewport overlaps their bounds
+        staging_states = ["RJ", "MG"]
+    elif state in ("RJ", "MG"):
+        staging_states = [state]
+
+    if staging_states:
+        sq = db.query(
+            CrimeStaging.municipio, CrimeStaging.state,
+            (func.coalesce(func.sum(CrimeStaging.occurrences), 0) +
+             func.coalesce(func.sum(CrimeStaging.victims), 0)).label("cnt")
+        ).filter(CrimeStaging.municipio.isnot(None), CrimeStaging.state.in_(staging_states))
+        if effective_tipo: sq = sq.filter(CrimeStaging.crime_type.in_(effective_tipo))
+        if semestre:
+            year_str, sem = semestre.split('-')
+            sq = sq.filter(CrimeStaging.year == int(year_str))
+            if sem == "S1": sq = sq.filter(CrimeStaging.month.between(1, 6))
+            else: sq = sq.filter(CrimeStaging.month.between(7, 12))
+        elif ano:
+            sq = sq.filter(CrimeStaging.year == int(ano))
+        if sexo: sq = sq.filter(CrimeStaging.sexo_vitima.in_(sexo))
+        staging_rows = sq.group_by(CrimeStaging.municipio, CrimeStaging.state).all()
+
+        for r in staging_rows:
+            if not r.cnt or int(r.cnt) == 0:
+                continue
+            mun_name = r.municipio
+            mun_norm = normalize_name(mun_name) if mun_name else ""
+            lat, lng = None, None
+            if mun_norm and mun_norm in MUNICIPIO_CENTROIDS:
+                lat, lng = MUNICIPIO_CENTROIDS[mun_norm]
+            else:
+                geo = db.query(GeocodeCache).filter(
+                    GeocodeCache.municipio == mun_norm, GeocodeCache.bairro == "").first()
+                if geo and geo.latitude and geo.longitude:
+                    lat, lng = geo.latitude, geo.longitude
+                else:
+                    centroid = STATE_CENTROIDS.get(r.state)
+                    if not centroid:
+                        continue
+                    lat, lng = centroid
+            # Apply viewport bounds filter
+            if south is not None and north is not None:
+                if not (south <= lat <= north):
+                    continue
+            if west is not None and east is not None:
+                if not (west <= lng <= east):
+                    continue
+            merged_results.append(HeatmapPoint(
+                latitude=lat, longitude=lng, weight=int(r.cnt),
+                municipio=mun_name, bairro=None, level="municipio",
+                population=get_municipio_population(mun_name, r.state)))
 
     return merged_results
 
@@ -1004,14 +1085,15 @@ def autocomplete(request: Request, q: str, db: Session = Depends(get_db)):
                 "latitude": float(m.lat), "longitude": float(m.lng), "count": m.cnt}
             muni_seen[normalize_name(m.municipio_fato)] = entry
 
-    # Query 2: staging table (all 27 states)
+    # Query 2: staging table (RS, RJ, MG only — not all 27 states)
     staging_munis = db.query(
         CrimeStaging.municipio, CrimeStaging.state,
         (func.coalesce(func.sum(CrimeStaging.occurrences), 0) +
          func.coalesce(func.sum(CrimeStaging.victims), 0)).label("cnt")
     ).filter(
         CrimeStaging.municipio.ilike(term),
-        CrimeStaging.municipio.isnot(None)
+        CrimeStaging.municipio.isnot(None),
+        CrimeStaging.state.in_(["RS", "RJ", "MG"])
     ).group_by(CrimeStaging.municipio, CrimeStaging.state).order_by(
         desc(literal_column("cnt"))
     ).limit(15).all()
@@ -1064,15 +1146,37 @@ def autocomplete(request: Request, q: str, db: Session = Depends(get_db)):
         else:
             bairro_merged[key] = {"type": "bairro", "name": b.bairro + ", " + b.municipio_fato,
                 "latitude": float(b.lat), "longitude": float(b.lng), "count": b.cnt}
-    # Override bairro coords from GeocodeCache for accurate centering
-    cache_rows = db.query(GeocodeCache).filter(GeocodeCache.bairro != "").all()
-    geo_cache = {(normalize_name(c.municipio), normalize_name(c.bairro)): (c.latitude, c.longitude) for c in cache_rows}
-    for key, item in bairro_merged.items():
-        cached = geo_cache.get(key)
-        if cached and cached[0] and cached[1]:
-            item['latitude'] = cached[0]
-            item['longitude'] = cached[1]
+    # Override bairro coords from GeocodeCache — targeted query, not full table scan
+    if bairro_merged:
+        bairro_munis = list({k[0] for k in bairro_merged.keys()})
+        gc_q = db.query(GeocodeCache).filter(GeocodeCache.bairro != "")
+        if len(bairro_munis) <= 50:
+            gc_q = gc_q.filter(GeocodeCache.municipio.in_(bairro_munis))
+        geo_cache_rows = gc_q.all()
+        geo_cache = {(normalize_name(c.municipio), normalize_name(c.bairro)): (c.latitude, c.longitude) for c in geo_cache_rows}
+        for key, item in bairro_merged.items():
+            cached = geo_cache.get(key)
+            if cached and cached[0] and cached[1]:
+                item['latitude'] = cached[0]
+                item['longitude'] = cached[1]
     results.extend(bairro_merged.values())
+
+    # Add state-level results if query matches a state name (RS, RJ, MG only)
+    STATE_NAMES = {
+        "RS": "Rio Grande do Sul", "RJ": "Rio de Janeiro", "MG": "Minas Gerais",
+    }
+    q_norm = normalize_name(q.strip())
+    for sigla, full_name in STATE_NAMES.items():
+        name_norm = normalize_name(full_name)
+        if q_norm in sigla or q_norm in name_norm:
+            centroid = STATE_CENTROIDS.get(sigla)
+            if centroid:
+                results.insert(0, {
+                    "type": "state", "name": f"{full_name} ({sigla})",
+                    "latitude": centroid[0], "longitude": centroid[1],
+                    "count": 0, "sigla": sigla,
+                })
+
     return results
 
 @app.get("/api/search")
@@ -1083,12 +1187,13 @@ def search_location(q: str, db: Session = Depends(get_db)):
         geo = db.query(GeocodeCache).filter(GeocodeCache.municipio == m[0], GeocodeCache.bairro == "").first()
         results.append({"type":"municipio","name":m[0],"latitude":geo.latitude if geo else None,"longitude":geo.longitude if geo else None})
         seen_munis.add(normalize_name(m[0]))
-    # Also search staging table for non-RS municipalities
+    # Also search staging table for non-RS municipalities (RS, RJ, MG only)
     staging_munis = db.query(
         CrimeStaging.municipio, CrimeStaging.state
     ).filter(
         CrimeStaging.municipio.ilike("%" + q + "%"),
-        CrimeStaging.municipio.isnot(None)
+        CrimeStaging.municipio.isnot(None),
+        CrimeStaging.state.in_(["RS", "RJ", "MG"])
     ).group_by(CrimeStaging.municipio, CrimeStaging.state).limit(15).all()
     for sm in staging_munis:
         if not sm.municipio:
@@ -1309,6 +1414,48 @@ def heatmap_states(request: Request,
             if (c := STATE_CENTROIDS.get(s))]
     _cache_set(cache_key, result)
     return result
+
+@app.get("/api/data-availability")
+@limiter.limit("60/minute")
+def data_availability(request: Request,
+    ano: Optional[str] = None,
+    semestre: Optional[str] = None,
+    selected_states: Optional[List[str]] = Query(None),
+    db: Session = Depends(get_db)):
+    """Check which selected states have data for the given period."""
+    validate_semestre(semestre)
+    if not selected_states:
+        return {"states": {}}
+
+    result = {}
+    for state_code in selected_states:
+        # Check crimes table (RS)
+        cq = db.query(func.count(Crime.id)).filter(Crime.state == state_code)
+        if semestre:
+            cq = cq.filter(Crime.year_month.in_(semester_months(semestre)))
+        elif ano:
+            cq = cq.filter(Crime.year_month.like(f"{ano}-%"))
+        crimes_count = cq.scalar() or 0
+
+        # Check staging table
+        sq = db.query(
+            func.coalesce(func.sum(CrimeStaging.occurrences), 0) +
+            func.coalesce(func.sum(CrimeStaging.victims), 0)
+        ).filter(CrimeStaging.state == state_code)
+        if semestre:
+            year_str, sem = semestre.split('-')
+            sq = sq.filter(CrimeStaging.year == int(year_str))
+            if sem == "S1": sq = sq.filter(CrimeStaging.month.between(1, 6))
+            else: sq = sq.filter(CrimeStaging.month.between(7, 12))
+        elif ano:
+            sq = sq.filter(CrimeStaging.year == int(ano))
+        staging_count = sq.scalar() or 0
+
+        total = crimes_count + int(staging_count)
+        result[state_code] = {"has_data": total > 0, "count": total}
+
+    return {"states": result}
+
 
 @app.get("/api/state-filter-info")
 def state_filter_info(

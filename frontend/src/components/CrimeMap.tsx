@@ -167,6 +167,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
   const [loading, setLoading] = useState(false);
   const [mapVersion, setMapVersion] = useState(0);
   const [nonRsInfo, setNonRsInfo] = useState(false);
+  const [bairroMixedInfo, setBairroMixedInfo] = useState(false);
   // Fix #10: track empty data state
   const [emptyResult, setEmptyResult] = useState(false);
   // Fix #18: track GeoJSON load errors
@@ -442,6 +443,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
     try {
       if (zoomLevel === 'states') {
         // State-level view
+        setBairroMixedInfo(false);
         const data = useCache ? cachedDataRef.current!.data : await fetchHeatmapStates(params);
         if (!useCache) {
           if (thisLoadId !== loadIdRef.current) return; // stale request
@@ -598,6 +600,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
             center.lng >= b.lngMin && center.lng <= b.lngMax;
         });
         const effectiveBairro = zoomLevel === 'bairros' && hasBairroData;
+        // Show info banner when at bairro zoom but not for non-detailed states
         setNonRsInfo(zoomLevel === 'bairros' && !hasBairroData);
 
         // Municipality or Bairro level (existing logic)
@@ -622,8 +625,13 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
           if (data.length === 0) {
             // Fix #10: show empty state message when filtered bairro data is empty
             setEmptyResult(true);
+            setBairroMixedInfo(false);
             return;
           }
+          // Show info banner when we have mixed bairro + municipality-level data
+          setBairroMixedInfo(data.some((d: any) => d.level === 'municipio'));
+        } else {
+          setBairroMixedInfo(false);
         }
         const displayValues2 = data.map((d:any) => {
           if (isRate && d.population) return (d.weight / d.population) * 100_000;
@@ -715,8 +723,12 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
             }
           }).addTo(mapRef.current);
         } else if (useBubbleChoropleth) {
+          // Split data into bairro-level (RS) and municipality-level (RJ/MG staging fallback)
+          const bairroData = data.filter((d: any) => d.level !== 'municipio');
+          const muniData = data.filter((d: any) => d.level === 'municipio');
+
           const bairroLookup: Record<string, {weight:number, intensity:number, municipio:string, bairro:string, population:number|null}> = {};
-          data.forEach((d:any) => {
+          bairroData.forEach((d:any) => {
             const munKey = normalizeGeoName(d.municipio || '');
             const bairroKey = normalizeGeoName(d.bairro || '');
             const key = munKey + '|' + bairroKey;
@@ -724,9 +736,70 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
             bairroLookup[key] = { weight: d.weight, intensity, municipio: d.municipio, bairro: d.bairro, population: d.population || null };
           });
 
-          const matchedKeys = new Set<string>();
+          // Municipality-level lookup for RJ/MG polygon rendering
+          const muniLookup: Record<string, {weight:number, intensity:number, municipio:string, population:number|null}> = {};
+          muniData.forEach((d:any) => {
+            const key = normalizeGeoName(d.municipio || '');
+            const intensity = dvMap.get(d) ?? 0.5;
+            muniLookup[key] = { weight: d.weight, intensity, municipio: d.municipio, population: d.population || null };
+          });
 
-          // Merge bairro features from all loaded state GeoJSON files
+          const matchedKeys = new Set<string>();
+          const matchedMuniKeys = new Set<string>();
+
+          // --- Layer 1: Municipality polygons for RJ/MG data ---
+          if (Object.keys(muniLookup).length > 0) {
+            const muniFeatures: any[] = [];
+            for (const [, stateGeo] of Object.entries(geoDataRefs.current)) {
+              if (!stateGeo?.features) continue;
+              muniFeatures.push(...stateGeo.features);
+            }
+            if (muniFeatures.length > 0) {
+              const mapBounds = mapRef.current!.getBounds();
+              const filteredMuniGeo = {
+                type: 'FeatureCollection' as const,
+                features: muniFeatures.filter((f: any) => {
+                  try {
+                    const featureBounds = L.geoJSON(f).getBounds();
+                    return mapBounds.intersects(featureBounds);
+                  } catch { return false; }
+                })
+              };
+              const muniLayer = L.geoJSON(filteredMuniGeo, {
+                style: (feature) => {
+                  const name = normalizeGeoName(feature?.properties?.name || '');
+                  const info = muniLookup[name];
+                  if (info) {
+                    const usePurple = compareModeRef.current && (comparisonLocationsRef.current?.length ?? 0) < 2;
+                    const isCompareSelected = compareModeRef.current && comparisonLocationsRef.current?.some(l => l.municipio && normalizeGeoName(l.municipio) === name && !l.bairro);
+                    return { fillColor: getColor(info.intensity, usePurple), fillOpacity: isCompareSelected ? 0.55 : 0.35, color: isCompareSelected ? '#a78bfa' : (usePurple ? '#2d1f4e' : '#1e293b'), weight: isCompareSelected ? 3 : 1 };
+                  }
+                  return { fillColor: 'transparent', fillOpacity: 0, color: 'transparent', weight: 0, interactive: false };
+                },
+                onEachFeature: (feature, layer) => {
+                  const name = normalizeGeoName(feature?.properties?.name || '');
+                  const displayName = feature?.properties?.name || '';
+                  const info = muniLookup[name];
+                  if (info) {
+                    matchedMuniKeys.add(name);
+                    bindInteractions(layer, displayName, info.weight, info.municipio, undefined, undefined, info.population);
+                    addPolygonHover(layer);
+                    const ctr = L.geoJSON(feature).getBounds().getCenter();
+                    const lbl = L.marker(ctr, {
+                      icon: L.divIcon({
+                        className: 'choropleth-label',
+                        html: `<span style="color:#fff;font-size:11px;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,0.9)">${displayValue(info.weight, info.population, isRate)}</span>`,
+                        iconSize: [40, 16], iconAnchor: [20, 8],
+                      }), interactive: false
+                    });
+                    markersRef.current?.addLayer(lbl);
+                  }
+                }
+              }).addTo(mapRef.current!);
+            }
+          }
+
+          // --- Layer 2: Bairro polygons for RS data ---
           const allBairroFeatures: any[] = [];
           for (const [, bairroGeo] of Object.entries(bairroGeoDataRefs.current)) {
             if (!bairroGeo?.features) continue;
@@ -781,12 +854,17 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
             }).addTo(mapRef.current!);
           }
 
-          // Fallback: circleMarkers for unmatched bairros
+          // Fallback: circleMarkers for unmatched bairros and unmatched municipalities
           data.forEach((d:any) => {
-            const munKey = normalizeGeoName(d.municipio || '');
-            const bairroKey = normalizeGeoName(d.bairro || '');
-            const key = munKey + '|' + bairroKey;
-            if (matchedKeys.has(key)) return;
+            if (d.level === 'municipio') {
+              const munKey = normalizeGeoName(d.municipio || '');
+              if (matchedMuniKeys.has(munKey)) return;
+            } else {
+              const munKey = normalizeGeoName(d.municipio || '');
+              const bairroKey = normalizeGeoName(d.bairro || '');
+              const key = munKey + '|' + bairroKey;
+              if (matchedKeys.has(key)) return;
+            }
             const intensity = dvMap.get(d) ?? 0.5;
             const color = getColor(intensity, compareModeRef.current);
             const label = d.bairro ? d.bairro + ', ' + d.municipio : d.municipio;
@@ -808,10 +886,13 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
             const geoKey = normalizeGeoName(d.municipio || '');
             // Use bairro GeoJSON centroid when available, then municipality centroid, then raw coords
             let lat = d.latitude, lng = d.longitude;
-            if (zoomLevel === 'bairros' && d.bairro) {
+            if (zoomLevel === 'bairros' && d.bairro && d.level !== 'municipio') {
               const bairroKey = normalizeGeoName(d.municipio || '') + '|' + normalizeGeoName(d.bairro || '');
               const bc = bairroCentroids[bairroKey];
               if (bc) { lat = bc[0]; lng = bc[1]; }
+            } else if (d.level === 'municipio' && centroids[geoKey]) {
+              // Municipality-level data (RJ/MG) at bairro zoom — use municipality centroid
+              lat = centroids[geoKey][0]; lng = centroids[geoKey][1];
             } else if (zoomLevel === 'municipios' && centroids[geoKey]) {
               lat = centroids[geoKey][0]; lng = centroids[geoKey][1];
             }
@@ -919,11 +1000,16 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
           ))}
         </div>
       </div>
-      {(nonRsInfo || activeFilter || compareMode) && (
+      {(nonRsInfo || bairroMixedInfo || activeFilter || compareMode) && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-[1000] pointer-events-none flex flex-col items-center gap-2">
           {nonRsInfo && (
             <div className="bg-[#111827]/90 backdrop-blur-sm rounded-xl px-5 py-2 shadow-lg border border-amber-500/30">
-              <span className="text-xs text-amber-400">Dados por bairro disponíveis para RS, RJ e MG. Exibindo municípios.</span>
+              <span className="text-xs text-amber-400">Dados por bairro disponíveis apenas para RS. RJ e MG exibem dados por município.</span>
+            </div>
+          )}
+          {bairroMixedInfo && !nonRsInfo && (
+            <div className="bg-[#111827]/90 backdrop-blur-sm rounded-xl px-5 py-2 shadow-lg border border-amber-500/30">
+              <span className="text-xs text-amber-400">Dados por bairro disponíveis apenas para RS. RJ e MG exibem dados por município.</span>
             </div>
           )}
           {activeFilter && (

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { fetchStats, fetchCrimeTypes, fetchSemesters, fetchAutocomplete, fetchSexoValues, fetchCorValues, fetchGrupoValues, fetchFilterOptions, fetchCaptcha, submitBugReport, fetchAvailableStates, fetchStateFilterInfo, fetchLocationStats, fetchStateStats, fetchSystemInfo } from '@/lib/api';
+import { fetchStats, fetchCrimeTypes, fetchSemesters, fetchAutocomplete, fetchSexoValues, fetchCorValues, fetchGrupoValues, fetchFilterOptions, fetchCaptcha, submitBugReport, fetchAvailableStates, fetchStateFilterInfo, fetchLocationStats, fetchStateStats, fetchSystemInfo, fetchDataAvailability } from '@/lib/api';
 import { calcRate, formatRate } from '@/lib/rates';
 const CrimeMap = dynamic(() => import('@/components/CrimeMap'), { ssr: false });
 
@@ -115,6 +115,9 @@ export default function Home() {
   // System-wide static info
   const [systemInfo, setSystemInfo] = useState<any>(null);
 
+  // Data availability warnings
+  const [dataWarnings, setDataWarnings] = useState<string[]>([]);
+
   const CHANGELOG = [
     {
       date: '2026-03-06',
@@ -205,7 +208,15 @@ export default function Home() {
 
   const onSelect = (item: any) => {
     setCenter([item.latitude, item.longitude]);
-    setZoom(item.type === 'bairro' ? 14 : 12);
+    if (item.type === 'state') {
+      setZoom(7);
+      // Auto-select the state if not already selected
+      if (item.sigla && !selectedStates.includes(item.sigla)) {
+        setSelectedStates(prev => [...prev, item.sigla]);
+      }
+    } else {
+      setZoom(item.type === 'bairro' ? 14 : 12);
+    }
     setSearchQ(item.name);
     setShowSuggestions(false);
     setSuggestions([]);
@@ -286,6 +297,29 @@ export default function Home() {
       setSelectedPeriod('ano');
     }
   }, [maxGranularity, selectedPeriod]);
+
+  // Check data availability when year/period or selected states change
+  const STATE_FULL_NAMES: Record<string, string> = { RS: 'Rio Grande do Sul', RJ: 'Rio de Janeiro', MG: 'Minas Gerais' };
+  useEffect(() => {
+    if (selectedStates.length === 0 || !selectedYear) {
+      setDataWarnings([]);
+      return;
+    }
+    const params: any = { selected_states: selectedStates };
+    if (selectedPeriod !== 'ano') params.semestre = `${selectedYear}-${selectedPeriod}`;
+    else params.ano = selectedYear;
+    fetchDataAvailability(params).then((res: any) => {
+      const warnings: string[] = [];
+      for (const [state, info] of Object.entries(res.states || {})) {
+        if (!(info as any).has_data) {
+          const periodLabel = selectedPeriod !== 'ano' ? `${selectedPeriod === 'S1' ? 'Jan-Jun' : 'Jul-Dez'} ${selectedYear}` : selectedYear;
+          const stateName = STATE_FULL_NAMES[state] || state;
+          warnings.push(`${stateName} não possui dados para ${periodLabel}.`);
+        }
+      }
+      setDataWarnings(warnings);
+    }).catch(() => setDataWarnings([]));
+  }, [selectedStates, selectedYear, selectedPeriod]);
 
   useEffect(() => {
     fetch('/api/data-sources').then(r => r.ok ? r.json() : null).then(d => { if (d) setDataSourcesApi(d); }).catch(() => {});
@@ -369,6 +403,7 @@ export default function Home() {
 
   const activeFilterCount = selectedTypes.length + selectedGrupo.length + selectedSexo.length + selectedCor.length + (idadeMin ? 1 : 0) + (idadeMax ? 1 : 0);
 
+  const stateResults = suggestions.filter(s => s.type === 'state');
   const municResults = suggestions.filter(s => s.type === 'municipio');
   const bairroResults = suggestions.filter(s => s.type === 'bairro');
 
@@ -428,7 +463,7 @@ export default function Home() {
               onChange={e => onSearchChange(e.target.value)}
               onFocus={() => { setSearchFocused(true); if (suggestions.length > 0) setShowSuggestions(true); }}
               onBlur={() => { setSearchFocused(false); setTimeout(() => setShowSuggestions(false), 200); }}
-              placeholder="Buscar cidade ou bairro..."
+              placeholder="Buscar estado, cidade ou bairro..."
               className="w-full bg-[#1a2234] border border-[#1e293b] rounded-xl px-4 py-2.5 text-sm text-[#f1f5f9] placeholder-[#475569] focus:outline-none focus:border-[#3b82f6]"
             />
             {searchFocused && searchQ.trim().length < 3 && !showSuggestions && (
@@ -438,6 +473,16 @@ export default function Home() {
             )}
             {showSuggestions && (
               <div className="absolute top-full mt-1 w-full bg-[#1a2234] border border-[#1e293b] rounded-xl overflow-hidden shadow-2xl z-[60] max-h-80 overflow-y-auto">
+                {stateResults.length > 0 && (
+                  <>
+                    <div className="px-4 py-1.5 text-[10px] uppercase tracking-wider text-[#94a3b8] bg-[#111827]">Estados</div>
+                    {stateResults.map((r, i) => (
+                      <button key={'s'+i} onMouseDown={() => onSelect(r)} className="w-full px-4 py-2 text-left text-sm hover:bg-[#111827] flex justify-between items-center">
+                        <span>{r.name}</span>
+                      </button>
+                    ))}
+                  </>
+                )}
                 {municResults.length > 0 && (
                   <>
                     <div className="px-4 py-1.5 text-[10px] uppercase tracking-wider text-[#94a3b8] bg-[#111827]">Cidades</div>
@@ -574,7 +619,13 @@ export default function Home() {
           </div>
         )}
         </header>
-      <div className="flex h-[calc(100vh-56px)] md:h-[calc(100vh-80px)]">
+      {dataWarnings.length > 0 && (
+        <div className="bg-amber-900/30 border-b border-amber-500/30 px-4 py-1.5 flex items-center justify-center gap-2">
+          <span className="text-xs text-amber-400">{dataWarnings.join(' ')}</span>
+          <button onClick={() => setDataWarnings([])} className="text-amber-400/60 hover:text-amber-400 text-xs ml-2">✕</button>
+        </div>
+      )}
+      <div className={`flex ${dataWarnings.length > 0 ? 'h-[calc(100vh-56px-32px)] md:h-[calc(100vh-80px-32px)]' : 'h-[calc(100vh-56px)] md:h-[calc(100vh-80px)]'}`}>
         {/* Fix #11: backdrop overlay that closes sidebar on mobile click */}
         {showFilters && (
           <div
