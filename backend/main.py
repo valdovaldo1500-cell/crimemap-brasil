@@ -1559,13 +1559,20 @@ def check_updates():
     return {"message": "Update check started in background"}
 
 @app.post("/api/admin/ingest-rs-history")
-def ingest_rs_history():
+def ingest_rs_history(force: bool = False):
     """Ingest all RS historical occurrence data (2022-2026). Runs in background."""
     def _run():
-        from services.data_ingestion import KNOWN_URLS, ingest_and_geocode
+        from services.data_ingestion import KNOWN_URLS, ingest_and_geocode, DataSource
         sess = SessionLocal()
         try:
             for url in KNOWN_URLS:
+                if force:
+                    fn = url.split("/")[-1]
+                    existing = sess.query(DataSource).filter(DataSource.filename == fn).first()
+                    if existing and existing.status == "ingested":
+                        existing.status = "pending"
+                        sess.commit()
+                        logging.info(f"RS force reset: {fn}")
                 try:
                     count = ingest_and_geocode(url, sess, state="RS")
                     logging.info(f"RS ingested: {url} → {count} records")
@@ -1575,7 +1582,7 @@ def ingest_rs_history():
             sess.close()
     thread = threading.Thread(target=_run, daemon=True)
     thread.start()
-    return {"message": "RS historical ingestion started in background (2022-2026)"}
+    return {"message": f"RS historical ingestion started in background (2022-2026, force={force})"}
 
 @app.post("/api/admin/load-staging")
 def load_staging():
