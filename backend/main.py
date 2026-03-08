@@ -413,11 +413,13 @@ def heatmap_bairros(request: Request,
         mun_norm = normalize_name(r.municipio_fato)
         bairro_norm = normalize_name(r.bairro)
         # Apply bairro name aliases before fuzzy merge
+        alias_display = None
         alias_map = BAIRRO_ALIASES.get(mun_norm.upper())
         if alias_map:
             alias = alias_map.get(bairro_norm.upper())
             if alias:
                 bairro_norm = normalize_name(alias)
+                alias_display = alias
         key = (mun_norm, bairro_norm)
         # Fuzzy merge (BOM FIM / BOMFIM → same key)
         fuzzy = (mun_norm, normalize_fuzzy(bairro_norm))
