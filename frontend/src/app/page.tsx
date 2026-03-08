@@ -674,14 +674,17 @@ export default function Home() {
         </aside>)}
         <main className="flex-1 relative z-0">
           <CrimeMap center={center} zoom={zoom} filters={filters} viewMode={viewMode} rateMode={rateMode} aggregationOverride={aggregationOverride} selectedStates={selectedStates} onToggleState={toggleState} activeFilter={activeFilter} maxGranularity={maxGranularity} availableStates={availableStates} compareMode={compareMode} comparisonLocations={comparisonLocations} onCompareSelect={onCompareSelect} />
-          {/* Floating compare button on map */}
+          {/* Floating compare toggle on map — visible on all screen sizes */}
           <button
             onClick={() => { const entering = !compareMode; setCompareMode(entering); if (entering) setSelectedStates([]); setComparisonLocations([]); setComparisonStats([]); }}
             aria-label={compareMode ? 'Desativar comparação' : 'Ativar comparação'}
-            className={`absolute top-[116px] left-4 z-[1000] hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium shadow-lg transition-colors ${compareMode ? 'bg-[#7c3aed] text-white border border-[#7c3aed]' : 'bg-[#111827]/90 backdrop-blur-xl border border-[#7c3aed]/60 text-[#c4b5fd] hover:bg-[#7c3aed]/20 hover:text-[#e9d5ff]'}`}
+            className={`absolute top-[116px] left-4 z-[1000] flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-medium shadow-lg transition-colors ${compareMode ? 'bg-[#7c3aed] text-white border border-[#7c3aed]' : 'bg-[#111827]/90 backdrop-blur-xl border border-[#7c3aed]/60 text-[#c4b5fd] hover:bg-[#7c3aed]/20 hover:text-[#e9d5ff]'}`}
           >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-            Comparar
+            <span className="relative w-8 h-4 rounded-full bg-[#1e293b] flex-shrink-0">
+              <span className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${compareMode ? 'left-[18px] bg-white' : 'left-0.5 bg-[#94a3b8]'}`} />
+            </span>
+            <span className="hidden sm:inline">Modo comparação</span>
+            <span className="sm:hidden">Comparar</span>
           </button>
           {/* Comparison mode panel */}
           {compareMode && (
