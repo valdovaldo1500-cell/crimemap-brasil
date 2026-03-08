@@ -278,12 +278,13 @@ def heatmap_municipios(request: Request,
         weight=r.cnt, municipio=r.municipio_fato,
         population=get_municipio_population(r.municipio_fato, "RS")) for r in q.all() if r.lat and r.lng]
 
-    # Also query staging table for non-RS municipalities
+    # Also query staging table for all detailed states (RS, RJ, MG)
+    # Crimes table data takes priority for dedup (see merge below)
     q2 = db.query(
         CrimeStaging.municipio, CrimeStaging.state,
         (func.coalesce(func.sum(CrimeStaging.occurrences), 0) +
          func.coalesce(func.sum(CrimeStaging.victims), 0)).label("cnt")
-    ).filter(CrimeStaging.municipio.isnot(None), CrimeStaging.state.in_(["RJ", "MG"]))
+    ).filter(CrimeStaging.municipio.isnot(None), CrimeStaging.state.in_(["RS", "RJ", "MG"]))
     if effective_tipo: q2 = q2.filter(CrimeStaging.crime_type.in_(effective_tipo))
     if semestre:
         year_str, sem = semestre.split('-')
@@ -294,7 +295,7 @@ def heatmap_municipios(request: Request,
         q2 = q2.filter(CrimeStaging.year == int(ano))
     if sexo: q2 = q2.filter(CrimeStaging.sexo_vitima.in_(sexo))
     if state: q2 = q2.filter(CrimeStaging.state == state)
-    if selected_states: q2 = q2.filter(CrimeStaging.state.in_([s for s in selected_states if s != "RS"]))
+    if selected_states: q2 = q2.filter(CrimeStaging.state.in_(selected_states))
     staging_rows = q2.group_by(CrimeStaging.municipio, CrimeStaging.state).all()
 
     # For staging municipalities, geocode or look up coordinates
