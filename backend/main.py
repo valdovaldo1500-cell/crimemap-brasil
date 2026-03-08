@@ -511,8 +511,6 @@ def heatmap_bairros(request: Request,
             lat, lng = centroid[0], centroid[1]
         is_at_centroid = centroid and _haversine_km(lat, lng, centroid[0], centroid[1]) < 0.5
         is_low_count = m['cnt'] < 3
-        if mun_norm == "PORTO ALEGRE" and bairro_norm in ("FARROUPILHA", "BOM FIM", "CENTRO HISTORICO", "PRAIA DE BELAS"):
-            import logging; logging.warning(f"DEBUG {bairro_norm}: is_at_centroid={is_at_centroid}, is_low_count={is_low_count}, in_poly_keys={key in polygon_matched_keys}, lat={lat:.4f}, cnt={m['cnt']}")
         if (is_at_centroid or is_low_count) and key not in polygon_matched_keys:
             if mun_norm not in unknown_bucket:
                 c_lat, c_lng = centroid if centroid else (lat, lng)
