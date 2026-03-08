@@ -1562,17 +1562,20 @@ def check_updates():
 def ingest_rs_history(force: bool = False):
     """Ingest all RS historical occurrence data (2022-2026). Runs in background."""
     def _run():
-        from services.data_ingestion import KNOWN_URLS, ingest_and_geocode, DataSource
+        from services.data_ingestion import KNOWN_URLS, ingest_and_geocode
+        from database import DataSource as DS
         sess = SessionLocal()
         try:
             for url in KNOWN_URLS:
+                fn = url.split("/")[-1]
                 if force:
-                    fn = url.split("/")[-1]
-                    existing = sess.query(DataSource).filter(DataSource.filename == fn).first()
-                    if existing and existing.status == "ingested":
+                    existing = sess.query(DS).filter(DS.filename == fn).first()
+                    if existing:
+                        # Delete old crime records for this source before re-ingesting
+                        deleted = sess.query(Crime).filter(Crime.source_file == fn).delete()
                         existing.status = "pending"
                         sess.commit()
-                        logging.info(f"RS force reset: {fn}")
+                        logging.info(f"RS force reset: {fn} (deleted {deleted} old records)")
                 try:
                     count = ingest_and_geocode(url, sess, state="RS")
                     logging.info(f"RS ingested: {url} → {count} records")
