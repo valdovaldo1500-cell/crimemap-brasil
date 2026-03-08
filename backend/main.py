@@ -430,7 +430,7 @@ def heatmap_bairros(request: Request,
         if key in merged:
             merged[key]['cnt'] += r.cnt
         else:
-            merged[key] = {'municipio': r.municipio_fato, 'bairro': r.bairro,
+            merged[key] = {'municipio': r.municipio_fato, 'bairro': alias_display or r.bairro,
                             'cnt': r.cnt, 'lat': float(r.lat), 'lng': float(r.lng)}
 
     # PIP pass: for merged bairros that don't match any polygon by name,
