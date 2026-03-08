@@ -484,7 +484,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
               const usePurple = compareModeRef.current && (comparisonLocationsRef.current?.length ?? 0) < 2;
               // States without detailed data (basic/none): render same as world background
               if (quality !== 'full' && quality !== 'partial') {
-                return { fillOpacity: 0, weight: 0, stroke: false, interactive: false };
+                return { fillColor: '#0f172a', fillOpacity: 0.12, color: '#1e293b', weight: 0.3, interactive: false, className: 'state-disabled' };
               }
               const isCompareSelected = compareModeRef.current && comparisonLocationsRef.current?.some(l => !l.municipio && l.state === sigla);
               if (isCompareSelected) {
