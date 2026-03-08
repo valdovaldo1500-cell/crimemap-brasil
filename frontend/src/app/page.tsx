@@ -559,7 +559,6 @@ export default function Home() {
             </div>
             <div className="flex flex-wrap gap-2">
               <button onClick={()=>{setShowFilters(!showFilters);setShowMobileMenu(false);}} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1a2234] border border-[#1e293b] text-sm">Filtros{activeFilterCount>0&&<span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{activeFilterCount}</span>}</button>
-              <button onClick={()=>{const entering=!compareMode;setCompareMode(entering);if(entering)setSelectedStates([]);setComparisonLocations([]);setComparisonStats([]);setShowMobileMenu(false);}} className={`px-3 py-2 rounded-xl border text-sm ${compareMode ? 'bg-[#7c3aed] text-white border-[#7c3aed]' : 'bg-[#1a2234] border-[#1e293b] text-[#94a3b8]'}`}>Comparar</button>
               <button onClick={()=>{openBugReport();setShowMobileMenu(false);}} className="px-3 py-2 rounded-xl bg-[#1a2234] border border-[#1e293b] text-sm text-[#94a3b8]">Bug</button>
               <button onClick={()=>{setShowHelp(true);setShowMobileMenu(false);}} className="px-3 py-2 rounded-xl bg-[#1a2234] border border-[#1e293b] text-sm text-[#94a3b8]">Como usar</button>
               <button onClick={()=>{setShowChangelog(true);setShowMobileMenu(false);}} className="px-3 py-2 rounded-xl bg-[#1a2234] border border-[#1e293b] text-sm text-[#94a3b8]">Novidades</button>
