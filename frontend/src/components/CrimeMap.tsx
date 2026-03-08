@@ -952,8 +952,8 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
       {/* Hidden SVG with hatch pattern for disabled states */}
       <svg width="0" height="0" style={{ position: 'absolute' }}>
         <defs>
-          <pattern id="disabled-hatch" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
-            <line x1="0" y1="0" x2="0" y2="8" stroke="#334155" strokeWidth="1" />
+          <pattern id="disabled-hatch" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)">
+            <line x1="0" y1="0" x2="0" y2="5" stroke="#475569" strokeWidth="1.5" />
           </pattern>
         </defs>
       </svg>
