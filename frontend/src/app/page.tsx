@@ -61,8 +61,8 @@ export default function Home() {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
-  const [center, setCenter] = useState<[number,number]>([-14.24,-51.93]);
-  const [zoom, setZoom] = useState(4);
+  const [center, setCenter] = useState<[number,number]>([-24,-47]);
+  const [zoom, setZoom] = useState(5);
   const [showFilters, setShowFilters] = useState(false);
   const [filterLoading, setFilterLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'dots' | 'choropleth'>('choropleth');
