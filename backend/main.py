@@ -925,17 +925,36 @@ def state_stats(request: Request,
 @limiter.limit("120/minute")
 def get_years(request: Request, db: Session = Depends(get_db)):
     year_col = func.substr(Crime.year_month, 1, 4).label("year")
-    rows = db.query(year_col).distinct().order_by(year_col.desc()).all()
-    return [r.year for r in rows if r.year]
+    crimes_years = {r.year for r in db.query(year_col).distinct().all() if r.year}
+    staging_years = {str(r[0]) for r in db.query(distinct(CrimeStaging.year)).filter(
+        CrimeStaging.state.in_(["RS", "RJ", "MG"]), CrimeStaging.year.isnot(None)
+    ).all() if r[0]}
+    all_years = sorted(crimes_years | staging_years, reverse=True)
+    return all_years
 
 @app.get("/api/semesters")
 @limiter.limit("120/minute")
 def get_semesters(request: Request, db: Session = Depends(get_db)):
-    rows = db.query(distinct(Crime.year_month)).filter(Crime.year_month.isnot(None)).all()
     semesters = set()
+    # From crimes table (RS detailed)
+    rows = db.query(distinct(Crime.year_month)).filter(Crime.year_month.isnot(None)).all()
     for (ym,) in rows:
         year, month = ym.split('-')
         semesters.add(f"{year}-{'S1' if int(month) <= 6 else 'S2'}")
+    # From crimes_staging (RJ, MG, etc.)
+    staging_rows = db.query(
+        CrimeStaging.year, CrimeStaging.month
+    ).filter(
+        CrimeStaging.state.in_(["RS", "RJ", "MG"]),
+        CrimeStaging.year.isnot(None)
+    ).distinct().all()
+    for yr, mo in staging_rows:
+        if mo is not None and mo > 0:
+            semesters.add(f"{yr}-{'S1' if mo <= 6 else 'S2'}")
+        else:
+            # Yearly data (e.g. SINESP VDE) — add both semesters
+            semesters.add(f"{yr}-S1")
+            semesters.add(f"{yr}-S2")
     return sorted(semesters, reverse=True)
 
 @app.get("/api/autocomplete")
