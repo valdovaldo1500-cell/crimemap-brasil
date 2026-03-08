@@ -819,8 +819,8 @@ def system_info(request: Request, db: Session = Depends(get_db)):
     staging_range = db.query(
         func.min(CrimeStaging.year), func.max(CrimeStaging.year)
     ).filter(CrimeStaging.state.in_(["RS", "RJ", "MG"])).first()
-    start_year = min(int(crimes_dates[0][:4]) if crimes_dates and crimes_dates[0] else 9999, staging_range[0] or 9999)
-    end_year = max(int(crimes_dates[1][:4]) if crimes_dates and crimes_dates[1] else 0, staging_range[1] or 0)
+    start_year = min(int(crimes_dates[0][-4:]) if crimes_dates and crimes_dates[0] else 9999, staging_range[0] or 9999)
+    end_year = max(int(crimes_dates[1][-4:]) if crimes_dates and crimes_dates[1] else 0, staging_range[1] or 0)
     return {
         "total_municipios": len(all_munis),
         "period_start_year": start_year,

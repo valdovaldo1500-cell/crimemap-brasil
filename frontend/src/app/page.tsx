@@ -678,7 +678,7 @@ export default function Home() {
           <button
             onClick={() => { const entering = !compareMode; setCompareMode(entering); if (entering) setSelectedStates([]); setComparisonLocations([]); setComparisonStats([]); }}
             aria-label={compareMode ? 'Desativar comparação' : 'Ativar comparação'}
-            className={`absolute top-4 left-[170px] z-[1000] hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium shadow-lg transition-colors ${compareMode ? 'bg-[#7c3aed] text-white border border-[#7c3aed]' : 'bg-[#111827]/90 backdrop-blur-xl border border-[#1e293b] text-[#94a3b8] hover:bg-[#1e293b] hover:text-[#f1f5f9]'}`}
+            className={`absolute top-[72px] left-4 z-[1000] hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium shadow-lg transition-colors ${compareMode ? 'bg-[#7c3aed] text-white border border-[#7c3aed]' : 'bg-[#111827]/90 backdrop-blur-xl border border-[#7c3aed]/60 text-[#c4b5fd] hover:bg-[#7c3aed]/20 hover:text-[#e9d5ff]'}`}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
             Comparar

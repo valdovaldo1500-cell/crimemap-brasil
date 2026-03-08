@@ -3,6 +3,5 @@
   <rect x="8" y="6" width="4" height="24" rx="1" fill="#7c3aed"/>
   <rect x="14" y="14" width="4" height="16" rx="1" fill="#3b82f6"/>
   <rect x="20" y="2" width="4" height="28" rx="1" fill="#ef4444"/>
-  <text x="32" y="24" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#f1f5f9" letter-spacing="-0.5">Crime</text>
-  <text x="97" y="24" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#3b82f6" letter-spacing="-0.5">Brasil</text>
+  <text x="32" y="24" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#f1f5f9" letter-spacing="-0.5">Crime<tspan fill="#3b82f6">Brasil</tspan></text>
 </svg>
