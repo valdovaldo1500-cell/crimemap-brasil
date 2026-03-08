@@ -445,6 +445,9 @@ def heatmap_bairros(request: Request,
         poly_names = polygon_names_by_mun.get(mun_norm, set())
         if bairro_norm in poly_names or normalize_fuzzy(bairro_norm) in {normalize_fuzzy(pn) for pn in poly_names}:
             continue  # already matches a polygon — no remap needed
+        # Don't PIP-remap established bairros (>= 50 records) — show as dot markers instead
+        if m['cnt'] >= 50:
+            continue
         cache_coords = cache.get(key)
         lat, lng = cache_coords if cache_coords else (m['lat'], m['lng'])
         result = _find_containing_polygon(lat, lng, mun_norm)
