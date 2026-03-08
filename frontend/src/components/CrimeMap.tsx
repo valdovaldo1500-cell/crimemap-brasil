@@ -59,15 +59,6 @@ function quantileIntensities(values: number[]): number[] {
   });
 }
 
-function absoluteRateIntensities(values: number[]): number[] {
-  // Fixed thresholds for crimes per 100K population
-  return values.map(v => {
-    if (v > 300) return 1.0;
-    if (v > 100) return 0.75;
-    if (v > 30)  return 0.5;
-    return 0.25;
-  });
-}
 
 function prettifyCrimeType(s: string): string {
   return s.toLowerCase()
@@ -221,6 +212,8 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
     map.on("moveend", onMove);
     mapRef.current = map;
     markersRef.current = L.layerGroup().addTo(map);
+    // Initial view: frame the 3 interactive states (RS, RJ, MG)
+    map.fitBounds(L.latLngBounds([-33.8, -57.7], [-14.2, -40.9]), { padding: [20, 20] });
 
     // Fix #18: GeoJSON fetch with error handling
     // Load all state municipality GeoJSON files
@@ -456,7 +449,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
           setEmptyResult(true);
           if (statesGeoDataRef.current && viewMode === 'choropleth') {
             geoJsonRef.current = L.geoJSON(statesGeoDataRef.current, {
-              style: () => ({ fillColor: compareModeRef.current ? '#2d1f4e' : '#1e293b', fillOpacity: 0.2, color: compareModeRef.current ? '#2d1f4e' : '#1e293b', weight: 1 }),
+              style: () => ({ fillColor: compareModeRef.current ? '#2d1f4e' : '#1e293b', fillOpacity: 0.2, color: compareModeRef.current ? '#2d1f4e' : '#1e293b', weight: 0.5 }),
               onEachFeature: (feature, layer) => {
                 const sigla = feature?.properties?.sigla || '';
                 const name = feature?.properties?.name || '';
@@ -491,7 +484,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
               const usePurple = compareModeRef.current && (comparisonLocationsRef.current?.length ?? 0) < 2;
               // States without detailed data (basic/none): render same as world background
               if (quality !== 'full' && quality !== 'partial') {
-                return { fillColor: usePurple ? '#1a0a2e' : '#0f172a', fillOpacity: 0.15, color: usePurple ? '#1a0a2e' : '#0f172a', weight: 0.1, interactive: false, className: 'state-disabled' };
+                return { fillColor: usePurple ? '#1a0a2e' : '#0f172a', fillOpacity: 0.08, color: '#1e293b', weight: 0.3, interactive: false };
               }
               const isCompareSelected = compareModeRef.current && comparisonLocationsRef.current?.some(l => !l.municipio && l.state === sigla);
               if (isCompareSelected) {
@@ -503,7 +496,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
                 return { fillColor: getColor(info.intensity, usePurple), fillOpacity: 0.45, color: '#475569', weight: 1.5 };
               }
               // Available states: muted blue to signal interactivity
-              return { fillColor: usePurple ? '#3d2160' : '#1e3a5f', fillOpacity: hasSelection && !isSelected ? 0.15 : 0.35, color: '#334155', weight: 1 };
+              return { fillColor: usePurple ? '#3d2160' : '#2563eb', fillOpacity: hasSelection && !isSelected ? 0.20 : 0.45, color: usePurple ? '#6d28d9' : '#3b82f6', weight: 1.5 };
             },
             onEachFeature: (feature, layer) => {
               const sigla = feature?.properties?.sigla || '';
@@ -532,10 +525,11 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
                 layer.bindTooltip(`<b>${name} (${sigla})</b><br>${compareMode ? 'Clique para comparar' : 'Clique para filtrar'}`, { sticky: true });
                 layer.on('mouseover', () => {
                   const usePurple = compareModeRef.current && (comparisonLocationsRef.current?.length ?? 0) < 2;
-                  (layer as any).setStyle({ fillOpacity: 0.5, color: usePurple ? '#7c3aed' : '#3b82f6', weight: 2 });
+                  (layer as any).setStyle({ fillOpacity: 0.55, color: usePurple ? '#7c3aed' : '#60a5fa', weight: 2.5 });
                 });
                 layer.on('mouseout', () => {
-                  (layer as any).setStyle({ fillOpacity: hasSelection && !isSelected ? 0.15 : 0.35, color: '#334155', weight: 1 });
+                  const usePurple = compareModeRef.current && (comparisonLocationsRef.current?.length ?? 0) < 2;
+                  (layer as any).setStyle({ fillOpacity: hasSelection && !isSelected ? 0.20 : 0.45, color: usePurple ? '#6d28d9' : '#3b82f6', weight: 1.5 });
                 });
                 layer.on('click', () => {
                   if (compareModeRef.current && onCompareSelectRef.current) {
@@ -578,7 +572,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
               L.geoJSON({ ...statesGeoDataRef.current, features: disabledFeatures }, {
                 style: () => {
                   const usePurple = compareModeRef.current && (comparisonLocationsRef.current?.length ?? 0) < 2;
-                  return { fillColor: usePurple ? '#1a0a2e' : '#0f172a', fillOpacity: 0.15, color: usePurple ? '#1a0a2e' : '#0f172a', weight: 0.1, interactive: false, className: 'state-disabled' };
+                  return { fillColor: usePurple ? '#1a0a2e' : '#0f172a', fillOpacity: 0.08, color: '#1e293b', weight: 0.3, interactive: false };
                 },
                 interactive: false,
               }).addTo(mapRef.current!);
@@ -1035,14 +1029,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
           </div>
         </div>
       )}
-      {/* Hidden SVG with hatch pattern for disabled states */}
-      <svg width="0" height="0" style={{ position: 'absolute' }}>
-        <defs>
-          <pattern id="disabled-hatch" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)">
-            <line x1="0" y1="0" x2="0" y2="5" stroke="#475569" strokeWidth="1.5" />
-          </pattern>
-        </defs>
-      </svg>
+
     </div>
   );
 }

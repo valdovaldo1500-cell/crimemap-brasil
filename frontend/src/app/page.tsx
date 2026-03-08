@@ -70,6 +70,7 @@ export default function Home() {
   const [aggregationOverride, setAggregationOverride] = useState<'auto'|'estados'|'municipios'|'bairros'>('auto');
   const searchRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>|null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   // Victim demographic filters
   const [sexoValues, setSexoValues] = useState<any[]>([]);
@@ -198,12 +199,19 @@ export default function Home() {
   const onSearchChange = (val: string) => {
     setSearchQ(val);
     if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (abortRef.current) abortRef.current.abort();
     if (val.trim().length < 3) { setSuggestions([]); setShowSuggestions(false); return; }
     debounceRef.current = setTimeout(async () => {
-      const results = await fetchAutocomplete(val.trim());
-      setSuggestions(results);
-      setShowSuggestions(results.length > 0);
-    }, 250);
+      const ac = new AbortController();
+      abortRef.current = ac;
+      try {
+        const results = await fetchAutocomplete(val.trim(), ac.signal);
+        if (!ac.signal.aborted) {
+          setSuggestions(results);
+          setShowSuggestions(results.length > 0);
+        }
+      } catch { /* aborted */ }
+    }, 350);
   };
 
   const onSelect = (item: any) => {
@@ -573,7 +581,7 @@ export default function Home() {
           </button>
         </div>
         {showMobileMenu && (
-          <div className="md:hidden border-t border-[#1e293b] p-3 space-y-3 bg-[#111827]">
+          <div className="md:hidden border-t border-[#1e293b] p-3 space-y-3 bg-[#111827] max-h-[50vh] overflow-y-auto">
             {years.length > 0 && (
               <div className="space-y-2">
                 <span className="text-[10px] text-[#94a3b8] uppercase tracking-wider">Ano</span>
@@ -734,7 +742,7 @@ export default function Home() {
           <button
             onClick={() => { const entering = !compareMode; setCompareMode(entering); if (entering) setSelectedStates([]); setComparisonLocations([]); setComparisonStats([]); }}
             aria-label={compareMode ? 'Desativar comparação' : 'Ativar comparação'}
-            className={`absolute top-[116px] left-4 z-[1000] flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-medium shadow-lg transition-colors ${compareMode ? 'bg-[#7c3aed] text-white border border-[#7c3aed]' : 'bg-[#111827]/90 backdrop-blur-xl border border-[#7c3aed]/60 text-[#c4b5fd] hover:bg-[#7c3aed]/20 hover:text-[#e9d5ff]'}`}
+            className={`absolute top-[60px] md:top-[116px] left-4 z-[1000] flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-medium shadow-lg transition-colors ${compareMode ? 'bg-[#7c3aed] text-white border border-[#7c3aed]' : 'bg-[#111827]/90 backdrop-blur-xl border border-[#7c3aed]/60 text-[#c4b5fd] hover:bg-[#7c3aed]/20 hover:text-[#e9d5ff]'}`}
           >
             <span className="relative w-8 h-4 rounded-full bg-[#1e293b] flex-shrink-0">
               <span className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${compareMode ? 'left-[18px] bg-white' : 'left-0.5 bg-[#94a3b8]'}`} />
@@ -744,7 +752,7 @@ export default function Home() {
           </button>
           {/* Comparison mode panel */}
           {compareMode && (
-            <div className="absolute top-4 right-14 z-[1001] w-80">
+            <div className="absolute top-4 right-2 md:right-14 z-[1001] w-[calc(100vw-1rem)] sm:w-96 max-w-[420px]">
               <div className="bg-[#111827]/95 backdrop-blur-xl border border-[#7c3aed]/40 rounded-xl p-3 shadow-2xl">
                 <div className="flex justify-between items-center mb-2">
                   <h3 className="text-xs uppercase tracking-wider text-[#7c3aed] font-semibold">Comparar locais</h3>
@@ -807,54 +815,58 @@ export default function Home() {
                           if (useCats) {
                             const allCats = new Set<string>();
                             comparisonStats.forEach((s: any) => (s.crime_categories || []).forEach((cc: any) => allCats.add(cc.category)));
-                            const catArr = Array.from(allCats).slice(0, 8);
+                            const catArr = Array.from(allCats).sort((a, b) => {
+                              const totalA = comparisonStats.reduce((sum: number, s: any) => sum + ((s.crime_categories || []).find((c: any) => c.category === a)?.count || 0), 0);
+                              const totalB = comparisonStats.reduce((sum: number, s: any) => sum + ((s.crime_categories || []).find((c: any) => c.category === b)?.count || 0), 0);
+                              return totalB - totalA;
+                            });
                             const getCatCount = (stats: any, cat: string) => {
                               const cc = (stats.crime_categories || []).find((c: any) => c.category === cat);
                               return cc ? cc.count : 0;
                             };
-                            return catArr.map(cat => {
+                            return <div className="max-h-60 overflow-y-auto">{catArr.map(cat => {
                               const c0 = getCatCount(comparisonStats[0], cat);
                               const c1 = getCatCount(comparisonStats[1], cat);
                               const diff = c0 > 0 ? (((c1 - c0) / c0) * 100) : 0;
                               return (
-                                <div key={cat} className="grid grid-cols-3 gap-1 text-[10px]">
+                                <div key={cat} className="grid grid-cols-4 gap-1 text-[10px]">
                                   <div className="text-[#94a3b8] truncate" title={cat}>{cat}</div>
                                   <div className="text-center font-mono">{c0.toLocaleString()}</div>
-                                  <div className="text-center font-mono">
-                                    {c1.toLocaleString()}
-                                    {c0 > 0 && <span className={`ml-1 ${diff > 0 ? 'text-red-400' : diff < 0 ? 'text-green-400' : 'text-[#94a3b8]'}`}>
-                                      {diff > 0 ? '+' : ''}{diff.toFixed(0)}%
-                                    </span>}
+                                  <div className="text-center font-mono">{c1.toLocaleString()}</div>
+                                  <div className={`text-center font-mono ${diff > 0 ? 'text-red-400' : diff < 0 ? 'text-green-400' : 'text-[#94a3b8]'}`}>
+                                    {c0 > 0 ? `${diff > 0 ? '+' : ''}${diff.toFixed(0)}%` : '—'}
                                   </div>
                                 </div>
                               );
-                            });
+                            })}</div>;
                           }
                           // Fallback to raw crime types (same-state comparison)
                           const allTypes = new Set<string>();
                           comparisonStats.forEach(s => (s.crime_types || []).forEach((ct: any) => allTypes.add(ct.tipo_enquadramento)));
-                          const typeArr = Array.from(allTypes).slice(0, 8);
+                          const typeArr = Array.from(allTypes).sort((a, b) => {
+                            const totalA = comparisonStats.reduce((sum: number, s: any) => sum + ((s.crime_types || []).find((c: any) => c.tipo_enquadramento === a)?.count || 0), 0);
+                            const totalB = comparisonStats.reduce((sum: number, s: any) => sum + ((s.crime_types || []).find((c: any) => c.tipo_enquadramento === b)?.count || 0), 0);
+                            return totalB - totalA;
+                          });
                           const getCount = (stats: any, tipo: string) => {
                             const ct = (stats.crime_types || []).find((c: any) => c.tipo_enquadramento === tipo);
                             return ct ? ct.count : 0;
                           };
-                          return typeArr.map(tipo => {
+                          return <div className="max-h-60 overflow-y-auto">{typeArr.map(tipo => {
                             const c0 = getCount(comparisonStats[0], tipo);
                             const c1 = getCount(comparisonStats[1], tipo);
                             const diff = c0 > 0 ? (((c1 - c0) / c0) * 100) : 0;
                             return (
-                              <div key={tipo} className="grid grid-cols-3 gap-1 text-[10px]">
+                              <div key={tipo} className="grid grid-cols-4 gap-1 text-[10px]">
                                 <div className="text-[#94a3b8] truncate" title={prettifyCrimeType(tipo)}>{prettifyCrimeType(tipo)}</div>
                                 <div className="text-center font-mono">{c0.toLocaleString()}</div>
-                                <div className="text-center font-mono">
-                                  {c1.toLocaleString()}
-                                  {c0 > 0 && <span className={`ml-1 ${diff > 0 ? 'text-red-400' : diff < 0 ? 'text-green-400' : 'text-[#94a3b8]'}`}>
-                                    {diff > 0 ? '+' : ''}{diff.toFixed(0)}%
-                                  </span>}
+                                <div className="text-center font-mono">{c1.toLocaleString()}</div>
+                                <div className={`text-center font-mono ${diff > 0 ? 'text-red-400' : diff < 0 ? 'text-green-400' : 'text-[#94a3b8]'}`}>
+                                  {c0 > 0 ? `${diff > 0 ? '+' : ''}${diff.toFixed(0)}%` : '—'}
                                 </div>
                               </div>
                             );
-                          });
+                          })}</div>;
                         })()}
                       </div>
                     ) : (
@@ -880,7 +892,7 @@ export default function Home() {
             <button onClick={() => setShowSources(!showSources)} className="text-[10px] text-[#64748b] hover:text-[#94a3b8] transition-colors">Fontes</button>
             <a href="mailto:contato@crimebrasil.com.br" className="text-[10px] text-[#64748b] hover:text-[#94a3b8] transition-colors">Contato</a>
           </div>
-          <div className="absolute bottom-2 left-2 md:bottom-4 md:left-4 bg-[#111827]/90 backdrop-blur-xl border border-[#1e293b] rounded-xl md:rounded-2xl p-2 md:p-4 z-[1000] flex gap-3 md:gap-6">
+          <div className="absolute bottom-2 left-2 md:bottom-4 md:left-4 bg-[#111827]/90 backdrop-blur-xl border border-[#1e293b] rounded-xl md:rounded-2xl p-2 md:p-4 z-[1000] flex gap-3 md:gap-6 max-w-[calc(100vw-4rem)]">
             {initialLoading ? (
               <>
                 <div><div className="h-8 w-20 bg-[#1e293b] rounded animate-pulse mb-1" /><div className="h-3 w-16 bg-[#1e293b] rounded animate-pulse" /></div>
@@ -888,9 +900,9 @@ export default function Home() {
               </>
             ) : (
               <>
-                {stats && <div><p className="text-lg md:text-2xl font-bold font-mono text-red-400">{stats.total_crimes?.toLocaleString()}</p><p className="text-[8px] md:text-[10px] text-[#94a3b8] uppercase tracking-wider">Ocorrências</p></div>}
-                <div><p className="text-lg md:text-2xl font-bold font-mono text-amber-400">{systemInfo?.total_municipios ?? '—'}</p><p className="text-[8px] md:text-[10px] text-[#94a3b8] uppercase tracking-wider">Municípios</p><p className="text-[7px] md:text-[8px] text-[#64748b]">no sistema</p></div>
-                <div><p className="text-lg md:text-2xl font-bold font-mono text-blue-400">{systemInfo ? `${systemInfo.period_start_year}–${systemInfo.period_end_year}` : '—'}</p><p className="text-[8px] md:text-[10px] text-[#94a3b8] uppercase tracking-wider">Dados disponíveis</p></div>
+                {stats && <div><p className="text-base sm:text-lg md:text-2xl font-bold font-mono text-red-400">{stats.total_crimes?.toLocaleString()}</p><p className="text-[8px] md:text-[10px] text-[#94a3b8] uppercase tracking-wider">Ocorrências</p></div>}
+                <div><p className="text-base sm:text-lg md:text-2xl font-bold font-mono text-amber-400">{systemInfo?.total_municipios ?? '—'}</p><p className="text-[8px] md:text-[10px] text-[#94a3b8] uppercase tracking-wider">Municípios</p><p className="text-[7px] md:text-[8px] text-[#64748b]">no sistema</p></div>
+                <div><p className="text-base sm:text-lg md:text-2xl font-bold font-mono text-blue-400">{systemInfo ? `${systemInfo.period_start_year}–${systemInfo.period_end_year}` : '—'}</p><p className="text-[8px] md:text-[10px] text-[#94a3b8] uppercase tracking-wider">Dados disponíveis</p></div>
               </>
             )}
           </div>

@@ -17,4 +17,4 @@ body{font-family:DM Sans,system-ui,sans-serif;background:var(--bg);color:var(--t
 .popup-breakdown{width:100%;margin-top:8px;font-size:11px;color:var(--t2);border-collapse:collapse}
 .popup-breakdown td{padding:2px 0;border-bottom:1px solid var(--border)}
 .popup-breakdown td:first-child{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-path.state-disabled{fill:url(#disabled-hatch)!important;fill-opacity:0.6!important}
+path.state-disabled{fill-opacity:0.08!important}

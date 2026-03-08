@@ -117,12 +117,13 @@ export async function fetchLocationStats(p: any = {}) {
   }
 }
 
-export async function fetchAutocomplete(q: string) {
+export async function fetchAutocomplete(q: string, signal?: AbortSignal) {
   try {
-    const res = await fetch(`${API}/api/autocomplete?q=${encodeURIComponent(q)}`);
+    const res = await fetch(`${API}/api/autocomplete?q=${encodeURIComponent(q)}`, { signal });
     if (!res.ok) throw new Error(`API error: ${res.status}`);
     return res.json();
   } catch (err: any) {
+    if (err.name === 'AbortError') return [];
     throw new Error(`fetchAutocomplete failed: ${err.message}`);
   }
 }

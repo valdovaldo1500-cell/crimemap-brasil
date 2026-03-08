@@ -399,6 +399,9 @@ def heatmap_bairros(request: Request,
         cache_rows = cache_q.all()
         cache = {(normalize_name(c.municipio), normalize_name(c.bairro)): (c.latitude, c.longitude) for c in cache_rows}
     # Merge rows by normalized bairro name + fuzzy (no hardcoded aliases)
+    BAIRRO_ALIASES = {
+        "PORTO ALEGRE": {"CENTRO": "CENTRO HISTORICO"},
+    }
     merged: dict[tuple[str, str], dict] = {}
     fuzzy_key_map: dict[tuple[str, str], tuple[str, str]] = {}
     for r in rows:
@@ -406,6 +409,12 @@ def heatmap_bairros(request: Request,
             continue
         mun_norm = normalize_name(r.municipio_fato)
         bairro_norm = normalize_name(r.bairro)
+        # Apply bairro name aliases before fuzzy merge
+        alias_map = BAIRRO_ALIASES.get(mun_norm.upper())
+        if alias_map:
+            alias = alias_map.get(bairro_norm.upper())
+            if alias:
+                bairro_norm = normalize_name(alias)
         key = (mun_norm, bairro_norm)
         # Fuzzy merge (BOM FIM / BOMFIM → same key)
         fuzzy = (mun_norm, normalize_fuzzy(bairro_norm))
@@ -449,6 +458,24 @@ def heatmap_bairros(request: Request,
             merged[new_key] = {'municipio': old_data['municipio'], 'bairro': new_display,
                                 'cnt': old_data['cnt'], 'lat': old_data['lat'], 'lng': old_data['lng']}
 
+    # Build set of bairro keys that match a polygon by name (exact or fuzzy)
+    polygon_matched_keys: set[tuple[str, str]] = set()
+    for key in merged:
+        mun_norm, bairro_norm = key
+        poly_names = polygon_names_by_mun.get(mun_norm, set())
+        if bairro_norm in poly_names:
+            polygon_matched_keys.add(key)
+        elif normalize_fuzzy(bairro_norm) in {normalize_fuzzy(pn) for pn in poly_names}:
+            polygon_matched_keys.add(key)
+            # Update display name to match polygon's actual name for frontend GeoJSON matching
+            for pn in poly_names:
+                if normalize_fuzzy(pn) == normalize_fuzzy(bairro_norm) and pn != bairro_norm:
+                    merged[key]['bairro'] = next(
+                        (p[1] for p in BAIRRO_POLYGON_INDEX.get(mun_norm, []) if p[0] == pn),
+                        merged[key]['bairro']
+                    )
+                    break
+
     # Build municipality centroid lookup for "unknown bairro" detection
     from services.geocoder import MAJOR_CITIES_RS, _haversine_km
     mun_cache_rows = db.query(GeocodeCache).filter(GeocodeCache.bairro == "").all()
@@ -476,7 +503,7 @@ def heatmap_bairros(request: Request,
             lat, lng = centroid[0], centroid[1]
         is_at_centroid = centroid and _haversine_km(lat, lng, centroid[0], centroid[1]) < 0.5
         is_low_count = m['cnt'] < 3
-        if is_at_centroid or is_low_count:
+        if (is_at_centroid or is_low_count) and key not in polygon_matched_keys:
             if mun_norm not in unknown_bucket:
                 c_lat, c_lng = centroid if centroid else (lat, lng)
                 unknown_bucket[mun_norm] = {'municipio': m['municipio'], 'cnt': 0,
@@ -1150,8 +1177,7 @@ def autocomplete(request: Request, q: str, db: Session = Depends(get_db)):
     if bairro_merged:
         bairro_munis = list({k[0] for k in bairro_merged.keys()})
         gc_q = db.query(GeocodeCache).filter(GeocodeCache.bairro != "")
-        if len(bairro_munis) <= 50:
-            gc_q = gc_q.filter(GeocodeCache.municipio.in_(bairro_munis))
+        gc_q = gc_q.filter(GeocodeCache.municipio.in_(bairro_munis))
         geo_cache_rows = gc_q.all()
         geo_cache = {(normalize_name(c.municipio), normalize_name(c.bairro)): (c.latitude, c.longitude) for c in geo_cache_rows}
         for key, item in bairro_merged.items():
