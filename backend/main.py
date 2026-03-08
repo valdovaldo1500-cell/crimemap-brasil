@@ -73,6 +73,29 @@ def _load_bairro_polygons():
 
 BAIRRO_POLYGON_INDEX = _load_bairro_polygons()
 
+def _compute_polygon_centroids():
+    """Compute centroid of each bairro polygon for coordinate lookup."""
+    centroids = {}
+    fuzzy = {}
+    for mun_norm, polys in BAIRRO_POLYGON_INDEX.items():
+        mun_c = {}
+        mun_f = {}
+        for name_norm, display_name, rings in polys:
+            if rings:
+                ring = rings[0]
+                n = len(ring)
+                if n > 0:
+                    coord = (sum(p[1] for p in ring) / n, sum(p[0] for p in ring) / n)
+                    mun_c[name_norm] = coord
+                    fk = normalize_fuzzy(name_norm)
+                    if fk not in mun_f:
+                        mun_f[fk] = coord
+        centroids[mun_norm] = mun_c
+        fuzzy[mun_norm] = mun_f
+    return centroids, fuzzy
+
+BAIRRO_POLYGON_CENTROIDS, BAIRRO_POLYGON_CENTROIDS_FUZZY = _compute_polygon_centroids()
+
 def _point_in_polygon(px, py, polygon):
     """Ray-casting PIP test. polygon is [[lon,lat], ...]."""
     n = len(polygon)
