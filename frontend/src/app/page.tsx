@@ -677,7 +677,7 @@ export default function Home() {
         {/* Fix #11: backdrop overlay that closes sidebar on mobile click */}
         {showFilters && (
           <div
-            className="fixed inset-0 z-40 md:hidden bg-black/40"
+            className="fixed inset-0 z-40 sm:hidden bg-black/40"
             aria-hidden="true"
             onClick={() => setShowFilters(false)}
           />
