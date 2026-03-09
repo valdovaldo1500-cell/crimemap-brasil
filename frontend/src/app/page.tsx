@@ -621,17 +621,20 @@ export default function Home() {
           <div className="sm:hidden border-t border-[#1e293b] p-3 space-y-3 bg-[#111827] max-h-[50vh] overflow-y-auto">
             {years.length > 0 && (
               <div className="space-y-2">
-                <span className="text-[10px] text-[#94a3b8] uppercase tracking-wider">Ano</span>
-                <select
-                  value={selectedYear}
-                  onChange={e => onSelectYear(e.target.value)}
-                  className="w-full bg-[#1a2234] border border-[#1e293b] rounded-xl px-3 py-2 text-sm text-[#f1f5f9] cursor-pointer"
-                >
-                  {years.map(yr => (
-                    <option key={yr} value={yr}>{yr}</option>
-                  ))}
-                </select>
+                <span className="text-[10px] text-[#94a3b8] uppercase tracking-wider">Período</span>
+                {selectedPeriod !== '12m' && (
+                  <select
+                    value={selectedYear}
+                    onChange={e => onSelectYear(e.target.value)}
+                    className="w-full bg-[#1a2234] border border-[#1e293b] rounded-xl px-3 py-2 text-sm text-[#f1f5f9] cursor-pointer"
+                  >
+                    {years.map(yr => (
+                      <option key={yr} value={yr}>{yr}</option>
+                    ))}
+                  </select>
+                )}
                 <div className="flex flex-wrap gap-1">
+                  <button onClick={() => setSelectedPeriod('12m')} className={`px-2.5 py-1 text-xs rounded-lg ${selectedPeriod === '12m' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8]'}`}>12 meses</button>
                   <button onClick={() => setSelectedPeriod('ano')} className={`px-2.5 py-1 text-xs rounded-lg ${selectedPeriod === 'ano' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8]'}`}>Ano</button>
                   {availablePeriods.includes('S1') && <button onClick={() => setSelectedPeriod('S1')} className={`px-2.5 py-1 text-xs rounded-lg ${selectedPeriod === 'S1' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8]'}`}>Jan-Jun</button>}
                   {availablePeriods.includes('S2') && <button onClick={() => setSelectedPeriod('S2')} className={`px-2.5 py-1 text-xs rounded-lg ${selectedPeriod === 'S2' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8]'}`}>Jul-Dez</button>}
