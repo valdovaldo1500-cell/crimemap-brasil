@@ -200,12 +200,16 @@ def _normalize_bairro_for_matching(bairro_norm: str, poly_names: set[str] | None
             # Short first-word: single-letter or 2-char abbreviation + meaningful suffix
             # "C BAIXA"→"CIDADE BAIXA", "L PINHEIRO"→"LOMBA DO PINHEIRO", "P BELAS"→"PRAIA DE BELAS"
             # Also tries bairro_norm when prefix expansion changed the first word
-            # e.g. "PR BELAS" expanded to "PARQUE BELAS" → try original "PR BELAS" suffix rule
+            # e.g. "PR BELAS" expanded to "PARQUE BELAS" → try original "PR BELAS" via bairro_norm
+            # Excludes Portuguese particles (DA, DO, DE, A, O, etc.) and numeric prefixes
             for try_name in ([result] + ([bairro_norm] if bairro_norm != result else [])):
                 if result in poly_names:
                     break
                 words = try_name.split()
                 if len(words) >= 2 and 1 <= len(words[0]) <= 2:
+                    fw = words[0]
+                    if fw in _SHORT_PT_PARTICLES or fw[0].isdigit():
+                        continue
                     suffix_part = ' '.join(words[1:])
                     if len(suffix_part) >= 5:
                         lw_matches = [pn for pn in poly_names if pn.endswith(' ' + suffix_part) and pn != try_name]
