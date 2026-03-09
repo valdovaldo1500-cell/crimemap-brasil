@@ -142,6 +142,12 @@ def _normalize_bairro_for_matching(bairro_norm: str, poly_names: set[str] | None
             suffix_matches = [pn for pn in poly_names if pn.endswith(' ' + result) and pn != result]
             if len(suffix_matches) == 1:
                 result = suffix_matches[0]
+        if result == bairro_norm and len(result) >= 10:
+            # Reverse-prefix: bairro name starts with polygon name + space
+            # e.g. "JARDIM ITU SABARA" → "JARDIM ITU" (if that's a unique polygon prefix)
+            rev_prefix = [pn for pn in poly_names if len(pn) >= 7 and result.startswith(pn + ' ')]
+            if len(rev_prefix) == 1:
+                result = rev_prefix[0]
     return result
 
 def _load_bairro_polygons():
