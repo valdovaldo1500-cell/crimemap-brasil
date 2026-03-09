@@ -116,6 +116,28 @@ def _find_containing_polygon(lat, lng, mun_norm):
                     return (name_norm, display_name)
     return None
 
+_STREET_PREFIXES = re.compile(
+    r'^(RUA|AVENIDA|AV\.?|TRAVESSA|TV\.?|ESTRADA|EST\.?|RODOVIA|ROD\.?|'
+    r'BECO|ALAMEDA|AL\.?|LARGO|PRACA|VILA|LOTEAMENTO|LOT\.?|'
+    r'LINHA|LOCALIDADE|DISTRITO|SITIO|FAZENDA|CHACARA)\s',
+    re.IGNORECASE
+)
+_HIGHWAY_PATTERN = re.compile(r'^(BR|RS|RJ|MG|SP|PR|SC|BA|GO|MT|MS|PE|CE|MA|PA|AM|PI|RN|PB|SE|AL|TO|RO|AC|AP|RR|ES|DF)-\d+', re.IGNORECASE)
+
+def _is_street_or_place(name: str) -> bool:
+    """Detect if a bairro name is actually a street, road, or place name."""
+    if not name:
+        return False
+    n = name.strip().upper()
+    if _STREET_PREFIXES.match(n):
+        return True
+    if _HIGHWAY_PATTERN.match(n):
+        return True
+    # Numeric-only names (e.g., "24 DE OUTUBRO") or names starting with numbers
+    if re.match(r'^\d+', n):
+        return True
+    return False
+
 def semester_months(semestre: str) -> list[str]:
     """'2025-S1' -> ['2025-01', ..., '2025-06']"""
     year, sem = semestre.split('-')
