@@ -3,6 +3,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 
 interface DetailPanelProps {
   data: {
+    id?: string;
     displayName: string;
     total: number;
     population?: number | null;
@@ -12,9 +13,11 @@ interface DetailPanelProps {
     loading?: boolean;
   } | null;
   onClose: () => void;
+  stackIndex?: number;
+  onFocus?: () => void;
 }
 
-export default function DetailPanel({ data, onClose }: DetailPanelProps) {
+export default function DetailPanel({ data, onClose, stackIndex = 0, onFocus }: DetailPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const [size, setSize] = useState({ w: 320, h: 0 }); // h=0 means auto
@@ -32,8 +35,8 @@ export default function DetailPanel({ data, onClose }: DetailPanelProps) {
       // Position: right side on desktop, center-bottom on mobile
       const isMobile = vw < 640;
       setPos({
-        x: isMobile ? Math.max(8, (vw - 300) / 2) : vw - 340,
-        y: isMobile ? vh - 350 : 100,
+        x: (isMobile ? Math.max(8, (vw - 300) / 2) : vw - 340) + stackIndex * 30,
+        y: (isMobile ? vh - 350 : 100) + stackIndex * 30,
       });
       setSize({ w: isMobile ? Math.min(300, vw - 16) : 320, h: 0 });
       initialized.current = true;
@@ -97,14 +100,17 @@ export default function DetailPanel({ data, onClose }: DetailPanelProps) {
   return (
     <div
       ref={panelRef}
-      className="fixed z-[2000] bg-[#111827] border border-[#1e293b] rounded-xl shadow-2xl overflow-hidden"
+      className="fixed bg-[#111827] border border-[#1e293b] rounded-xl shadow-2xl overflow-hidden"
       style={{
         left: pos.x,
         top: pos.y,
         width: size.w,
         ...(size.h > 0 ? { height: size.h } : {}),
         maxHeight: '80vh',
+        zIndex: 2000 + stackIndex,
       }}
+      onMouseDown={() => onFocus?.()}
+      onTouchStart={() => onFocus?.()}
     >
       {/* Drag handle / title bar */}
       <div

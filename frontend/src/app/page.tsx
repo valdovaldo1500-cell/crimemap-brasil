@@ -95,7 +95,7 @@ export default function Home() {
   const [bugError, setBugError] = useState('');
   const [crimeTypeSearch, setCrimeTypeSearch] = useState('');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [detailData, setDetailData] = useState<any>(null);
+  const [detailPanels, setDetailPanels] = useState<any[]>([]);
 
   // State selection
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
@@ -415,19 +415,34 @@ export default function Home() {
   }, []);
 
   const onDetailOpen = useCallback((data: any) => {
-    // Merge incoming data with previous detail data (to handle two-phase updates from CrimeMap)
-    setDetailData((prev: any) => {
-      if (!prev || data.total !== 0 || data.crime_types) {
-        // Full update or first call
-        return {
+    const panelId = data.displayName || String(Date.now());
+    setDetailPanels(prev => {
+      // Check if panel with same displayName exists (for two-phase merge)
+      const existingIdx = prev.findIndex(p => p.displayName === data.displayName);
+      if (existingIdx >= 0) {
+        // Update existing panel
+        const updated = [...prev];
+        const existing = updated[existingIdx];
+        updated[existingIdx] = {
+          ...existing,
           ...data,
-          crime_types: data.crime_types || prev?.crime_types,
-          total: data.total || prev?.total || 0,
-          population: data.population !== undefined ? data.population : prev?.population,
+          id: existing.id,
+          crime_types: data.crime_types || existing.crime_types,
+          total: data.total || existing.total || 0,
+          population: data.population !== undefined ? data.population : existing.population,
           loading: data.loading ?? false,
         };
+        return updated;
       }
-      return prev;
+      // Add new panel (max 5)
+      const newPanel = {
+        ...data,
+        id: panelId,
+        total: data.total || 0,
+        loading: data.loading ?? false,
+      };
+      const newPanels = [...prev, newPanel];
+      return newPanels.length > 5 ? newPanels.slice(-5) : newPanels;
     });
   }, []);
 
@@ -658,8 +673,8 @@ export default function Home() {
             </div>
             <div className="flex flex-wrap gap-2">
               <button onClick={()=>{setShowFilters(!showFilters);setShowMobileMenu(false);}} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1a2234] border border-[#1e293b] text-sm">Filtros{activeFilterCount>0&&<span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{activeFilterCount}</span>}</button>
-              <button onClick={()=>{openBugReport();setShowMobileMenu(false);}} className="px-3 py-2 rounded-xl bg-[#1a2234] border border-[#1e293b] text-sm text-[#94a3b8]">Bug</button>
-              <button onClick={()=>{setShowHelp(true);setShowMobileMenu(false);}} className="px-3 py-2 rounded-xl bg-[#1a2234] border border-[#1e293b] text-sm text-[#94a3b8]">Como usar</button>
+              <button onClick={()=>{openBugReport();setShowMobileMenu(false);}} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#1a2234] border border-[#1e293b] text-sm text-[#94a3b8]"><svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2l1.88 1.88M14.12 3.88L16 2M9 7.13v-1a3.003 3.003 0 116 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 014-4h4a4 4 0 014 4v3c0 3.3-2.7 6-6 6z"/><path d="M12 20v-9M6.53 9C4.6 8.8 3 7.1 3 5M6 13H2M6 17l-4 1M17.47 9c1.93-.2 3.53-1.9 3.53-4M18 13h4M18 17l4 1"/></svg>Bug</button>
+              <button onClick={()=>{setShowHelp(true);setShowMobileMenu(false);}} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#1a2234] border border-[#1e293b] text-sm text-[#94a3b8]"><svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r=".5"/></svg>Como usar</button>
               <button onClick={()=>{setShowChangelog(true);setShowMobileMenu(false);}} className="px-3 py-2 rounded-xl bg-[#1a2234] border border-[#1e293b] text-sm text-[#94a3b8]">Novidades</button>
               <button onClick={()=>{setShowSources(!showSources);setShowMobileMenu(false);}} className="px-3 py-2 rounded-xl bg-[#1a2234] border border-[#1e293b] text-sm text-[#94a3b8]">Fontes</button>
               <a href="mailto:contato@crimebrasil.com.br" className="px-3 py-2 rounded-xl bg-[#1a2234] border border-[#1e293b] text-sm text-[#94a3b8]">Contato</a>
@@ -927,8 +942,12 @@ export default function Home() {
           )}
           {/* Bottom-right utility links */}
           <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 z-[1000] hidden sm:flex items-center gap-3">
-            <button onClick={openBugReport} className="text-[10px] text-[#64748b] hover:text-[#94a3b8] transition-colors">Reportar Bug</button>
-            <button onClick={() => setShowHelp(true)} className="text-[10px] text-[#64748b] hover:text-[#94a3b8] transition-colors">Como usar</button>
+            <button onClick={openBugReport} className="text-[#64748b] hover:text-[#94a3b8] transition-colors" title="Reportar Bug">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2l1.88 1.88M14.12 3.88L16 2M9 7.13v-1a3.003 3.003 0 116 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 014-4h4a4 4 0 014 4v3c0 3.3-2.7 6-6 6z"/><path d="M12 20v-9M6.53 9C4.6 8.8 3 7.1 3 5M6 13H2M6 17l-4 1M17.47 9c1.93-.2 3.53-1.9 3.53-4M18 13h4M18 17l4 1"/></svg>
+            </button>
+            <button onClick={() => setShowHelp(true)} className="text-[#64748b] hover:text-[#94a3b8] transition-colors" title="Como usar">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r=".5"/></svg>
+            </button>
             <button onClick={() => setShowChangelog(true)} className="text-[10px] text-[#64748b] hover:text-[#94a3b8] transition-colors">Novidades</button>
             <button onClick={() => setShowSources(!showSources)} className="text-[10px] text-[#64748b] hover:text-[#94a3b8] transition-colors">Fontes</button>
             <a href="mailto:contato@crimebrasil.com.br" className="text-[10px] text-[#64748b] hover:text-[#94a3b8] transition-colors">Contato</a>
@@ -948,7 +967,19 @@ export default function Home() {
               </>
             )}
           </div>
-          <DetailPanel data={detailData} onClose={() => setDetailData(null)} />
+          {detailPanels.map((panel, idx) => (
+            <DetailPanel
+              key={panel.id}
+              data={panel}
+              onClose={() => setDetailPanels(prev => prev.filter(p => p.id !== panel.id))}
+              stackIndex={idx}
+              onFocus={() => setDetailPanels(prev => {
+                const panelToFocus = prev.find(p => p.id === panel.id);
+                if (!panelToFocus) return prev;
+                return [...prev.filter(p => p.id !== panel.id), panelToFocus];
+              })}
+            />
+          ))}
         </main></div>
       {showMgWarning && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={cancelMgWarning}>

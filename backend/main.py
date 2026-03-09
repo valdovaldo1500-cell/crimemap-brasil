@@ -861,20 +861,29 @@ def filter_options(request: Request,
             q = q.filter(Crime.state.in_(selected_states))
         return q
 
+    # Only query crimes table if RS or SP is selected (or no states selected = default)
+    has_crimes_states = not selected_states or any(s in ('RS', 'SP') for s in selected_states)
+
     # Grupo options (apply all filters except grupo)
-    gq = apply_common(base_query(), skip='grupo')
-    gq = gq.with_entities(Crime.grupo_fato, func.count()).filter(
-        Crime.grupo_fato.isnot(None), Crime.grupo_fato != "",
-        Crime.grupo_fato.in_(["CRIMES", "CONTRAVENCOES"])
-    ).group_by(Crime.grupo_fato).order_by(func.count().desc())
-    grupo_opts = [{"value": r[0], "count": r[1]} for r in gq.all()]
+    if has_crimes_states:
+        gq = apply_common(base_query(), skip='grupo')
+        gq = gq.with_entities(Crime.grupo_fato, func.count()).filter(
+            Crime.grupo_fato.isnot(None), Crime.grupo_fato != "",
+            Crime.grupo_fato.in_(["CRIMES", "CONTRAVENCOES"])
+        ).group_by(Crime.grupo_fato).order_by(func.count().desc())
+        grupo_opts = [{"value": r[0], "count": r[1]} for r in gq.all()]
+    else:
+        grupo_opts = []
 
     # Tipo options (apply all filters except tipo)
-    tq = apply_common(base_query(), skip='tipo')
-    tq = tq.with_entities(Crime.tipo_enquadramento, func.count()).filter(
-        Crime.tipo_enquadramento.isnot(None), Crime.tipo_enquadramento != ""
-    ).group_by(Crime.tipo_enquadramento).order_by(func.count().desc())
-    tipo_opts = [{"value": r[0], "count": r[1]} for r in tq.all()]
+    if has_crimes_states:
+        tq = apply_common(base_query(), skip='tipo')
+        tq = tq.with_entities(Crime.tipo_enquadramento, func.count()).filter(
+            Crime.tipo_enquadramento.isnot(None), Crime.tipo_enquadramento != ""
+        ).group_by(Crime.tipo_enquadramento).order_by(func.count().desc())
+        tipo_opts = [{"value": r[0], "count": r[1]} for r in tq.all()]
+    else:
+        tipo_opts = []
 
     # Merge tipo from CrimeStaging for non-RS states
     if selected_states:
@@ -912,24 +921,29 @@ def filter_options(request: Request,
                     existing_values.add(row.crime_type)
 
     # Sexo options (apply all filters except sexo)
-    sq = apply_common(base_query(), skip='sexo')
-    sq = sq.with_entities(Crime.sexo_vitima, func.count()).filter(
-        Crime.sexo_vitima.isnot(None), Crime.sexo_vitima != ""
-    ).group_by(Crime.sexo_vitima).order_by(func.count().desc())
-    sexo_opts = [{"value": r[0], "count": r[1]} for r in sq.all()]
+    if has_crimes_states:
+        sq = apply_common(base_query(), skip='sexo')
+        sq = sq.with_entities(Crime.sexo_vitima, func.count()).filter(
+            Crime.sexo_vitima.isnot(None), Crime.sexo_vitima != ""
+        ).group_by(Crime.sexo_vitima).order_by(func.count().desc())
+        sexo_opts = [{"value": r[0], "count": r[1]} for r in sq.all()]
+    else:
+        sexo_opts = []
 
     # Cor options (apply all filters except cor)
-    cq = apply_common(base_query(), skip='cor')
-    cq = cq.with_entities(Crime.cor_vitima, func.count()).filter(
-        Crime.cor_vitima.isnot(None), Crime.cor_vitima != ""
-    ).group_by(Crime.cor_vitima).order_by(func.count().desc())
-    cor_opts = [{"value": r[0], "count": r[1]} for r in cq.all()]
+    if has_crimes_states:
+        cq = apply_common(base_query(), skip='cor')
+        cq = cq.with_entities(Crime.cor_vitima, func.count()).filter(
+            Crime.cor_vitima.isnot(None), Crime.cor_vitima != ""
+        ).group_by(Crime.cor_vitima).order_by(func.count().desc())
+        cor_opts = [{"value": r[0], "count": r[1]} for r in cq.all()]
+    else:
+        cor_opts = []
 
     states = selected_states or []
     if states:
         from services.crime_categories import get_compatible_types
-        states_with_rs = list(set(states + ['RS']))
-        compatible = get_compatible_types(states_with_rs)
+        compatible = get_compatible_types(states)
         if compatible:
             all_compat = set()
             for types in compatible.values():
