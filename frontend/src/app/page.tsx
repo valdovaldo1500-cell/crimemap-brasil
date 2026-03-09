@@ -414,6 +414,22 @@ export default function Home() {
     setComparisonStats([]);
   }, []);
 
+  const onDetailOpen = useCallback((data: any) => {
+    // Merge incoming data with previous detail data (to handle two-phase updates from CrimeMap)
+    setDetailData((prev: any) => {
+      if (!prev || data.total !== 0 || data.crime_types) {
+        // Full update or first call
+        return {
+          ...data,
+          crime_types: data.crime_types || prev?.crime_types,
+          total: data.total || prev?.total || 0,
+          population: data.population !== undefined ? data.population : prev?.population,
+        };
+      }
+      return prev;
+    });
+  }, []);
+
   const activeFilterCount = selectedTypes.length + selectedGrupo.length + selectedSexo.length + selectedCor.length + (idadeMin ? 1 : 0) + (idadeMax ? 1 : 0);
 
   const stateResults = suggestions.filter(s => s.type === 'state');
