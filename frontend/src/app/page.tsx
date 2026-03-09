@@ -589,8 +589,8 @@ export default function Home() {
             )}
             {/* Fix #13: aria-label on view toggle buttons */}
             <div className="flex rounded-xl border border-[#1e293b] overflow-hidden" role="group" aria-label="Modo de visualização">
-              <button onClick={()=>setViewMode('dots')} aria-label="Visualização em pontos" className={`px-2 py-2 text-xs ${viewMode==='dots'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>Pontos</button>
               <button onClick={()=>setViewMode('choropleth')} aria-label="Visualização em regiões" className={`px-2 py-2 text-xs ${viewMode==='choropleth'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>Regiões</button>
+              <button onClick={()=>setViewMode('dots')} aria-label="Visualização em pontos" className={`px-2 py-2 text-xs ${viewMode==='dots'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>Pontos</button>
             </div>
             <div className="flex rounded-xl border border-[#1e293b] overflow-hidden" role="group" aria-label="Modo de taxa">
               <button onClick={()=>setRateMode('rate')} aria-label="Taxa por 100 mil habitantes" className={`px-2 py-2 text-xs ${rateMode==='rate'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>/100K</button>
