@@ -554,6 +554,10 @@ def heatmap_bairros(request: Request,
     # Merge rows by normalized bairro name + fuzzy (no hardcoded aliases)
     BAIRRO_ALIASES = {
         "PORTO ALEGRE": {"CENTRO": "CENTRO HISTORICO"},
+        "CAXIAS DO SUL": {
+            "LOURDES": "NOSSA SENHORA DE LOURDES",
+            "LURDES": "NOSSA SENHORA DE LOURDES",
+        },
     }
     polygon_names_by_mun: dict[str, set[str]] = {}
     # Also map parts of compound polygon names (e.g. "Americana / Sumaré" → {"AMERICANA", "SUMARE"})
