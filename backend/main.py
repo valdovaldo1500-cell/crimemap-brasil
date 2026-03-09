@@ -303,7 +303,10 @@ def heatmap_municipios(request: Request,
     if grupo: q = q.filter(Crime.grupo_fato == grupo)
     if data_inicio: q = q.filter(Crime.data_fato >= data_inicio)
     if data_fim: q = q.filter(Crime.data_fato <= data_fim)
-    if semestre: q = q.filter(Crime.year_month.in_(semester_months(semestre)))
+    if ultimos_meses:
+        threshold_date, _, _ = _ultimos_meses_range(ultimos_meses)
+        q = q.filter(Crime.data_fato >= threshold_date)
+    elif semestre: q = q.filter(Crime.year_month.in_(semester_months(semestre)))
     elif ano: q = q.filter(Crime.year_month.like(f"{ano}-%"))
     if idade_min is not None: q = q.filter(Crime.idade_vitima >= idade_min)
     if idade_max is not None: q = q.filter(Crime.idade_vitima <= idade_max)
@@ -328,7 +331,13 @@ def heatmap_municipios(request: Request,
          func.coalesce(func.sum(CrimeStaging.victims), 0)).label("cnt")
     ).filter(CrimeStaging.municipio.isnot(None), CrimeStaging.state.in_(["RS", "RJ", "MG"]))
     if effective_tipo: q2 = q2.filter(CrimeStaging.crime_type.in_(effective_tipo))
-    if semestre:
+    if ultimos_meses:
+        _, thresh_year, thresh_month = _ultimos_meses_range(ultimos_meses)
+        q2 = q2.filter(
+            (CrimeStaging.year > thresh_year) |
+            ((CrimeStaging.year == thresh_year) & (CrimeStaging.month >= thresh_month))
+        )
+    elif semestre:
         year_str, sem = semestre.split('-')
         q2 = q2.filter(CrimeStaging.year == int(year_str))
         if sem == "S1": q2 = q2.filter(CrimeStaging.month.between(1, 6))
