@@ -9,6 +9,7 @@ interface DetailPanelProps {
     crime_types?: { tipo: string; count: number }[];
     components?: { bairro: string; weight: number }[];
     isUnknown?: boolean;
+    loading?: boolean;
   } | null;
   onClose: () => void;
 }
@@ -123,49 +124,80 @@ export default function DetailPanel({ data, onClose }: DetailPanelProps) {
 
       {/* Content */}
       <div className="p-3 overflow-y-auto" style={{ maxHeight: size.h > 0 ? size.h - 40 : 'calc(80vh - 40px)' }}>
-        <div className="flex items-baseline gap-3 mb-2">
-          <span className="text-lg font-bold font-mono text-[#f1f5f9]">{data.total.toLocaleString()}</span>
-          <span className="text-xs text-[#94a3b8]">ocorrências</span>
-        </div>
-        {rate && (
-          <div className="text-xs text-[#94a3b8] mb-3">
-            <span className="font-mono text-[#f1f5f9]">{rate}</span> /100K hab.
-            {data.population && <span className="ml-2 text-[#64748b]">(pop: {data.population.toLocaleString()})</span>}
-          </div>
-        )}
-
-        {/* Unknown bairro components */}
-        {data.isUnknown && data.components && data.components.length > 0 && (
-          <div className="mb-3">
-            <div className="text-[10px] text-[#94a3b8] uppercase tracking-wider mb-1">
-              Bairros com poucas ocorrências ou localização imprecisa:
+        {data.loading && !data.total ? (
+          /* Full skeleton when no cached total */
+          <div className="space-y-3">
+            <div className="flex items-baseline gap-3 mb-2">
+              <div className="h-6 w-20 bg-[#1e293b] rounded animate-pulse" />
+              <div className="h-3 w-16 bg-[#1e293b] rounded animate-pulse" />
             </div>
-            <div className="space-y-0.5 max-h-40 overflow-y-auto">
-              {data.components.map((c, i) => (
-                <div key={i} className="flex justify-between text-xs">
-                  <span className="text-[#cbd5e1] truncate">{c.bairro}</span>
-                  <span className="font-mono text-[#94a3b8] ml-2">{c.weight.toLocaleString()}</span>
+            <div className="h-3 w-32 bg-[#1e293b] rounded animate-pulse" />
+            <div className="space-y-1.5 pt-2">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="flex justify-between">
+                  <div className="h-3 bg-[#1e293b] rounded animate-pulse" style={{ width: `${60 + i * 10}%` }} />
+                  <div className="h-3 w-8 bg-[#1e293b] rounded animate-pulse" />
                 </div>
               ))}
             </div>
           </div>
-        )}
+        ) : (
+          <>
+            <div className="flex items-baseline gap-3 mb-2">
+              <span className="text-lg font-bold font-mono text-[#f1f5f9]">{data.total.toLocaleString()}</span>
+              <span className="text-xs text-[#94a3b8]">ocorrências</span>
+            </div>
+            {rate && (
+              <div className="text-xs text-[#94a3b8] mb-3">
+                <span className="font-mono text-[#f1f5f9]">{rate}</span> /100K hab.
+                {data.population && <span className="ml-2 text-[#64748b]">(pop: {data.population.toLocaleString()})</span>}
+              </div>
+            )}
 
-        {/* Crime type breakdown */}
-        {data.crime_types && data.crime_types.length > 0 && (
-          <div>
-            <div className="text-[10px] text-[#94a3b8] uppercase tracking-wider mb-1">
-              Tipos de crime
-            </div>
-            <div className="space-y-0.5">
-              {data.crime_types.map((ct, i) => (
-                <div key={i} className="flex justify-between text-xs">
-                  <span className="text-[#cbd5e1] truncate">{ct.tipo}</span>
-                  <span className="font-mono text-[#94a3b8] ml-2">{ct.count.toLocaleString()}</span>
+            {/* Unknown bairro components */}
+            {data.isUnknown && data.components && data.components.length > 0 && (
+              <div className="mb-3">
+                <div className="text-[10px] text-[#94a3b8] uppercase tracking-wider mb-1">
+                  Bairros com poucas ocorrências ou localização imprecisa:
                 </div>
-              ))}
-            </div>
-          </div>
+                <div className="space-y-0.5 max-h-40 overflow-y-auto">
+                  {data.components.map((c, i) => (
+                    <div key={i} className="flex justify-between text-xs">
+                      <span className="text-[#cbd5e1] truncate">{c.bairro}</span>
+                      <span className="font-mono text-[#94a3b8] ml-2">{c.weight.toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Crime type breakdown — skeleton or real data */}
+            {data.loading && !data.crime_types ? (
+              <div className="space-y-1.5 pt-1">
+                <div className="text-[10px] text-[#94a3b8] uppercase tracking-wider mb-1">Tipos de crime</div>
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="flex justify-between">
+                    <div className="h-3 bg-[#1e293b] rounded animate-pulse" style={{ width: `${60 + i * 10}%` }} />
+                    <div className="h-3 w-8 bg-[#1e293b] rounded animate-pulse" />
+                  </div>
+                ))}
+              </div>
+            ) : data.crime_types && data.crime_types.length > 0 ? (
+              <div>
+                <div className="text-[10px] text-[#94a3b8] uppercase tracking-wider mb-1">
+                  Tipos de crime
+                </div>
+                <div className="space-y-0.5">
+                  {data.crime_types.map((ct, i) => (
+                    <div key={i} className="flex justify-between text-xs">
+                      <span className="text-[#cbd5e1] truncate">{ct.tipo}</span>
+                      <span className="font-mono text-[#94a3b8] ml-2">{ct.count.toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </>
         )}
       </div>
 

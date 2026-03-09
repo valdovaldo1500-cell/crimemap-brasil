@@ -16,7 +16,7 @@ interface Props {
   compareMode?: boolean;
   comparisonLocations?: { municipio: string; bairro?: string; state?: string; displayName: string }[];
   onCompareSelect?: (location: { municipio: string; bairro?: string; state?: string; displayName: string }) => void;
-  onDetailOpen?: (data: { displayName: string; municipio: string; bairro?: string; state?: string; total: number; population?: number | null; components?: { bairro: string; weight: number }[]; isUnknown?: boolean }) => void;
+  onDetailOpen?: (data: { displayName: string; municipio: string; bairro?: string; state?: string; total: number; population?: number | null; components?: { bairro: string; weight: number }[]; isUnknown?: boolean; loading?: boolean }) => void;
 }
 
 // States that have their own municipality GeoJSON files
@@ -316,7 +316,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
       // Use DetailPanel when available
       if (onDetailOpenRef.current) {
         const isUnknown = bairro === 'Bairro desconhecido';
-        onDetailOpenRef.current({ displayName, municipio, bairro, state, total: count, population, components, isUnknown });
+        onDetailOpenRef.current({ displayName, municipio, bairro, state, total: count, population, components, isUnknown, loading: true });
         if (isUnknown) return; // no stats fetch for unknown bairros
         try {
           const f = filtersRef.current;
@@ -327,7 +327,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
             idade_min: f.idade_min, idade_max: f.idade_max,
           });
           onDetailOpenRef.current({ displayName, municipio, bairro, state, total: stats.total ?? count, population: stats.population ?? population, components,
-            isUnknown: false,
+            isUnknown: false, loading: false,
             // pass crime_types via the callback — page.tsx will merge
             ...(stats.crime_types ? { crime_types: stats.crime_types.map((ct: any) => ({ tipo: ct.tipo_enquadramento || ct.tipo, count: ct.count })) } : {}),
           } as any);
@@ -408,7 +408,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
       // Open DetailPanel with state stats
       if (onDetailOpenRef.current) {
         const displayName2 = `${stateName} (${sigla})`;
-        onDetailOpenRef.current({ displayName: displayName2, municipio: '', state: sigla, total: weight, population, isUnknown: false });
+        onDetailOpenRef.current({ displayName: displayName2, municipio: '', state: sigla, total: weight, population, isUnknown: false, loading: true });
         try {
           const f = filtersRef.current;
           const stats = await fetchStateStats({
@@ -418,7 +418,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
             selected_states: selectedStates,
           });
           onDetailOpenRef.current({ displayName: displayName2, municipio: '', state: sigla,
-            total: stats.total ?? weight, population: stats.population ?? population, isUnknown: false,
+            total: stats.total ?? weight, population: stats.population ?? population, isUnknown: false, loading: false,
             ...(stats.crime_types ? { crime_types: stats.crime_types.map((ct: any) => ({ tipo: ct.tipo_enquadramento || ct.tipo, count: ct.count })) } : {}),
           } as any);
         } catch (err) {
@@ -587,7 +587,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
                   if (onToggleState) onToggleState(sigla);
                   if (onDetailOpenRef.current) {
                     const dn = `${name} (${sigla})`;
-                    onDetailOpenRef.current({ displayName: dn, municipio: '', state: sigla, total: 0, isUnknown: false });
+                    onDetailOpenRef.current({ displayName: dn, municipio: '', state: sigla, total: 0, isUnknown: false, loading: true });
                     try {
                       const f = filtersRef.current;
                       const stats = await fetchStateStats({
@@ -597,7 +597,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
                         selected_states: selectedStates,
                       });
                       onDetailOpenRef.current({ displayName: dn, municipio: '', state: sigla,
-                        total: stats.total ?? 0, population: stats.population, isUnknown: false,
+                        total: stats.total ?? 0, population: stats.population, isUnknown: false, loading: false,
                         ...(stats.crime_types ? { crime_types: stats.crime_types.map((ct: any) => ({ tipo: ct.tipo_enquadramento || ct.tipo, count: ct.count })) } : {}),
                       } as any);
                     } catch (err) {
@@ -978,7 +978,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
         const pp = pendingPopupRef.current;
         if (onDetailOpenRef.current) {
           // Use DetailPanel — show loading state then fetch
-          onDetailOpenRef.current({ displayName: pp.displayName, municipio: pp.municipio, bairro: pp.bairro, total: 0, isUnknown: false });
+          onDetailOpenRef.current({ displayName: pp.displayName, municipio: pp.municipio, bairro: pp.bairro, total: 0, isUnknown: false, loading: true });
           (async () => {
             try {
               const f = filtersRef.current;
@@ -990,7 +990,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
               });
               onDetailOpenRef.current!({ displayName: pp.displayName, municipio: pp.municipio, bairro: pp.bairro,
                 total: stats.total ?? 0, population: stats.population,
-                isUnknown: false,
+                isUnknown: false, loading: false,
                 ...(stats.crime_types ? { crime_types: stats.crime_types.map((ct: any) => ({ tipo: ct.tipo_enquadramento || ct.tipo, count: ct.count })) } : {}),
               } as any);
             } catch {

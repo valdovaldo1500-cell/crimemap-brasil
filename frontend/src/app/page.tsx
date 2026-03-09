@@ -424,6 +424,7 @@ export default function Home() {
           crime_types: data.crime_types || prev?.crime_types,
           total: data.total || prev?.total || 0,
           population: data.population !== undefined ? data.population : prev?.population,
+          loading: data.loading ?? false,
         };
       }
       return prev;
