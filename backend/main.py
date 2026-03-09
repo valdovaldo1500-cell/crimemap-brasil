@@ -767,7 +767,12 @@ def heatmap_bairros(request: Request,
         mun_norm, bairro_norm = key
         # Prefer pre-computed polygon centroid > geocode cache > crime average
         mun_centroids_poly = BAIRRO_CENTROIDS.get(mun_norm, {})
-        poly_coord = mun_centroids_poly.get(bairro_norm) or mun_centroids_poly.get(normalize_fuzzy(bairro_norm))
+        poly_coord = mun_centroids_poly.get(bairro_norm)
+        if not poly_coord:
+            # Fuzzy fallback: internal key may differ from centroid key by apostrophe/spacing
+            # e.g. key="PASSO DAREIA" but centroid keyed as "PASSO D'AREIA"
+            bfz = normalize_fuzzy(bairro_norm)
+            poly_coord = next((v for k, v in mun_centroids_poly.items() if normalize_fuzzy(k) == bfz), None)
         if poly_coord:
             lat, lng = poly_coord
         else:
