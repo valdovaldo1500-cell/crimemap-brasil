@@ -468,7 +468,8 @@ def heatmap_bairros(request: Request,
         if bairro_norm in poly_names or normalize_fuzzy(bairro_norm) in {normalize_fuzzy(pn) for pn in poly_names}:
             continue  # already matches a polygon — no remap needed
         # Don't PIP-remap established bairros (>= 50 records) — show as dot markers instead
-        if m['cnt'] >= 50:
+        # EXCEPT for street/place names which should always be PIP-remapped
+        if m['cnt'] >= 50 and not _is_street_or_place(bairro_norm):
             continue
         cache_coords = cache.get(key)
         lat, lng = cache_coords if cache_coords else (m['lat'], m['lng'])
