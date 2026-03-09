@@ -304,7 +304,7 @@ export default function Home() {
 
   // When granularity becomes yearly, reset period to 'ano' if semester is selected
   useEffect(() => {
-    if (maxGranularity === 'yearly' && selectedPeriod !== 'ano') {
+    if (maxGranularity === 'yearly' && selectedPeriod !== 'ano' && selectedPeriod !== '12m') {
       setSelectedPeriod('ano');
     }
   }, [maxGranularity, selectedPeriod]);
