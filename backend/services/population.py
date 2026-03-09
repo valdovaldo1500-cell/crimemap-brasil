@@ -35,7 +35,7 @@ def _load():
 
     # Build name -> IBGE code map
     # Primary: load from static JSON file (Docker-safe, no GeoJSON needed)
-    static_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "mun_name_to_code.json")
+    static_json_path = os.path.join(os.path.dirname(__file__), "..", "lookup", "mun_name_to_code.json")
     if os.path.exists(static_json_path):
         try:
             with open(static_json_path, encoding='utf-8') as f:
