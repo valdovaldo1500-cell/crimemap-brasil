@@ -61,21 +61,60 @@ _BAIRRO_TYPE_PREFIXES = re.compile(
     r'^(BAIRRO\s+DE\s+|BAIRRO\s+DO\s+|BAIRRO\s+)', re.IGNORECASE
 )
 
+# Abbreviation prefixes that expand to full words (applied left-to-right before matching)
+_BAIRRO_PREFIX_EXPANSIONS = [
+    (re.compile(r'^NSA?\s+SRA?\.?\s+', re.IGNORECASE), 'NOSSA SENHORA '),
+    (re.compile(r'^VL\s+', re.IGNORECASE), 'VILA '),
+    (re.compile(r'^STA\s+', re.IGNORECASE), 'SANTA '),
+    (re.compile(r'^STO\s+', re.IGNORECASE), 'SANTO '),
+    (re.compile(r'^PRQ?\.?\s+', re.IGNORECASE), 'PARQUE '),
+    (re.compile(r'^JD\.?\s+', re.IGNORECASE), 'JARDIM '),
+]
+
+# Articles/prepositions to strip when doing article-normalized fuzzy matching
+_PT_ARTICLES = re.compile(r'\b(DO|DA|DOS|DAS|DE|D)\b\s*', re.IGNORECASE)
+
+def _strip_articles(s: str) -> str:
+    """Strip Portuguese articles/prepositions for fuzzy comparison."""
+    return re.sub(r'\s+', ' ', _PT_ARTICLES.sub('', s)).strip()
+
+# Names that are clearly not real bairros (noise data)
+_INVALID_BAIRRO_NAMES = {'-', '--', '---', 'INTERIOR', 'RURAL', 'ZONA RURAL', 'N/A', 'NAO INFORMADO',
+                          'NAO IDENTIFICADO', 'SEM BAIRRO', 'SEM INFORMACAO', 'OUTROS', 'OUTRO',
+                          'IGNORADO', 'NAO CONSTA', 'NAO INFORMADA'}
+
+def _is_invalid_bairro(name: str) -> bool:
+    """Return True for clearly non-bairro values that should go to Bairro desconhecido."""
+    n = name.strip()
+    if not n or n in _INVALID_BAIRRO_NAMES:
+        return True
+    # Single or double character codes (e.g. "I", "H", "A") — Campo Bom data artifact
+    if len(n) <= 2 and re.match(r'^[A-Za-z]+$', n):
+        return True
+    return False
+
 def _normalize_bairro_for_matching(bairro_norm: str, poly_names: set[str] | None = None) -> str:
     """Enhanced bairro name normalization for polygon matching.
 
     Handles: type prefixes (BAIRRO X → X), abbreviations (M VELHO → MATHIAS VELHO),
+    prefix expansions (VL → VILA, STA → SANTA, PQ → PARQUE, NSA SRA → NOSSA SENHORA),
     and truncated names (NOSSA SENHORA DAS GR → NOSSA SENHORA DAS GRACAS).
     """
     result = bairro_norm
-    # Strip type prefixes
+    # Strip type prefixes (BAIRRO X → X)
     result = _BAIRRO_TYPE_PREFIXES.sub('', result).strip()
+    # Apply prefix expansions (VL → VILA, STA → SANTA, etc.)
+    for pattern, replacement in _BAIRRO_PREFIX_EXPANSIONS:
+        expanded = pattern.sub(replacement, result)
+        if expanded != result:
+            result = expanded
+            break
     # Check abbreviation map
     if result in _BAIRRO_ABBREVIATIONS:
         result = _BAIRRO_ABBREVIATIONS[result]
     # If we have polygon names available, try prefix matching for truncated names
     if poly_names and result != bairro_norm:
-        # Already found a match via prefix strip or abbreviation
+        # Already found a match via prefix strip or abbreviation — pass
         pass
     elif poly_names and len(result) >= 8:
         # Try prefix match for truncated names (e.g. "NOSSA SENHORA DAS GR" → "NOSSA SENHORA DAS GRACAS")
