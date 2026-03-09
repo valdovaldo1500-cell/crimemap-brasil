@@ -79,6 +79,15 @@ _BAIRRO_PREFIX_EXPANSIONS = [
 # Articles/prepositions to strip when doing article-normalized fuzzy matching
 _PT_ARTICLES = re.compile(r'\b(DO|DA|DOS|DAS|DE|D)\b\s*', re.IGNORECASE)
 
+# Short first-word prefixes that are Portuguese particles (not abbreviations)
+# Used to exclude false matches in the short-first-word suffix rule
+_SHORT_PT_PARTICLES = frozenset({
+    'A', 'O', 'E', 'I', 'U',        # single-vowel articles: "A Região", "O Parque"
+    'DA', 'DO', 'DE', 'DI', 'DU',   # "de" contracted with articles
+    'AS', 'OS',                       # plural definite articles
+    'NA', 'NO', 'EM', 'AO', 'AP',   # contracted prepositions
+})
+
 def _strip_articles(s: str) -> str:
     """Strip Portuguese articles/prepositions for fuzzy comparison."""
     return re.sub(r'\s+', ' ', _PT_ARTICLES.sub('', s)).strip()
