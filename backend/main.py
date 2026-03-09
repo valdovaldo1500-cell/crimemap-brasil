@@ -187,6 +187,21 @@ def _normalize_bairro_for_matching(bairro_norm: str, poly_names: set[str] | None
             art_matches = [pn for pn in poly_names if _strip_articles(pn) == result_stripped and pn != result]
             if len(art_matches) == 1:
                 result = art_matches[0]
+        if result not in poly_names:
+            # Short first-word: single-letter or 2-char abbreviation + meaningful suffix
+            # "C BAIXA"→"CIDADE BAIXA", "L PINHEIRO"→"LOMBA DO PINHEIRO", "P BELAS"→"PRAIA DE BELAS"
+            # Also tries bairro_norm when prefix expansion changed the first word
+            # e.g. "PR BELAS" expanded to "PARQUE BELAS" → try original "PR BELAS" suffix rule
+            for try_name in ([result] + ([bairro_norm] if bairro_norm != result else [])):
+                if result in poly_names:
+                    break
+                words = try_name.split()
+                if len(words) >= 2 and 1 <= len(words[0]) <= 2:
+                    suffix_part = ' '.join(words[1:])
+                    if len(suffix_part) >= 5:
+                        lw_matches = [pn for pn in poly_names if pn.endswith(' ' + suffix_part) and pn != try_name]
+                        if len(lw_matches) == 1:
+                            result = lw_matches[0]
     return result
 
 def _load_bairro_polygons():
