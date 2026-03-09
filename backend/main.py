@@ -141,13 +141,14 @@ def _normalize_bairro_for_matching(bairro_norm: str, poly_names: set[str] | None
     if poly_names and result != bairro_norm:
         # Already found a match via prefix strip or abbreviation — pass
         pass
-    elif poly_names and len(result) >= 8:
-        # Try prefix match (e.g. "NOSSA SENHORA DAS GR" → "NOSSA SENHORA DAS GRACAS")
-        prefix_matches = [pn for pn in poly_names if pn.startswith(result) and pn != result]
-        if len(prefix_matches) == 1:
-            result = prefix_matches[0]
-        elif len(result) >= 7:
-            # Try word-suffix match (e.g. "MEDIANEIRA" → "NOSSA SENHORA MEDIANEIRA")
+    elif poly_names and result not in poly_names:
+        if len(result) >= 7:
+            # Try prefix match (e.g. "NOSSA SENHORA DAS GR" → "NOSSA SENHORA DAS GRACAS", "FAXINAL" → "FAXINAL MENINO DEUS")
+            prefix_matches = [pn for pn in poly_names if pn.startswith(result) and pn != result]
+            if len(prefix_matches) == 1:
+                result = prefix_matches[0]
+        if result == bairro_norm and len(result) >= 5:
+            # Try word-suffix match (e.g. "PENHA" → "NOSSA SENHORA DA PENHA", "MEDIANEIRA" → "NOSSA SENHORA MEDIANEIRA")
             suffix_matches = [pn for pn in poly_names if pn.endswith(' ' + result) and pn != result]
             if len(suffix_matches) == 1:
                 result = suffix_matches[0]
