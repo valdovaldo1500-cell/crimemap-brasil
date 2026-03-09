@@ -85,10 +85,14 @@ def _strip_articles(s: str) -> str:
     return re.sub(r'\s+', ' ', _PT_ARTICLES.sub('', s)).strip()
 
 def _phonetic_br(s: str) -> str:
-    """Brazilian Portuguese phonetic normalization: Z→S at word boundaries.
-    Handles common spelling variants like Luiz/Luís, Teresa/Tereza.
+    """Brazilian Portuguese phonetic normalization: Z→S everywhere.
+    In Brazilian Portuguese, Z and S are interchangeable spelling variants
+    (Luiz/Luís, Tereza/Teresa, Elizabete/Elisabete, Rezende/Resende, etc.).
+    Applying universally (not just word boundaries) handles all such cases.
+    Both bairro names and polygon names are normalized, so genuine Z-names
+    still match themselves after conversion.
     """
-    return re.sub(r'Z\b', 'S', s)
+    return re.sub(r'Z', 'S', s)
 
 # Names that are clearly not real bairros (noise data)
 _INVALID_BAIRRO_NAMES = {'-', '--', '---', 'INTERIOR', 'RURAL', 'ZONA RURAL', 'N/A', 'NAO INFORMADO',
