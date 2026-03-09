@@ -144,6 +144,19 @@ def semester_months(semestre: str) -> list[str]:
     rng = range(1, 7) if sem == "S1" else range(7, 13)
     return [f"{year}-{m:02d}" for m in rng]
 
+def _ultimos_meses_range(n: int):
+    """Compute (threshold_date_str, threshold_year, threshold_month) for 'last N months' filter."""
+    from datetime import date
+    today = date.today()
+    # Go back N months from current month
+    month = today.month - n
+    year = today.year
+    while month <= 0:
+        month += 12
+        year -= 1
+    threshold_date = f"{year}-{month:02d}-01"
+    return threshold_date, year, month
+
 _SEMESTRE_RE = re.compile(r'^\d{4}-S[12]$')
 
 def validate_semestre(semestre: Optional[str]) -> None:
