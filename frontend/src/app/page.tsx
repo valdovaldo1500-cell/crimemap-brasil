@@ -672,7 +672,7 @@ export default function Home() {
           <button onClick={() => setDataWarnings([])} className="text-amber-400/60 hover:text-amber-400 text-xs ml-2">✕</button>
         </div>
       )}
-      <div className={`flex ${dataWarnings.length > 0 ? 'h-[calc(100vh-56px-32px)] md:h-[calc(100vh-80px-32px)]' : 'h-[calc(100vh-56px)] md:h-[calc(100vh-80px)]'}`}>
+      <div className={`flex ${dataWarnings.length > 0 ? 'h-[calc(100dvh-56px-32px)] md:h-[calc(100dvh-80px-32px)]' : 'h-[calc(100dvh-56px)] md:h-[calc(100dvh-80px)]'}`}>
         {/* Fix #11: backdrop overlay that closes sidebar on mobile click */}
         {showFilters && (
           <div
