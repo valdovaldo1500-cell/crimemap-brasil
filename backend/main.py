@@ -511,7 +511,7 @@ def heatmap_bairros(request: Request,
             lat, lng = centroid[0], centroid[1]
         is_at_centroid = centroid and _haversine_km(lat, lng, centroid[0], centroid[1]) < 0.5
         is_low_count = m['cnt'] < 3
-        if (is_at_centroid or is_low_count) and key not in polygon_matched_keys and m['cnt'] < 50:
+        if (is_at_centroid or is_low_count) and key not in polygon_matched_keys:
             if mun_norm not in unknown_bucket:
                 c_lat, c_lng = centroid if centroid else (lat, lng)
                 unknown_bucket[mun_norm] = {'municipio': m['municipio'], 'cnt': 0,
