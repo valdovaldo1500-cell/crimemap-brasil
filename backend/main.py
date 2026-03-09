@@ -687,7 +687,13 @@ def heatmap_bairros(request: Request,
              func.coalesce(func.sum(CrimeStaging.victims), 0)).label("cnt")
         ).filter(CrimeStaging.municipio.isnot(None), CrimeStaging.state.in_(staging_states))
         if effective_tipo: sq = sq.filter(CrimeStaging.crime_type.in_(effective_tipo))
-        if semestre:
+        if ultimos_meses:
+            _, thresh_year, thresh_month = _ultimos_meses_range(ultimos_meses)
+            sq = sq.filter(
+                (CrimeStaging.year > thresh_year) |
+                ((CrimeStaging.year == thresh_year) & (CrimeStaging.month >= thresh_month))
+            )
+        elif semestre:
             year_str, sem = semestre.split('-')
             sq = sq.filter(CrimeStaging.year == int(year_str))
             if sem == "S1": sq = sq.filter(CrimeStaging.month.between(1, 6))
