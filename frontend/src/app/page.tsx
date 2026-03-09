@@ -537,64 +537,80 @@ export default function Home() {
               </div>
             )}
           </div>
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-1.5">
             {years.length > 0 && (
               <div className="flex items-center gap-1">
-                <select
-                  value={selectedYear}
-                  onChange={e => onSelectYear(e.target.value)}
-                  className="bg-[#1a2234] border border-[#1e293b] rounded-xl px-3 py-2 text-sm text-[#f1f5f9] cursor-pointer appearance-none pr-8"
-                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center' }}
-                >
-                  {years.map(yr => (
-                    <option key={yr} value={yr}>{yr}</option>
-                  ))}
-                </select>
                 <div className="flex rounded-xl border border-[#1e293b] overflow-hidden">
+                  <button onClick={() => setSelectedPeriod('12m')}
+                    className={`px-2 py-2 text-xs ${selectedPeriod === '12m' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>
+                    12m
+                  </button>
                   <button onClick={() => setSelectedPeriod('ano')}
-                    className={`px-2.5 py-2 text-xs ${selectedPeriod === 'ano' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>
+                    className={`px-2 py-2 text-xs ${selectedPeriod === 'ano' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>
                     Ano
                   </button>
                   {availablePeriods.includes('S1') && (
                     <button onClick={() => maxGranularity === 'monthly' && setSelectedPeriod('S1')}
                       title={maxGranularity === 'yearly' ? 'Filtro por semestre indisponível — dados do SINESP são anuais' : ''}
-                      className={`px-2.5 py-2 text-xs ${selectedPeriod === 'S1' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'} ${maxGranularity === 'yearly' ? 'opacity-40 cursor-not-allowed' : ''}`}>
-                      Jan-Jun
+                      className={`px-2 py-2 text-xs ${selectedPeriod === 'S1' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'} ${maxGranularity === 'yearly' ? 'opacity-40 cursor-not-allowed' : ''}`}>
+                      S1
                     </button>
                   )}
                   {availablePeriods.includes('S2') && (
                     <button onClick={() => maxGranularity === 'monthly' && setSelectedPeriod('S2')}
                       title={maxGranularity === 'yearly' ? 'Filtro por semestre indisponível — dados do SINESP são anuais' : ''}
-                      className={`px-2.5 py-2 text-xs ${selectedPeriod === 'S2' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'} ${maxGranularity === 'yearly' ? 'opacity-40 cursor-not-allowed' : ''}`}>
-                      Jul-Dez
+                      className={`px-2 py-2 text-xs ${selectedPeriod === 'S2' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'} ${maxGranularity === 'yearly' ? 'opacity-40 cursor-not-allowed' : ''}`}>
+                      S2
                     </button>
                   )}
                 </div>
+                {selectedPeriod === '12m' ? (
+                  <span className="text-xs text-[#94a3b8] px-2">
+                    {(() => {
+                      const now = new Date();
+                      const from = new Date(now);
+                      from.setMonth(from.getMonth() - 12);
+                      const fmt = (d: Date) => d.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
+                      return `${fmt(from)} – ${fmt(now)}`;
+                    })()}
+                  </span>
+                ) : (
+                  <select
+                    value={selectedYear}
+                    onChange={e => onSelectYear(e.target.value)}
+                    className="bg-[#1a2234] border border-[#1e293b] rounded-xl px-2 py-2 text-xs text-[#f1f5f9] cursor-pointer appearance-none pr-6"
+                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 6px center' }}
+                  >
+                    {years.map(yr => (
+                      <option key={yr} value={yr}>{yr}</option>
+                    ))}
+                  </select>
+                )}
               </div>
             )}
             {/* Fix #13: aria-label on view toggle buttons */}
             <div className="flex rounded-xl border border-[#1e293b] overflow-hidden" role="group" aria-label="Modo de visualização">
-              <button onClick={()=>setViewMode('dots')} aria-label="Visualização em pontos" className={`px-3 py-2.5 text-sm ${viewMode==='dots'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>Pontos</button>
-              <button onClick={()=>setViewMode('choropleth')} aria-label="Visualização em regiões" className={`px-3 py-2.5 text-sm ${viewMode==='choropleth'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>Regiões</button>
+              <button onClick={()=>setViewMode('dots')} aria-label="Visualização em pontos" className={`px-2 py-2 text-xs ${viewMode==='dots'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>Pontos</button>
+              <button onClick={()=>setViewMode('choropleth')} aria-label="Visualização em regiões" className={`px-2 py-2 text-xs ${viewMode==='choropleth'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>Regiões</button>
             </div>
             <div className="flex rounded-xl border border-[#1e293b] overflow-hidden" role="group" aria-label="Modo de taxa">
-              <button onClick={()=>setRateMode('rate')} aria-label="Taxa por 100 mil habitantes" className={`px-3 py-2.5 text-sm ${rateMode==='rate'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>/100K hab.</button>
-              <button onClick={()=>setRateMode('absolute')} aria-label="Total absoluto" className={`px-3 py-2.5 text-sm ${rateMode==='absolute'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>Total</button>
+              <button onClick={()=>setRateMode('rate')} aria-label="Taxa por 100 mil habitantes" className={`px-2 py-2 text-xs ${rateMode==='rate'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>/100K</button>
+              <button onClick={()=>setRateMode('absolute')} aria-label="Total absoluto" className={`px-2 py-2 text-xs ${rateMode==='absolute'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>Total</button>
             </div>
             <div className="flex rounded-xl border border-[#1e293b] overflow-hidden" role="group" aria-label="Nível de agregação">
               {(['auto','estados','municipios','bairros'] as const).map(v=>(
                 <button key={v} onClick={()=>setAggregationOverride(v)}
                   aria-label={v==='auto'?'Agregação automática':v==='estados'?'Estados':v==='municipios'?'Municípios':'Bairros'}
-                  className={`px-2.5 py-2.5 text-xs ${aggregationOverride===v?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>
-                  {v==='auto'?'Auto':v==='estados'?'Estados':v==='municipios'?'Municípios':'Bairros'}
+                  className={`px-2 py-2 text-xs ${aggregationOverride===v?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'}`}>
+                  {v==='auto'?'Auto':v==='estados'?'Est.':v==='municipios'?'Mun.':'Bairros'}
                 </button>
               ))}
             </div>
-            <button onClick={()=>setShowFilters(!showFilters)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#1a2234] border border-[#1e293b] text-sm hover:bg-[#1e293b]">Filtros{activeFilterCount>0&&<span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{activeFilterCount}</span>}</button>
+            <button onClick={()=>setShowFilters(!showFilters)} className="flex items-center gap-1.5 px-2 py-2 rounded-xl bg-[#1a2234] border border-[#1e293b] text-xs hover:bg-[#1e293b]">Filtros{activeFilterCount>0&&<span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{activeFilterCount}</span>}</button>
           </div>
           {/* Fix #13: aria-label on hamburger button */}
           <button
-            className="md:hidden p-2 rounded-lg bg-[#1a2234] border border-[#1e293b]"
+            className="sm:hidden p-2 rounded-lg bg-[#1a2234] border border-[#1e293b]"
             onClick={() => setShowMobileMenu(!showMobileMenu)}
             aria-label="Abrir menu de navegação"
           >
@@ -602,7 +618,7 @@ export default function Home() {
           </button>
         </div>
         {showMobileMenu && (
-          <div className="md:hidden border-t border-[#1e293b] p-3 space-y-3 bg-[#111827] max-h-[50vh] overflow-y-auto">
+          <div className="sm:hidden border-t border-[#1e293b] p-3 space-y-3 bg-[#111827] max-h-[50vh] overflow-y-auto">
             {years.length > 0 && (
               <div className="space-y-2">
                 <span className="text-[10px] text-[#94a3b8] uppercase tracking-wider">Ano</span>
