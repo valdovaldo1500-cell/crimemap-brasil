@@ -149,6 +149,15 @@ def _normalize_bairro_for_matching(bairro_norm: str, poly_names: set[str] | None
                       for pn in poly_names if "D'" in pn}
             if result in da_map:
                 result = da_map[result]
+        if result not in poly_names:
+            # D+vowel as contracted D' (apostrophe AND space both omitted in data entry):
+            # "PASSO DAREIA" → "PASSO D'AREIA" → "PASSO DA AREIA"
+            # Only applies when the expanded form is an actual polygon (safe, no false positives)
+            d_vowel = re.sub(r"\bD([AEIOU])", r"D'\1", result)
+            if d_vowel != result:
+                d_expanded = re.sub(r"\bD'", "DA ", d_vowel, flags=re.IGNORECASE).strip()
+                if d_expanded in poly_names:
+                    result = d_expanded
         if result not in poly_names and len(result) >= 6:
             # Try prefix match: bairro name is a prefix of a unique polygon
             # e.g. "CENTRO" → "CENTRO HISTORICO", "FAXINAL" → "FAXINAL MENINO DEUS"
