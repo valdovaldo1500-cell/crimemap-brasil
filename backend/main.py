@@ -573,8 +573,12 @@ def heatmap_bairros(request: Request,
         fuzzy = (mun_norm, normalize_fuzzy(bairro_norm))
         if fuzzy in fuzzy_key_map:
             key = fuzzy_key_map[fuzzy]
+        elif art_key in fuzzy_key_map:
+            key = fuzzy_key_map[art_key]
         else:
             fuzzy_key_map[fuzzy] = key
+            if art_key != fuzzy:
+                fuzzy_key_map[art_key] = key
         if key in merged:
             merged[key]['cnt'] += r.cnt
         else:
