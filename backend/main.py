@@ -1458,7 +1458,10 @@ def heatmap_states(request: Request,
     # Query 1: crimes table (detailed RS data)
     q1 = db.query(Crime.state, func.count().label("cnt")).filter(Crime.state.isnot(None))
     if effective_tipo: q1 = q1.filter(Crime.tipo_enquadramento.in_(effective_tipo))
-    if semestre: q1 = q1.filter(Crime.year_month.in_(semester_months(semestre)))
+    if ultimos_meses:
+        threshold_date, _, _ = _ultimos_meses_range(ultimos_meses)
+        q1 = q1.filter(Crime.data_fato >= threshold_date)
+    elif semestre: q1 = q1.filter(Crime.year_month.in_(semester_months(semestre)))
     elif ano: q1 = q1.filter(Crime.year_month.like(f"{ano}-%"))
     if idade_min is not None: q1 = q1.filter(Crime.idade_vitima >= idade_min)
     if idade_max is not None: q1 = q1.filter(Crime.idade_vitima <= idade_max)
@@ -1475,7 +1478,13 @@ def heatmap_states(request: Request,
          func.coalesce(func.sum(CrimeStaging.victims), 0)).label("cnt")
     ).filter(CrimeStaging.state.isnot(None), CrimeStaging.state.in_(detailed_states))
     if effective_tipo: q2 = q2.filter(CrimeStaging.crime_type.in_(effective_tipo))
-    if semestre:
+    if ultimos_meses:
+        _, thresh_year, thresh_month = _ultimos_meses_range(ultimos_meses)
+        q2 = q2.filter(
+            (CrimeStaging.year > thresh_year) |
+            ((CrimeStaging.year == thresh_year) & (CrimeStaging.month >= thresh_month))
+        )
+    elif semestre:
         year_str, sem = semestre.split('-')
         q2 = q2.filter(CrimeStaging.year == int(year_str))
         if sem == "S1": q2 = q2.filter(CrimeStaging.month.between(1, 6))
