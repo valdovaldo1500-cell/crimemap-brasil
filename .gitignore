@@ -5,3 +5,4 @@ __pycache__
 *.pyc
 backend/data
 .env
+test-results/
