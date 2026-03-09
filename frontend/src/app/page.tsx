@@ -247,7 +247,7 @@ export default function Home() {
 
   const onSelectYear = useCallback((yr: string) => {
     setSelectedYear(yr);
-    setSelectedPeriod('ano');
+    setSelectedPeriod(prev => prev === '12m' ? 'ano' : prev);
   }, []);
 
   const toggleType = (t:string) => setSelectedTypes(p=>p.includes(t)?p.filter(x=>x!==t):[...p,t]);
