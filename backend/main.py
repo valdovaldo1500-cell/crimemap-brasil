@@ -130,6 +130,11 @@ def _normalize_bairro_for_matching(bairro_norm: str, poly_names: set[str] | None
         without_vila = result[5:]
         if without_vila in poly_names and result not in poly_names:
             result = without_vila
+    # Conditionally strip "JARDIM " prefix: if "Jardim X" is not a polygon but "X" is
+    if poly_names and result.startswith('JARDIM '):
+        without_jardim = result[7:]
+        if without_jardim in poly_names and result not in poly_names:
+            result = without_jardim
     # If we have polygon names available, try prefix/suffix matching for abbreviated/truncated names
     if poly_names and result != bairro_norm:
         # Already found a match via prefix strip or abbreviation — pass
@@ -150,6 +155,11 @@ def _normalize_bairro_for_matching(bairro_norm: str, poly_names: set[str] | None
             rev_prefix = [pn for pn in poly_names if len(pn) >= 7 and result.startswith(pn + ' ')]
             if len(rev_prefix) == 1:
                 result = rev_prefix[0]
+        if result == bairro_norm and len(result) >= 6:
+            # Reverse-suffix: result ends with a polygon name (e.g. "SANTA CECILIA" → "CECILIA")
+            rev_suffix = [pn for pn in poly_names if len(pn) >= 4 and result.endswith(' ' + pn) and pn != result]
+            if len(rev_suffix) == 1:
+                result = rev_suffix[0]
     return result
 
 def _load_bairro_polygons():
