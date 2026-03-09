@@ -127,12 +127,12 @@ def _normalize_bairro_for_matching(bairro_norm: str, poly_names: set[str] | None
         result = _BAIRRO_ABBREVIATIONS[result]
     # Conditionally strip "VILA " prefix: if "Vila X" is not a polygon but "X" is
     if poly_names and result.startswith('VILA '):
-        without_vila = result[5:]
+        without_vila = result[5:].strip()
         if without_vila in poly_names and result not in poly_names:
             result = without_vila
     # Conditionally strip "JARDIM " prefix: if "Jardim X" is not a polygon but "X" is
     if poly_names and result.startswith('JARDIM '):
-        without_jardim = result[7:]
+        without_jardim = result[7:].strip()
         if without_jardim in poly_names and result not in poly_names:
             result = without_jardim
     # If we have polygon names available, try prefix/suffix matching for abbreviated/truncated names
