@@ -925,7 +925,7 @@ export default function Home() {
             </div>
           )}
           {/* Bottom-right utility links */}
-          <div className="absolute bottom-2 right-2 md:bottom-4 md:right-4 z-[1000] hidden md:flex items-center gap-3">
+          <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 z-[1000] hidden sm:flex items-center gap-3">
             <button onClick={openBugReport} className="text-[10px] text-[#64748b] hover:text-[#94a3b8] transition-colors">Reportar Bug</button>
             <button onClick={() => setShowHelp(true)} className="text-[10px] text-[#64748b] hover:text-[#94a3b8] transition-colors">Como usar</button>
             <button onClick={() => setShowChangelog(true)} className="text-[10px] text-[#64748b] hover:text-[#94a3b8] transition-colors">Novidades</button>
