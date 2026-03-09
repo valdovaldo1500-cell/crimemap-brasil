@@ -230,14 +230,17 @@ def shutdown():
     from services.scheduler import stop_scheduler
     stop_scheduler()
 
-def apply_filters(q, tipo=None, grupo=None, municipio=None, bairro=None, data_inicio=None, data_fim=None, ano=None, semestre=None, idade_min=None, idade_max=None, sexo=None, cor=None, state=None):
+def apply_filters(q, tipo=None, grupo=None, municipio=None, bairro=None, data_inicio=None, data_fim=None, ano=None, semestre=None, idade_min=None, idade_max=None, sexo=None, cor=None, state=None, ultimos_meses=None):
     if tipo: q = q.filter(Crime.tipo_enquadramento.in_(tipo))
     if grupo: q = q.filter(Crime.grupo_fato == grupo)
     if municipio: q = q.filter(Crime.municipio_fato.ilike(f"%{municipio}%"))
     if bairro: q = q.filter(Crime.bairro.ilike(f"%{bairro}%"))
     if data_inicio: q = q.filter(Crime.data_fato >= data_inicio)
     if data_fim: q = q.filter(Crime.data_fato <= data_fim)
-    if semestre:
+    if ultimos_meses:
+        threshold_date, _, _ = _ultimos_meses_range(ultimos_meses)
+        q = q.filter(Crime.data_fato >= threshold_date)
+    elif semestre:
         q = q.filter(Crime.year_month.in_(semester_months(semestre)))
     elif ano:
         q = q.filter(Crime.year_month.like(f"{ano}-%"))
