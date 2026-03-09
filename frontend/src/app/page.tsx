@@ -685,7 +685,7 @@ export default function Home() {
         {showFilters&&(
           /* Fix #13: role="region" and aria-label on sidebar */
           <aside
-            className="fixed inset-y-0 left-0 z-50 w-80 md:relative md:inset-auto md:z-0 md:w-80 border-r border-[#1e293b] bg-[#111827] overflow-y-auto p-4 space-y-4"
+            className="fixed inset-y-0 left-0 z-50 w-80 sm:relative sm:inset-auto sm:z-0 sm:w-80 border-r border-[#1e293b] bg-[#111827] overflow-y-auto p-4 space-y-4"
             role="region"
             aria-label="Filtros"
             onClick={e => e.stopPropagation()}
