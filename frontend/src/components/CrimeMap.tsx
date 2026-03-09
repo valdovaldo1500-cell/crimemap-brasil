@@ -192,6 +192,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
   const comparisonLocationsRef = useRef(comparisonLocations);
   useEffect(() => { comparisonLocationsRef.current = comparisonLocations; }, [comparisonLocations]);
   useEffect(() => { onCompareSelectRef.current = onCompareSelect; }, [onCompareSelect]);
+  useEffect(() => { onDetailOpenRef.current = onDetailOpen; }, [onDetailOpen]);
   useEffect(() => { filtersRef.current = filters; }, [filters]);
 
   useEffect(() => {
