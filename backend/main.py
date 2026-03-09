@@ -579,7 +579,7 @@ def heatmap_bairros(request: Request,
         # Check exact, fuzzy, enhanced exact, enhanced fuzzy
         matched_pn = None
         if bairro_norm in poly_names:
-            polygon_matched_keys.add(key)
+            matched_pn = bairro_norm
         elif enhanced in poly_names:
             matched_pn = enhanced
         elif normalize_fuzzy(bairro_norm) in {normalize_fuzzy(pn) for pn in poly_names}:
@@ -588,12 +588,13 @@ def heatmap_bairros(request: Request,
             matched_pn = next((pn for pn in poly_names if normalize_fuzzy(pn) == normalize_fuzzy(enhanced)), None)
         if matched_pn:
             polygon_matched_keys.add(key)
-            # Update display name to match polygon's actual name for frontend GeoJSON matching
-            if matched_pn != bairro_norm:
-                merged[key]['bairro'] = next(
-                    (p[1] for p in BAIRRO_POLYGON_INDEX.get(mun_norm, []) if p[0] == matched_pn),
-                    merged[key]['bairro']
-                )
+            # Always update display name to polygon's canonical name for frontend GeoJSON matching
+            canonical = next(
+                (p[1] for p in BAIRRO_POLYGON_INDEX.get(mun_norm, []) if p[0] == matched_pn),
+                None
+            )
+            if canonical and canonical != merged[key]['bairro']:
+                merged[key]['bairro'] = canonical
 
     # Build municipality centroid lookup for "unknown bairro" detection
     from services.geocoder import MAJOR_CITIES_RS, _haversine_km
