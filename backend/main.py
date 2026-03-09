@@ -123,6 +123,10 @@ _STREET_PREFIXES = re.compile(
     re.IGNORECASE
 )
 _HIGHWAY_PATTERN = re.compile(r'^(BR|RS|RJ|MG|SP|PR|SC|BA|GO|MT|MS|PE|CE|MA|PA|AM|PI|RN|PB|SE|AL|TO|RO|AC|AP|RR|ES|DF)-\d+', re.IGNORECASE)
+_KNOWN_STREET_NAMES = {
+    'PROTASIO ALVES', 'MARCILIO DIAS', 'CORONEL APARICIO BORGES',
+    'CORONEL APARICO BORGES', 'CAIS DO PORTO', '24 DE OUTUBRO',
+}
 
 def _is_street_or_place(name: str) -> bool:
     """Detect if a bairro name is actually a street, road, or place name."""
@@ -133,7 +137,8 @@ def _is_street_or_place(name: str) -> bool:
         return True
     if _HIGHWAY_PATTERN.match(n):
         return True
-    # Numeric-only names (e.g., "24 DE OUTUBRO") or names starting with numbers
+    if n in _KNOWN_STREET_NAMES:
+        return True
     if re.match(r'^\d+', n):
         return True
     return False
