@@ -55,7 +55,7 @@ _BAIRRO_ABBREVIATIONS = {
     "EST VELHA": "ESTANCIA VELHA",
     "NSA SRA DAS GRACAS": "NOSSA SENHORA DAS GRACAS",
     "NS DAS GRACAS": "NOSSA SENHORA DAS GRACAS",
-    "BOM FIM": "BONFIM",       # Santa Maria: "Bom Fim" → polygon "Bonfim"
+    "M DEUS": "MENINO DEUS",   # Porto Alegre: "M Deus" → polygon "Menino Deus"
     "LURDES": "LOURDES",       # Caxias do Sul: typo normalization
 }
 
