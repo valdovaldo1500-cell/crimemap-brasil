@@ -399,12 +399,32 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
         `<table style="margin-top:4px;border-top:1px solid #334155;padding-top:3px">${breakdownRows}</table>`;
     }
     l.bindTooltip(tip, { sticky: true });
-    l.on('click', () => {
+    l.on('click', async () => {
       if (compareModeRef.current && onCompareSelectRef.current) {
         onCompareSelectRef.current({ municipio: '', state: sigla, displayName: `${stateName} (${sigla})` });
         return;
       }
       if (onToggleState) onToggleState(sigla);
+      // Open DetailPanel with state stats
+      if (onDetailOpenRef.current) {
+        const displayName2 = `${stateName} (${sigla})`;
+        onDetailOpenRef.current({ displayName: displayName2, municipio: '', state: sigla, total: weight, population, isUnknown: false });
+        try {
+          const f = filtersRef.current;
+          const stats = await fetchStateStats({
+            state: sigla, semestre: f.semestre, ano: f.ano, tipo: f.tipo,
+            grupo: f.grupo, sexo: f.sexo, cor: f.cor,
+            idade_min: f.idade_min, idade_max: f.idade_max,
+            selected_states: selectedStatesRef.current,
+          });
+          onDetailOpenRef.current({ displayName: displayName2, municipio: '', state: sigla,
+            total: stats.total ?? weight, population: stats.population ?? population, isUnknown: false,
+            ...(stats.crime_types ? { crime_types: stats.crime_types.map((ct: any) => ({ tipo: ct.tipo_enquadramento || ct.tipo, count: ct.count })) } : {}),
+          } as any);
+        } catch (err) {
+          console.error('Failed to load state stats:', err);
+        }
+      }
     });
   };
 
