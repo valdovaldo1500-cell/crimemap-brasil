@@ -935,31 +935,55 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
       // Re-open pending popup after reload cleared old layers
       if (pendingPopupRef.current && mapRef.current) {
         const pp = pendingPopupRef.current;
-        const loadingHtml = '<div style="display:flex;align-items:center;gap:8px;padding:4px 0">' +
-          '<div style="width:16px;height:16px;border:2px solid #3b82f6;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite"></div>' +
-          '<span style="color:#94a3b8;font-size:13px">Carregando...</span></div>' +
-          '<style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
-        const popup = L.popup({ closeOnClick: true }).setLatLng(pp.latlng).setContent(loadingHtml).openOn(mapRef.current);
-        popupOpenRef.current = true;
-        popup.on('remove', () => { popupOpenRef.current = false; });
-        (async () => {
-          try {
-            const f = filtersRef.current;
-            const stats = await fetchLocationStats({
-              municipio: pp.municipio, bairro: pp.bairro,
-              semestre: f.semestre, ano: f.ano, tipo: f.tipo,
-              grupo: f.grupo, sexo: f.sexo, cor: f.cor,
-              idade_min: f.idade_min, idade_max: f.idade_max,
-            });
-            popup.setContent(buildBreakdownPopup(pp.displayName, stats, rateModeRef.current === 'rate'));
-          } catch {
-            popup.setContent(
-              `<div class="popup-title">${pp.displayName}</div>` +
-              `<div class="popup-detail">Erro ao carregar detalhes</div>`
-            );
-          }
-          pendingPopupRef.current = null;
-        })();
+        if (onDetailOpenRef.current) {
+          // Use DetailPanel — show loading state then fetch
+          onDetailOpenRef.current({ displayName: pp.displayName, municipio: pp.municipio, bairro: pp.bairro, total: 0, isUnknown: false });
+          (async () => {
+            try {
+              const f = filtersRef.current;
+              const stats = await fetchLocationStats({
+                municipio: pp.municipio, bairro: pp.bairro,
+                semestre: f.semestre, ano: f.ano, tipo: f.tipo,
+                grupo: f.grupo, sexo: f.sexo, cor: f.cor,
+                idade_min: f.idade_min, idade_max: f.idade_max,
+              });
+              onDetailOpenRef.current!({ displayName: pp.displayName, municipio: pp.municipio, bairro: pp.bairro,
+                total: stats.total ?? 0, population: stats.population,
+                isUnknown: false,
+                ...(stats.crime_types ? { crime_types: stats.crime_types.map((ct: any) => ({ tipo: ct.tipo_enquadramento || ct.tipo, count: ct.count })) } : {}),
+              } as any);
+            } catch {
+              // leave panel open with zero data
+            }
+            pendingPopupRef.current = null;
+          })();
+        } else {
+          const loadingHtml = '<div style="display:flex;align-items:center;gap:8px;padding:4px 0">' +
+            '<div style="width:16px;height:16px;border:2px solid #3b82f6;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite"></div>' +
+            '<span style="color:#94a3b8;font-size:13px">Carregando...</span></div>' +
+            '<style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
+          const popup = L.popup({ closeOnClick: true }).setLatLng(pp.latlng).setContent(loadingHtml).openOn(mapRef.current);
+          popupOpenRef.current = true;
+          popup.on('remove', () => { popupOpenRef.current = false; });
+          (async () => {
+            try {
+              const f = filtersRef.current;
+              const stats = await fetchLocationStats({
+                municipio: pp.municipio, bairro: pp.bairro,
+                semestre: f.semestre, ano: f.ano, tipo: f.tipo,
+                grupo: f.grupo, sexo: f.sexo, cor: f.cor,
+                idade_min: f.idade_min, idade_max: f.idade_max,
+              });
+              popup.setContent(buildBreakdownPopup(pp.displayName, stats, rateModeRef.current === 'rate'));
+            } catch {
+              popup.setContent(
+                `<div class="popup-title">${pp.displayName}</div>` +
+                `<div class="popup-detail">Erro ao carregar detalhes</div>`
+              );
+            }
+            pendingPopupRef.current = null;
+          })();
+        }
       }
       // Keep Brazil outline behind data layers
       if (brazilOutlineRef.current) brazilOutlineRef.current.bringToBack();
