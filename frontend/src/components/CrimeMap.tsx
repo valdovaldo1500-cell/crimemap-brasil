@@ -311,6 +311,29 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
         onCompareSelectRef.current({ municipio, bairro, state, displayName });
         return;
       }
+      // Use DetailPanel when available
+      if (onDetailOpenRef.current) {
+        const isUnknown = bairro === 'Bairro desconhecido';
+        onDetailOpenRef.current({ displayName, municipio, bairro, state, total: count, population, components, isUnknown });
+        if (isUnknown) return; // no stats fetch for unknown bairros
+        try {
+          const f = filtersRef.current;
+          const stats = await fetchLocationStats({
+            municipio, bairro, state,
+            semestre: f.semestre, ano: f.ano, tipo: f.tipo,
+            grupo: f.grupo, sexo: f.sexo, cor: f.cor,
+            idade_min: f.idade_min, idade_max: f.idade_max,
+          });
+          onDetailOpenRef.current({ displayName, municipio, bairro, state, total: stats.total ?? count, population: stats.population ?? population, components,
+            isUnknown: false,
+            // pass crime_types via the callback — page.tsx will merge
+            ...(stats.crime_types ? { crime_types: stats.crime_types.map((ct: any) => ({ tipo: ct.tipo_enquadramento || ct.tipo, count: ct.count })) } : {}),
+          } as any);
+        } catch (err) {
+          console.error('Failed to load location stats:', err);
+        }
+        return;
+      }
       popupOpenRef.current = true;
       if (bairro === 'Bairro desconhecido' && components) {
         const rows = components.map(c =>
