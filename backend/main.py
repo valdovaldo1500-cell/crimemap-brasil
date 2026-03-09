@@ -812,6 +812,7 @@ def filter_options(request: Request,
     grupo: Optional[str] = None,
     semestre: Optional[str] = None,
     ano: Optional[str] = None,
+    ultimos_meses: Optional[int] = None,
     idade_min: Optional[int] = None,
     idade_max: Optional[int] = None,
     sexo: Optional[List[str]] = Query(None),
@@ -823,7 +824,7 @@ def filter_options(request: Request,
     validate_age_filters(idade_min, idade_max)
 
     # Check response cache
-    cache_key = f"filter_options:{tipo}:{grupo}:{semestre}:{ano}:{idade_min}:{idade_max}:{sexo}:{cor}:{selected_states}"
+    cache_key = f"filter_options:{tipo}:{grupo}:{semestre}:{ano}:{ultimos_meses}:{idade_min}:{idade_max}:{sexo}:{cor}:{selected_states}"
     cached = _cache_get(cache_key)
     if cached is not None:
         return cached
@@ -836,7 +837,10 @@ def filter_options(request: Request,
             q = q.filter(Crime.tipo_enquadramento.in_(tipo))
         if skip != 'grupo' and grupo:
             q = q.filter(Crime.grupo_fato == grupo)
-        if semestre:
+        if ultimos_meses:
+            threshold_date, _, _ = _ultimos_meses_range(ultimos_meses)
+            q = q.filter(Crime.data_fato >= threshold_date)
+        elif semestre:
             q = q.filter(Crime.year_month.in_(semester_months(semestre)))
         elif ano:
             q = q.filter(Crime.year_month.like(f"{ano}-%"))
