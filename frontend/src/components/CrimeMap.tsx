@@ -142,7 +142,7 @@ function initialPopupHtml(displayName: string, weight: number, population: numbe
   );
 }
 
-export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rateMode = 'rate', aggregationOverride = 'auto', selectedStates = [], onToggleState, activeFilter, maxGranularity = 'monthly', availableStates = [], compareMode = false, comparisonLocations = [], onCompareSelect }: Props) {
+export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rateMode = 'rate', aggregationOverride = 'auto', selectedStates = [], onToggleState, activeFilter, maxGranularity = 'monthly', availableStates = [], compareMode = false, comparisonLocations = [], onCompareSelect, onDetailOpen }: Props) {
   const mapRef = useRef<L.Map|null>(null);
   const markersRef = useRef<L.LayerGroup|null>(null);
   const geoJsonRef = useRef<L.GeoJSON|null>(null);
