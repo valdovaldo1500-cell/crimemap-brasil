@@ -215,6 +215,19 @@ def _normalize_bairro_for_matching(bairro_norm: str, poly_names: set[str] | None
                         lw_matches = [pn for pn in poly_names if pn.endswith(' ' + suffix_part) and pn != try_name]
                         if len(lw_matches) == 1:
                             result = lw_matches[0]
+        if result not in poly_names:
+            # Phonetic normalization: Brazilian Portuguese Z↔S interchangeable spelling
+            # (Formoza/Formosa, Tereza/Teresa, Rezende/Resende)
+            # Also tries prefix match for phonetically-corrected names against compound polygons
+            # e.g. "FORMOZA" → phonetic "FORMOSA" → prefix of "FORMOSA / MARIA REGINA"
+            ph_result = _phonetic_br(result)
+            if ph_result != result:
+                if ph_result in poly_names:
+                    result = ph_result
+                elif len(ph_result) >= 6:
+                    ph_prefix = [pn for pn in poly_names if pn.startswith(ph_result) and pn != ph_result]
+                    if len(ph_prefix) == 1:
+                        result = ph_prefix[0]
     return result
 
 def _load_bairro_polygons():
