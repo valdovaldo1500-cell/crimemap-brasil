@@ -16,6 +16,7 @@ interface Props {
   compareMode?: boolean;
   comparisonLocations?: { municipio: string; bairro?: string; state?: string; displayName: string }[];
   onCompareSelect?: (location: { municipio: string; bairro?: string; state?: string; displayName: string }) => void;
+  onDetailOpen?: (data: { displayName: string; municipio: string; bairro?: string; state?: string; total: number; population?: number | null; components?: { bairro: string; weight: number }[]; isUnknown?: boolean }) => void;
 }
 
 // States that have their own municipality GeoJSON files
