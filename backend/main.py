@@ -551,8 +551,17 @@ def heatmap_bairros(request: Request,
         "PORTO ALEGRE": {"CENTRO": "CENTRO HISTORICO"},
     }
     polygon_names_by_mun: dict[str, set[str]] = {}
+    # Also map parts of compound polygon names (e.g. "Americana / Sumaré" → {"AMERICANA", "SUMARE"})
+    polygon_compound_map: dict[tuple[str, str], str] = {}  # (mun, part_norm) → full_norm
     for mun, polys in BAIRRO_POLYGON_INDEX.items():
-        polygon_names_by_mun[mun] = {p[0] for p in polys}
+        names: set[str] = {p[0] for p in polys}
+        for p in polys:
+            if ' / ' in p[0]:
+                for part in p[0].split(' / '):
+                    part_norm = normalize_name(part)
+                    names.add(part_norm)
+                    polygon_compound_map[(mun, part_norm)] = p[0]
+        polygon_names_by_mun[mun] = names
     merged: dict[tuple[str, str], dict] = {}
     fuzzy_key_map: dict[tuple[str, str], tuple[str, str]] = {}
     for r in rows:
