@@ -178,7 +178,8 @@ export default function Home() {
       const params: any = {};
       if (selectedTypes.length) params.tipo = selectedTypes;
       if (selectedGrupo.length) params.grupo = selectedGrupo[0];
-      if (selectedPeriod !== 'ano') params.semestre = `${selectedYear}-${selectedPeriod}`;
+      if (selectedPeriod === '12m') params.ultimos_meses = 12;
+      else if (selectedPeriod !== 'ano') params.semestre = `${selectedYear}-${selectedPeriod}`;
       else if (selectedYear) params.ano = selectedYear;
       if (selectedSexo.length) params.sexo = selectedSexo;
       if (selectedCor.length) params.cor = selectedCor;
