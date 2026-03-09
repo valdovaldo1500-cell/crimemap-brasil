@@ -138,8 +138,8 @@ def _normalize_bairro_for_matching(bairro_norm: str, poly_names: set[str] | None
                 result = stripped
                 break
     # If we have polygon names available, try prefix/suffix matching for abbreviated/truncated names
-    if poly_names and result != bairro_norm:
-        # Already found a match via prefix strip or abbreviation — pass
+    if poly_names and result != bairro_norm and result in poly_names:
+        # Transformation already found a valid polygon match — stop here
         pass
     elif poly_names and result not in poly_names:
         if len(result) >= 6:
