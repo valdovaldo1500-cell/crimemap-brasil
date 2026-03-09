@@ -303,8 +303,10 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
     const l = layer as any;
     const isRate = rateModeRef.current === 'rate';
     l.bindTooltip(tooltipText(displayName, count, population, isRate, compareModeRef.current ? 'Clique para comparar' : undefined), { sticky: true });
-    l.bindPopup(initialPopupHtml(displayName, count, population, isRate));
-    trackPopup(l);
+    if (!onDetailOpenRef.current) {
+      l.bindPopup(initialPopupHtml(displayName, count, population, isRate));
+      trackPopup(l);
+    }
     l.on('click', async () => {
       // In compare mode, intercept click to select location for comparison
       if (compareModeRef.current && onCompareSelectRef.current) {
