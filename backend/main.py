@@ -650,9 +650,10 @@ def heatmap_bairros(request: Request,
         mun_norm, bairro_norm = key
         poly_names = polygon_names_by_mun.get(mun_norm, set())
         enhanced = _normalize_bairro_for_matching(bairro_norm, poly_names)
-        # Check exact, fuzzy, enhanced exact, enhanced fuzzy, article-stripped fuzzy
+        # Check exact, fuzzy, enhanced, article-stripped, phonetic
         poly_fuzzy_map = {normalize_fuzzy(pn): pn for pn in poly_names}
         poly_art_fuzzy_map = {normalize_fuzzy(_strip_articles(pn)): pn for pn in poly_names}
+        poly_phonetic_map = {_phonetic_br(normalize_fuzzy(pn)): pn for pn in poly_names}
         matched_pn = None
         if bairro_norm in poly_names:
             matched_pn = bairro_norm
@@ -666,6 +667,13 @@ def heatmap_bairros(request: Request,
             matched_pn = poly_art_fuzzy_map[normalize_fuzzy(_strip_articles(bairro_norm))]
         elif normalize_fuzzy(_strip_articles(enhanced)) in poly_art_fuzzy_map:
             matched_pn = poly_art_fuzzy_map[normalize_fuzzy(_strip_articles(enhanced))]
+        elif _phonetic_br(normalize_fuzzy(bairro_norm)) in poly_phonetic_map:
+            matched_pn = poly_phonetic_map[_phonetic_br(normalize_fuzzy(bairro_norm))]
+        elif _phonetic_br(normalize_fuzzy(enhanced)) in poly_phonetic_map:
+            matched_pn = poly_phonetic_map[_phonetic_br(normalize_fuzzy(enhanced))]
+        # If matched via compound polygon part, remap to the full polygon name
+        if matched_pn and (mun_norm, matched_pn) in polygon_compound_map:
+            matched_pn = polygon_compound_map[(mun_norm, matched_pn)]
         if matched_pn:
             polygon_matched_keys.add(key)
             # Always update display name to polygon's canonical name for frontend GeoJSON matching
