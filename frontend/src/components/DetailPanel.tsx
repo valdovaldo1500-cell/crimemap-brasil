@@ -1,0 +1,186 @@
+'use client';
+import { useState, useRef, useCallback, useEffect } from 'react';
+
+interface DetailPanelProps {
+  data: {
+    displayName: string;
+    total: number;
+    population?: number | null;
+    crime_types?: { tipo: string; count: number }[];
+    components?: { bairro: string; weight: number }[];
+    isUnknown?: boolean;
+  } | null;
+  onClose: () => void;
+}
+
+export default function DetailPanel({ data, onClose }: DetailPanelProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const [size, setSize] = useState({ w: 320, h: 0 }); // h=0 means auto
+  const [dragging, setDragging] = useState(false);
+  const [resizing, setResizing] = useState(false);
+  const dragStart = useRef({ x: 0, y: 0, px: 0, py: 0 });
+  const resizeStart = useRef({ x: 0, y: 0, w: 0, h: 0 });
+  const initialized = useRef(false);
+
+  // Center panel on first show
+  useEffect(() => {
+    if (data && !initialized.current) {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      // Position: right side on desktop, center-bottom on mobile
+      const isMobile = vw < 640;
+      setPos({
+        x: isMobile ? Math.max(8, (vw - 300) / 2) : vw - 340,
+        y: isMobile ? vh - 350 : 100,
+      });
+      setSize({ w: isMobile ? Math.min(300, vw - 16) : 320, h: 0 });
+      initialized.current = true;
+    }
+    if (!data) initialized.current = false;
+  }, [data]);
+
+  // Drag handlers (mouse + touch)
+  const onDragStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    dragStart.current = { x: clientX, y: clientY, px: pos.x, py: pos.y };
+    setDragging(true);
+  }, [pos]);
+
+  // Resize handlers
+  const onResizeStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    const rect = panelRef.current?.getBoundingClientRect();
+    resizeStart.current = { x: clientX, y: clientY, w: rect?.width || 320, h: rect?.height || 200 };
+    setResizing(true);
+  }, []);
+
+  useEffect(() => {
+    if (!dragging && !resizing) return;
+    const onMove = (e: MouseEvent | TouchEvent) => {
+      const clientX = 'touches' in e ? (e as TouchEvent).touches[0].clientX : (e as MouseEvent).clientX;
+      const clientY = 'touches' in e ? (e as TouchEvent).touches[0].clientY : (e as MouseEvent).clientY;
+      if (dragging) {
+        setPos({
+          x: dragStart.current.px + (clientX - dragStart.current.x),
+          y: dragStart.current.py + (clientY - dragStart.current.y),
+        });
+      } else if (resizing) {
+        const newW = Math.max(220, resizeStart.current.w + (clientX - resizeStart.current.x));
+        const newH = Math.max(100, resizeStart.current.h + (clientY - resizeStart.current.y));
+        setSize({ w: newW, h: newH });
+      }
+    };
+    const onEnd = () => { setDragging(false); setResizing(false); };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onEnd);
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', onEnd);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onEnd);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onEnd);
+    };
+  }, [dragging, resizing]);
+
+  if (!data) return null;
+
+  const rate = data.population ? ((data.total / data.population) * 100000).toFixed(1) : null;
+
+  return (
+    <div
+      ref={panelRef}
+      className="fixed z-[2000] bg-[#111827] border border-[#1e293b] rounded-xl shadow-2xl overflow-hidden"
+      style={{
+        left: pos.x,
+        top: pos.y,
+        width: size.w,
+        ...(size.h > 0 ? { height: size.h } : {}),
+        maxHeight: '80vh',
+      }}
+    >
+      {/* Drag handle / title bar */}
+      <div
+        className="flex items-center justify-between px-3 py-2 bg-[#1a2234] cursor-move select-none border-b border-[#1e293b]"
+        onMouseDown={onDragStart}
+        onTouchStart={onDragStart}
+      >
+        <span className="text-sm font-semibold text-[#f1f5f9] truncate mr-2">{data.displayName}</span>
+        <button
+          onClick={onClose}
+          className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[#374151] text-[#94a3b8] hover:text-white transition-colors"
+          aria-label="Fechar painel"
+        >
+          &#x2715;
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="p-3 overflow-y-auto" style={{ maxHeight: size.h > 0 ? size.h - 40 : 'calc(80vh - 40px)' }}>
+        <div className="flex items-baseline gap-3 mb-2">
+          <span className="text-lg font-bold font-mono text-[#f1f5f9]">{data.total.toLocaleString()}</span>
+          <span className="text-xs text-[#94a3b8]">ocorrências</span>
+        </div>
+        {rate && (
+          <div className="text-xs text-[#94a3b8] mb-3">
+            <span className="font-mono text-[#f1f5f9]">{rate}</span> /100K hab.
+            {data.population && <span className="ml-2 text-[#64748b]">(pop: {data.population.toLocaleString()})</span>}
+          </div>
+        )}
+
+        {/* Unknown bairro components */}
+        {data.isUnknown && data.components && data.components.length > 0 && (
+          <div className="mb-3">
+            <div className="text-[10px] text-[#94a3b8] uppercase tracking-wider mb-1">
+              Bairros com poucas ocorrências ou localização imprecisa:
+            </div>
+            <div className="space-y-0.5 max-h-40 overflow-y-auto">
+              {data.components.map((c, i) => (
+                <div key={i} className="flex justify-between text-xs">
+                  <span className="text-[#cbd5e1] truncate">{c.bairro}</span>
+                  <span className="font-mono text-[#94a3b8] ml-2">{c.weight.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Crime type breakdown */}
+        {data.crime_types && data.crime_types.length > 0 && (
+          <div>
+            <div className="text-[10px] text-[#94a3b8] uppercase tracking-wider mb-1">
+              Tipos de crime
+            </div>
+            <div className="space-y-0.5">
+              {data.crime_types.map((ct, i) => (
+                <div key={i} className="flex justify-between text-xs">
+                  <span className="text-[#cbd5e1] truncate">{ct.tipo}</span>
+                  <span className="font-mono text-[#94a3b8] ml-2">{ct.count.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Resize handle */}
+      <div
+        className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
+        onMouseDown={onResizeStart}
+        onTouchStart={onResizeStart}
+      >
+        <svg className="w-3 h-3 text-[#475569] ml-1 mt-1" viewBox="0 0 6 6">
+          <circle cx="5" cy="1" r="0.7" fill="currentColor" />
+          <circle cx="5" cy="5" r="0.7" fill="currentColor" />
+          <circle cx="1" cy="5" r="0.7" fill="currentColor" />
+        </svg>
+      </div>
+    </div>
+  );
+}
