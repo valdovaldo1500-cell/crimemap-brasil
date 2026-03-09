@@ -142,8 +142,9 @@ def _normalize_bairro_for_matching(bairro_norm: str, poly_names: set[str] | None
         # Already found a match via prefix strip or abbreviation — pass
         pass
     elif poly_names and result not in poly_names:
-        if len(result) >= 7:
-            # Try prefix match (e.g. "NOSSA SENHORA DAS GR" → "NOSSA SENHORA DAS GRACAS", "FAXINAL" → "FAXINAL MENINO DEUS")
+        if len(result) >= 6:
+            # Try prefix match: bairro name is a prefix of a unique polygon
+            # e.g. "CENTRO" → "CENTRO HISTORICO", "FAXINAL" → "FAXINAL MENINO DEUS"
             prefix_matches = [pn for pn in poly_names if pn.startswith(result) and pn != result]
             if len(prefix_matches) == 1:
                 result = prefix_matches[0]
@@ -163,6 +164,13 @@ def _normalize_bairro_for_matching(bairro_norm: str, poly_names: set[str] | None
             rev_suffix = [pn for pn in poly_names if len(pn) >= 4 and result.endswith(' ' + pn) and pn != result]
             if len(rev_suffix) == 1:
                 result = rev_suffix[0]
+        if result == bairro_norm:
+            # Last resort: article-stripped comparison — matches bairros differing only in
+            # Portuguese articles (do/da/dos/das/de): "LOMBA PINHEIRO" = "LOMBA DO PINHEIRO"
+            result_stripped = _strip_articles(result)
+            art_matches = [pn for pn in poly_names if _strip_articles(pn) == result_stripped and pn != result]
+            if len(art_matches) == 1:
+                result = art_matches[0]
     return result
 
 def _load_bairro_polygons():
