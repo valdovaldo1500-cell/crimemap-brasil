@@ -3,7 +3,7 @@ node_modules
 __pycache__
 *.db
 *.pyc
-backend/data
+backend/data/*
 !backend/data/population.json
 !backend/data/mun_name_to_code.json
 !backend/data/mun_centroids.json
