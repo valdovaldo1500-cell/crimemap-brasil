@@ -121,15 +121,20 @@ def _normalize_bairro_for_matching(bairro_norm: str, poly_names: set[str] | None
     # Check abbreviation map
     if result in _BAIRRO_ABBREVIATIONS:
         result = _BAIRRO_ABBREVIATIONS[result]
-    # If we have polygon names available, try prefix matching for truncated names
+    # If we have polygon names available, try prefix/suffix matching for abbreviated/truncated names
     if poly_names and result != bairro_norm:
         # Already found a match via prefix strip or abbreviation — pass
         pass
     elif poly_names and len(result) >= 8:
-        # Try prefix match for truncated names (e.g. "NOSSA SENHORA DAS GR" → "NOSSA SENHORA DAS GRACAS")
+        # Try prefix match (e.g. "NOSSA SENHORA DAS GR" → "NOSSA SENHORA DAS GRACAS")
         prefix_matches = [pn for pn in poly_names if pn.startswith(result) and pn != result]
         if len(prefix_matches) == 1:
             result = prefix_matches[0]
+        elif len(result) >= 9:
+            # Try word-suffix match (e.g. "MEDIANEIRA" → "NOSSA SENHORA MEDIANEIRA")
+            suffix_matches = [pn for pn in poly_names if pn.endswith(' ' + result) and pn != result]
+            if len(suffix_matches) == 1:
+                result = suffix_matches[0]
     return result
 
 def _load_bairro_polygons():
