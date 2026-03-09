@@ -994,7 +994,7 @@ def filter_options(request: Request,
         cor_opts = []
 
     states = selected_states or []
-    if states:
+    if len(states) >= 2 and any(s not in ('RS', 'SP') for s in states):
         from services.crime_categories import get_compatible_types
         compatible = get_compatible_types(states)
         if compatible:
