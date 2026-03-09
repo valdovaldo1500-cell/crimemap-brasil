@@ -33,7 +33,19 @@ def _load():
         log.warning(f"Population data not found at {_DATA_PATH}")
         _population_data = {}
 
-    # Build name -> IBGE code map from ALL *-municipios.geojson files
+    # Build name -> IBGE code map
+    # Primary: load from static JSON file (Docker-safe, no GeoJSON needed)
+    static_json_path = os.path.join(os.path.dirname(__file__), "..", "data", "mun_name_to_code.json")
+    if os.path.exists(static_json_path):
+        try:
+            with open(static_json_path, encoding='utf-8') as f:
+                _mun_name_to_code = json.load(f)
+            log.info(f"Loaded {len(_mun_name_to_code)} municipality name→code mappings from mun_name_to_code.json")
+            return  # Skip GeoJSON loading
+        except Exception as e:
+            log.warning(f"Failed to load mun_name_to_code.json: {e}")
+
+    # Fallback: build from GeoJSON files
     import glob
     geo_dirs = [
         os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "public", "geo"),
