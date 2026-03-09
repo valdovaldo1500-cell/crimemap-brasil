@@ -690,7 +690,7 @@ export default function Home() {
             aria-label="Filtros"
             onClick={e => e.stopPropagation()}
           >
-          <div className="flex justify-between items-center md:hidden mb-3">
+          <div className="flex justify-between items-center sm:hidden mb-3">
             <h2 className="text-base font-bold">Filtros</h2>
             {/* Fix #12: min touch target on close button */}
             <button onClick={() => setShowFilters(false)} className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-[#1a2234] border border-[#1e293b] text-[#94a3b8] text-sm" aria-label="Fechar filtros">✕</button>
