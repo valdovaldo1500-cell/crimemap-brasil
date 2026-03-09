@@ -558,7 +558,10 @@ def heatmap_bairros(request: Request,
         cache = {(normalize_name(c.municipio), normalize_name(c.bairro)): (c.latitude, c.longitude) for c in cache_rows}
     # Merge rows by normalized bairro name + fuzzy (no hardcoded aliases)
     BAIRRO_ALIASES = {
-        "PORTO ALEGRE": {"CENTRO": "CENTRO HISTORICO"},
+        "PORTO ALEGRE": {
+            "CENTRO": "CENTRO HISTORICO",
+            "JARDIM DONA LEOPOLDINA": "JARDIM LEOPOLDINA",
+        },
         "CAXIAS DO SUL": {
             "LOURDES": "NOSSA SENHORA DE LOURDES",
             "LURDES": "NOSSA SENHORA DE LOURDES",
