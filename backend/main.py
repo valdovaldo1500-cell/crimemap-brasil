@@ -55,6 +55,8 @@ _BAIRRO_ABBREVIATIONS = {
     "EST VELHA": "ESTANCIA VELHA",
     "NSA SRA DAS GRACAS": "NOSSA SENHORA DAS GRACAS",
     "NS DAS GRACAS": "NOSSA SENHORA DAS GRACAS",
+    "BOM FIM": "BONFIM",       # Santa Maria: "Bom Fim" → polygon "Bonfim"
+    "LURDES": "LOURDES",       # Caxias do Sul: typo normalization
 }
 
 _BAIRRO_TYPE_PREFIXES = re.compile(
@@ -64,6 +66,7 @@ _BAIRRO_TYPE_PREFIXES = re.compile(
 # Abbreviation prefixes that expand to full words (applied left-to-right before matching)
 _BAIRRO_PREFIX_EXPANSIONS = [
     (re.compile(r'^NSA?\s+SRA?\.?\s+', re.IGNORECASE), 'NOSSA SENHORA '),
+    (re.compile(r'^NOSSA\s+SRA?\.?\s+', re.IGNORECASE), 'NOSSA SENHORA '),
     (re.compile(r'^VL\s+', re.IGNORECASE), 'VILA '),
     (re.compile(r'^STA\s+', re.IGNORECASE), 'SANTA '),
     (re.compile(r'^STO\s+', re.IGNORECASE), 'SANTO '),
@@ -77,6 +80,12 @@ _PT_ARTICLES = re.compile(r'\b(DO|DA|DOS|DAS|DE|D)\b\s*', re.IGNORECASE)
 def _strip_articles(s: str) -> str:
     """Strip Portuguese articles/prepositions for fuzzy comparison."""
     return re.sub(r'\s+', ' ', _PT_ARTICLES.sub('', s)).strip()
+
+def _phonetic_br(s: str) -> str:
+    """Brazilian Portuguese phonetic normalization: Z→S at word boundaries.
+    Handles common spelling variants like Luiz/Luís, Teresa/Tereza.
+    """
+    return re.sub(r'Z\b', 'S', s)
 
 # Names that are clearly not real bairros (noise data)
 _INVALID_BAIRRO_NAMES = {'-', '--', '---', 'INTERIOR', 'RURAL', 'ZONA RURAL', 'N/A', 'NAO INFORMADO',
