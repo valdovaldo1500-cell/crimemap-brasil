@@ -155,23 +155,23 @@ def _normalize_bairro_for_matching(bairro_norm: str, poly_names: set[str] | None
             prefix_matches = [pn for pn in poly_names if pn.startswith(result) and pn != result]
             if len(prefix_matches) == 1:
                 result = prefix_matches[0]
-        if result == bairro_norm and len(result) >= 5:
+        if result not in poly_names and len(result) >= 5:
             # Try word-suffix match (e.g. "PENHA" → "NOSSA SENHORA DA PENHA", "MEDIANEIRA" → "NOSSA SENHORA MEDIANEIRA")
             suffix_matches = [pn for pn in poly_names if pn.endswith(' ' + result) and pn != result]
             if len(suffix_matches) == 1:
                 result = suffix_matches[0]
-        if result == bairro_norm and len(result) >= 10:
+        if result not in poly_names and len(result) >= 10:
             # Reverse-prefix: bairro name starts with polygon name + space
             # e.g. "JARDIM ITU SABARA" → "JARDIM ITU"; "RINCAO DOS ILHEUS" → "RINCAO"
             rev_prefix = [pn for pn in poly_names if len(pn) >= 6 and result.startswith(pn + ' ')]
             if len(rev_prefix) == 1:
                 result = rev_prefix[0]
-        if result == bairro_norm and len(result) >= 6:
+        if result not in poly_names and len(result) >= 6:
             # Reverse-suffix: result ends with a polygon name (e.g. "SANTA CECILIA" → "CECILIA")
             rev_suffix = [pn for pn in poly_names if len(pn) >= 4 and result.endswith(' ' + pn) and pn != result]
             if len(rev_suffix) == 1:
                 result = rev_suffix[0]
-        if result == bairro_norm:
+        if result not in poly_names:
             # Last resort: article-stripped comparison — matches bairros differing only in
             # Portuguese articles (do/da/dos/das/de): "LOMBA PINHEIRO" = "LOMBA DO PINHEIRO"
             result_stripped = _strip_articles(result)
