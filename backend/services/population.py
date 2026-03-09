@@ -7,7 +7,7 @@ import json, os, unicodedata, logging
 
 log = logging.getLogger(__name__)
 
-_DATA_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "population.json")
+_DATA_PATH = os.path.join(os.path.dirname(__file__), "..", "lookup", "population.json")
 
 # Loaded data
 _population_data: dict = {}
