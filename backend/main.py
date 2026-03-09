@@ -427,7 +427,10 @@ def heatmap_bairros(request: Request,
     if grupo: q = q.filter(Crime.grupo_fato == grupo)
     if data_inicio: q = q.filter(Crime.data_fato >= data_inicio)
     if data_fim: q = q.filter(Crime.data_fato <= data_fim)
-    if semestre: q = q.filter(Crime.year_month.in_(semester_months(semestre)))
+    if ultimos_meses:
+        threshold_date, _, _ = _ultimos_meses_range(ultimos_meses)
+        q = q.filter(Crime.data_fato >= threshold_date)
+    elif semestre: q = q.filter(Crime.year_month.in_(semester_months(semestre)))
     elif ano: q = q.filter(Crime.year_month.like(f"{ano}-%"))
     if idade_min is not None: q = q.filter(Crime.idade_vitima >= idade_min)
     if idade_max is not None: q = q.filter(Crime.idade_vitima <= idade_max)
