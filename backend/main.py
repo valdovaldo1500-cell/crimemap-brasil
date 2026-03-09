@@ -56,9 +56,8 @@ _BAIRRO_ABBREVIATIONS = {
     "NSA SRA DAS GRACAS": "NOSSA SENHORA DAS GRACAS",
     "NS DAS GRACAS": "NOSSA SENHORA DAS GRACAS",
     "M DEUS": "MENINO DEUS",      # Porto Alegre: "M Deus" → polygon "Menino Deus"
-    "LURDES": "LOURDES",          # Caxias do Sul: typo normalization
-    "SANTA TERESA": "SANTA TEREZA",  # São Leopoldo: spelling variant
-    "DIHEL": "DIEHL",             # Novo Hamburgo: transposition typo
+    "LURDES": "LOURDES",          # common name variant (Lurdes/Lourdes)
+    "DIHEL": "DIEHL",             # transposition typo (edit-distance-1)
     "JABOTICABAL": "JABUTICABAL", # Erechim: O/U spelling variant
 }
 
