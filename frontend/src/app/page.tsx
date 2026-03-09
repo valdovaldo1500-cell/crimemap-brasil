@@ -56,7 +56,7 @@ export default function Home() {
   const [crimeTypes, setCrimeTypes] = useState<any[]>([]);
   const [semesters, setSemesters] = useState<string[]>([]);
   const [selectedYear, setSelectedYear] = useState('');
-  const [selectedPeriod, setSelectedPeriod] = useState<'ano' | 'S1' | 'S2'>('ano');
+  const [selectedPeriod, setSelectedPeriod] = useState<'ano' | 'S1' | 'S2' | '12m'>('12m');
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [searchQ, setSearchQ] = useState('');
   const [suggestions, setSuggestions] = useState<any[]>([]);
