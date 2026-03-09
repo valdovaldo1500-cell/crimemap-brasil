@@ -60,7 +60,6 @@ _BAIRRO_ABBREVIATIONS = {
     "SANTA TERESA": "SANTA TEREZA",  # São Leopoldo: spelling variant
     "DIHEL": "DIEHL",             # Novo Hamburgo: transposition typo
     "JABOTICABAL": "JABUTICABAL", # Erechim: O/U spelling variant
-    "LUIZ FOGLIATO": "LUIS FOGLIATTO",  # Ijuí: Z→S + single/double T variant
 }
 
 _BAIRRO_TYPE_PREFIXES = re.compile(
