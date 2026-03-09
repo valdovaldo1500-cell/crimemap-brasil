@@ -59,6 +59,7 @@ _BAIRRO_ABBREVIATIONS = {
     "LURDES": "LOURDES",          # Caxias do Sul: typo normalization
     "SANTA TERESA": "SANTA TEREZA",  # São Leopoldo: spelling variant
     "DIHEL": "DIEHL",             # Novo Hamburgo: transposition typo
+    "JABOTICABAL": "JABUTICABAL", # Erechim: O/U spelling variant
 }
 
 _BAIRRO_TYPE_PREFIXES = re.compile(
