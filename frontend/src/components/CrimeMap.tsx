@@ -325,8 +325,9 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
             semestre: f.semestre, ano: f.ano, tipo: f.tipo,
             grupo: f.grupo, sexo: f.sexo, cor: f.cor,
             idade_min: f.idade_min, idade_max: f.idade_max,
+            ultimos_meses: f.ultimos_meses,
           });
-          onDetailOpenRef.current({ displayName, municipio, bairro, state, total: stats.total ?? count, population: stats.population ?? population, components,
+          onDetailOpenRef.current({ displayName, municipio, bairro, state, total: count, population: stats.population ?? population, components,
             isUnknown: false, loading: false,
             // pass crime_types via the callback — page.tsx will merge
             ...(stats.crime_types ? { crime_types: stats.crime_types.map((ct: any) => ({ tipo: ct.tipo_enquadramento || ct.tipo, count: ct.count })) } : {}),
@@ -367,6 +368,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
           semestre: f.semestre, ano: f.ano, tipo: f.tipo,
           grupo: f.grupo, sexo: f.sexo, cor: f.cor,
           idade_min: f.idade_min, idade_max: f.idade_max,
+          ultimos_meses: f.ultimos_meses,
         });
         l.setPopupContent(buildBreakdownPopup(displayName, stats, rateModeRef.current === 'rate'));
         pendingPopupRef.current = null;
@@ -987,6 +989,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
                 semestre: f.semestre, ano: f.ano, tipo: f.tipo,
                 grupo: f.grupo, sexo: f.sexo, cor: f.cor,
                 idade_min: f.idade_min, idade_max: f.idade_max,
+                ultimos_meses: f.ultimos_meses,
               });
               onDetailOpenRef.current!({ displayName: pp.displayName, municipio: pp.municipio, bairro: pp.bairro,
                 total: stats.total ?? 0, population: stats.population,
@@ -1014,6 +1017,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
                 semestre: f.semestre, ano: f.ano, tipo: f.tipo,
                 grupo: f.grupo, sexo: f.sexo, cor: f.cor,
                 idade_min: f.idade_min, idade_max: f.idade_max,
+                ultimos_meses: f.ultimos_meses,
               });
               popup.setContent(buildBreakdownPopup(pp.displayName, stats, rateModeRef.current === 'rate'));
             } catch {

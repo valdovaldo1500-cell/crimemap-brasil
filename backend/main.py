@@ -1221,6 +1221,7 @@ def location_stats(request: Request,
     tipo: Optional[List[str]] = Query(None), grupo: Optional[str] = None,
     semestre: Optional[str] = None,
     ano: Optional[str] = None,
+    ultimos_meses: Optional[int] = None,
     idade_min: Optional[int] = None, idade_max: Optional[int] = None,
     sexo: Optional[List[str]] = Query(None), cor: Optional[List[str]] = Query(None),
     state: Optional[str] = None,
@@ -1233,7 +1234,10 @@ def location_stats(request: Request,
     q = q.filter(Crime.latitude.isnot(None))
     if bairro:
         q = q.filter(Crime.bairro == bairro)
-    if semestre:
+    if ultimos_meses:
+        threshold_date, _, _ = _ultimos_meses_range(ultimos_meses)
+        q = q.filter(Crime.data_fato >= threshold_date)
+    elif semestre:
         q = q.filter(Crime.year_month.in_(semester_months(semestre)))
     elif ano:
         q = q.filter(Crime.year_month.like(f"{ano}-%"))
@@ -1260,7 +1264,13 @@ def location_stats(request: Request,
         ).filter(CrimeStaging.municipio == municipio)
         if state:
             sq = sq.filter(CrimeStaging.state == state)
-        if semestre:
+        if ultimos_meses:
+            _, thresh_year, thresh_month = _ultimos_meses_range(ultimos_meses)
+            sq = sq.filter(
+                (CrimeStaging.year > thresh_year) |
+                ((CrimeStaging.year == thresh_year) & (CrimeStaging.month >= thresh_month))
+            )
+        elif semestre:
             year_str, sem_str = semestre.split('-')
             month_range = range(1, 7) if sem_str == "S1" else range(7, 13)
             sq = sq.filter(

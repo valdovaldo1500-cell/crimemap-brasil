@@ -400,6 +400,7 @@ export default function Home() {
           semestre: filters.semestre, ano: filters.ano, tipo: filters.tipo,
           grupo: filters.grupo, sexo: filters.sexo, cor: filters.cor,
           idade_min: filters.idade_min, idade_max: filters.idade_max,
+          ultimos_meses: filters.ultimos_meses,
         });
       }
       setComparisonStats(prev => [...prev, { ...stats, displayName: location.displayName }]);
