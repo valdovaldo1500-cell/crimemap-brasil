@@ -316,7 +316,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
       // Use DetailPanel when available
       if (onDetailOpenRef.current) {
         const isUnknown = bairro === 'Bairro desconhecido';
-        onDetailOpenRef.current({ displayName, municipio, bairro, state, total: count, population, components, isUnknown, loading: true });
+        onDetailOpenRef.current({ displayName, municipio, bairro, state, total: count, population, components, isUnknown, loading: !isUnknown });
         if (isUnknown) return; // no stats fetch for unknown bairros
         try {
           const f = filtersRef.current;
