@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { fetchStats, fetchCrimeTypes, fetchSemesters, fetchAutocomplete, fetchSexoValues, fetchCorValues, fetchGrupoValues, fetchFilterOptions, fetchCaptcha, submitBugReport, fetchAvailableStates, fetchStateFilterInfo, fetchLocationStats, fetchStateStats, fetchSystemInfo, fetchDataAvailability } from '@/lib/api';
+import { fetchStats, fetchCrimeTypes, fetchSemesters, fetchAutocomplete, fetchSexoValues, fetchCorValues, fetchGrupoValues, fetchFilterOptions, submitBugReport, fetchAvailableStates, fetchStateFilterInfo, fetchLocationStats, fetchStateStats, fetchSystemInfo, fetchDataAvailability } from '@/lib/api';
 import { calcRate, formatRate } from '@/lib/rates';
 import DetailPanel from '@/components/DetailPanel';
 const CrimeMap = dynamic(() => import('@/components/CrimeMap'), { ssr: false });
@@ -88,8 +88,7 @@ export default function Home() {
   const [bugDesc, setBugDesc] = useState('');
   const [bugEmail, setBugEmail] = useState('');
   const [bugImage, setBugImage] = useState('');
-  const [captcha, setCaptcha] = useState<any>(null);
-  const [captchaAnswer, setCaptchaAnswer] = useState('');
+  const [hcaptchaToken, setHcaptchaToken] = useState('');
   const [bugSubmitting, setBugSubmitting] = useState(false);
   const [bugSuccess, setBugSuccess] = useState(false);
   const [bugError, setBugError] = useState('');
@@ -452,16 +451,42 @@ export default function Home() {
   const municResults = suggestions.filter(s => s.type === 'municipio');
   const bairroResults = suggestions.filter(s => s.type === 'bairro');
 
-  const openBugReport = async () => {
+  const openBugReport = () => {
     setShowBugReport(true);
     setBugSuccess(false);
     setBugError('');
     setBugDesc('');
     setBugEmail('');
     setBugImage('');
-    setCaptchaAnswer('');
-    try { setCaptcha(await fetchCaptcha()); } catch { /* ignore */ }
+    setHcaptchaToken('');
   };
+
+  useEffect(() => {
+    if (!showBugReport || bugSuccess) return;
+    const siteKey = process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY || '10000000-ffff-ffff-ffff-000000000000';
+    const renderWidget = () => {
+      const container = document.getElementById('hcaptcha-widget');
+      if (container && (window as any).hcaptcha) {
+        container.innerHTML = '';
+        (window as any).hcaptcha.render('hcaptcha-widget', {
+          sitekey: siteKey,
+          theme: 'dark',
+          callback: (token: string) => setHcaptchaToken(token),
+          'expired-callback': () => setHcaptchaToken(''),
+        });
+      }
+    };
+    if ((window as any).hcaptcha) {
+      // Script already loaded, just render after DOM update
+      setTimeout(renderWidget, 0);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://js.hcaptcha.com/1/api.js?render=explicit';
+    script.async = true;
+    script.onload = () => setTimeout(renderWidget, 100);
+    document.head.appendChild(script);
+  }, [showBugReport, bugSuccess]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -473,7 +498,7 @@ export default function Home() {
 
   const handleBugSubmit = async () => {
     if (!bugDesc.trim()) { setBugError('Descrição é obrigatória'); return; }
-    if (!captchaAnswer.trim()) { setBugError('Responda o captcha'); return; }
+    if (!hcaptchaToken) { setBugError('Complete o captcha'); return; }
     setBugSubmitting(true);
     setBugError('');
     try {
@@ -481,14 +506,15 @@ export default function Home() {
         description: bugDesc,
         email: bugEmail || undefined,
         image: bugImage || undefined,
-        captcha_token: captcha?.token || '',
-        captcha_answer: captchaAnswer,
+        hcaptcha_token: hcaptchaToken,
       });
       setBugSuccess(true);
     } catch (err: any) {
       setBugError(err.message || 'Erro ao enviar');
-      try { setCaptcha(await fetchCaptcha()); } catch { /* ignore */ }
-      setCaptchaAnswer('');
+      setHcaptchaToken('');
+      if (typeof window !== 'undefined' && (window as any).hcaptcha) {
+        (window as any).hcaptcha.reset();
+      }
     } finally {
       setBugSubmitting(false);
     }
@@ -1023,12 +1049,10 @@ export default function Home() {
                     <label className="text-xs uppercase tracking-wider text-[#94a3b8] block mb-1">Screenshot (opcional)</label>
                     <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full text-sm text-[#94a3b8] file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:bg-[#1a2234] file:text-[#94a3b8] hover:file:bg-[#1e293b]" />
                   </div>
-                  {captcha && (
-                    <div>
-                      <label className="text-xs uppercase tracking-wider text-[#94a3b8] block mb-1">{captcha.question}</label>
-                      <input type="text" value={captchaAnswer} onChange={e => setCaptchaAnswer(e.target.value)} className="w-full bg-[#1a2234] border border-[#1e293b] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#3b82f6]" placeholder="Sua resposta" />
-                    </div>
-                  )}
+                  <div>
+                    <label className="text-xs uppercase tracking-wider text-[#94a3b8] block mb-1">Verificação</label>
+                    <div id="hcaptcha-widget" />
+                  </div>
                   {bugError && <p className="text-sm text-red-400">{bugError}</p>}
                   <div className="flex gap-2 pt-2">
                     <button onClick={() => setShowBugReport(false)} className="flex-1 px-4 py-2 rounded-xl bg-[#1a2234] border border-[#1e293b] text-sm hover:bg-[#1e293b]">Cancelar</button>

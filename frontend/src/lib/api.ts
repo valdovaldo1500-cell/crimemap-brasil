@@ -148,17 +148,7 @@ export async function fetchCorValues() {
   }
 }
 
-export async function fetchCaptcha() {
-  try {
-    const res = await fetch(`${API}/api/captcha`);
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    return res.json();
-  } catch (err: any) {
-    throw new Error(`fetchCaptcha failed: ${err.message}`);
-  }
-}
-
-export async function submitBugReport(data: { description: string; email?: string; image?: string; captcha_token: string; captcha_answer: string }) {
+export async function submitBugReport(data: { description: string; email?: string; image?: string; hcaptcha_token: string }) {
   try {
     const res = await fetch(`${API}/api/bug-reports`, {
       method: 'POST',

@@ -3,7 +3,11 @@ services:
     build: ./backend
     ports: ["8000:8000"]
     volumes: ["./backend/data:/app/data", "./frontend/public/geo:/app/geo:ro"]
-    environment: {DATABASE_URL: "sqlite:///./data/crimemap.db"}
+    environment:
+      DATABASE_URL: "sqlite:///./data/crimemap.db"
+      HCAPTCHA_SECRET_KEY: "0x0000000000000000000000000000000000000000"
+      RESEND_API_KEY: ""
+      BUG_REPORT_EMAIL: ""
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/years"]
@@ -14,7 +18,9 @@ services:
     build: ./frontend
     ports: ["3001:3000"]
     depends_on: [backend]
-    environment: {NEXT_PUBLIC_API_URL: "http://localhost:8000"}
+    environment:
+      NEXT_PUBLIC_API_URL: "http://localhost:8000"
+      NEXT_PUBLIC_HCAPTCHA_SITE_KEY: "10000000-ffff-ffff-ffff-000000000000"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]

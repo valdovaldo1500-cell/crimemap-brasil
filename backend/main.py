@@ -1,5 +1,6 @@
 """CrimeBrasil"""
-import os, logging, re, threading, unicodedata, hmac, hashlib, time, random, base64, json
+import os, logging, re, threading, unicodedata, time, random, base64, json
+import resend, httpx
 import os as _os, json as _json
 from typing import Optional, List
 from functools import lru_cache
@@ -17,7 +18,9 @@ from services.geocoder import GeocoderService, batch_geocode_new_bairros
 from services.population import get_municipio_population, get_state_population, get_bairro_population, get_municipio_population_by_code
 from services.crime_categories import get_filter_info, get_compatible_types, get_max_granularity, STATE_QUALITY, PARTIAL_STATES, categorize_crime_types
 
-CAPTCHA_SECRET = os.getenv("CAPTCHA_SECRET", "crimebrasil-captcha-2024")
+HCAPTCHA_SECRET_KEY = os.getenv("HCAPTCHA_SECRET_KEY", "0x0000000000000000000000000000000000000000")
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+BUG_REPORT_EMAIL = os.getenv("BUG_REPORT_EMAIL", "")
 
 logging.basicConfig(level=logging.INFO)
 
@@ -1768,49 +1771,32 @@ def data_sources(db: Session = Depends(get_db)):
     return result
 
 
-@app.get("/api/captcha")
-def get_captcha():
-    a, b = random.randint(1, 20), random.randint(1, 20)
-    answer = str(a + b)
-    ts = str(int(time.time()))
-    payload = f"{answer}:{ts}"
-    sig = hmac.new(CAPTCHA_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
-    token = base64.b64encode(f"{payload}:{sig}".encode()).decode()
-    return {"question": f"Quanto é {a} + {b}?", "token": token}
-
 class BugReportPayload(BaseModel):
     description: str
     email: Optional[str] = None
     image: Optional[str] = None
-    captcha_token: str
-    captcha_answer: str
+    hcaptcha_token: str
 
 @app.post("/api/bug-reports")
 def create_bug_report(payload: BugReportPayload, db: Session = Depends(get_db)):
-    # Validate captcha
+    # Validate hCaptcha
     try:
-        decoded = base64.b64decode(payload.captcha_token).decode()
-        parts = decoded.split(":")
-        if len(parts) != 3:
-            raise ValueError("Invalid token")
-        answer, ts, sig = parts
-        expected_sig = hmac.new(CAPTCHA_SECRET.encode(), f"{answer}:{ts}".encode(), hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(sig, expected_sig):
-            raise ValueError("Invalid signature")
-        if abs(time.time() - int(ts)) > 300:
-            raise HTTPException(status_code=400, detail="Captcha expirado, tente novamente")
-        if payload.captcha_answer.strip() != answer:
-            raise HTTPException(status_code=400, detail="Resposta do captcha incorreta")
+        resp = httpx.post("https://api.hcaptcha.com/siteverify", data={
+            "secret": HCAPTCHA_SECRET_KEY,
+            "response": payload.hcaptcha_token,
+        })
+        result = resp.json()
+        if not result.get("success"):
+            raise HTTPException(status_code=400, detail="Captcha inválido, tente novamente")
     except HTTPException:
         raise
     except Exception:
-        raise HTTPException(status_code=400, detail="Captcha inválido")
+        raise HTTPException(status_code=400, detail="Erro ao validar captcha")
     # Save image if provided
     image_path = ""
     if payload.image and payload.image.startswith("data:image"):
         bug_dir = os.path.join(os.path.dirname(__file__), "data", "bug-reports")
         os.makedirs(bug_dir, exist_ok=True)
-        # Extract base64 data
         header, b64data = payload.image.split(",", 1)
         ext = "png" if "png" in header else "jpg"
         fname = f"bug_{int(time.time())}_{random.randint(1000,9999)}.{ext}"
@@ -1821,6 +1807,31 @@ def create_bug_report(payload: BugReportPayload, db: Session = Depends(get_db)):
     report = BugReport(description=payload.description, email=payload.email or "", image_path=image_path)
     db.add(report)
     db.commit()
+    # Send email notification
+    if RESEND_API_KEY and BUG_REPORT_EMAIL:
+        def _send_email():
+            try:
+                resend.api_key = RESEND_API_KEY
+                attachments = []
+                if image_path:
+                    img_fpath = os.path.join(os.path.dirname(__file__), "data", "bug-reports", image_path)
+                    if os.path.exists(img_fpath):
+                        with open(img_fpath, "rb") as f:
+                            attachments.append({"filename": image_path, "content": list(f.read())})
+                resend.Emails.send({
+                    "from": "Crime Brasil <bugs@crimebrasil.com.br>",
+                    "to": [BUG_REPORT_EMAIL],
+                    "subject": f"[Bug Report #{report.id}] {payload.description[:80]}",
+                    "html": f"<h3>Bug Report #{report.id}</h3>"
+                           f"<p><b>Descrição:</b> {payload.description}</p>"
+                           f"<p><b>Email:</b> {payload.email or 'Não informado'}</p>"
+                           f"<p><b>Screenshot:</b> {'Sim' if image_path else 'Não'}</p>",
+                    **({"attachments": attachments} if attachments else {}),
+                })
+                logging.info(f"Bug report email sent for #{report.id}")
+            except Exception as e:
+                logging.error(f"Failed to send bug report email: {e}")
+        threading.Thread(target=_send_email, daemon=True).start()
     return {"message": "Bug reportado com sucesso", "id": report.id}
 
 @app.get("/api/admin/bug-reports")
