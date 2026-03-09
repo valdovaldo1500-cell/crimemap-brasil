@@ -137,7 +137,7 @@ def _normalize_bairro_for_matching(bairro_norm: str, poly_names: set[str] | None
         prefix_matches = [pn for pn in poly_names if pn.startswith(result) and pn != result]
         if len(prefix_matches) == 1:
             result = prefix_matches[0]
-        elif len(result) >= 9:
+        elif len(result) >= 7:
             # Try word-suffix match (e.g. "MEDIANEIRA" → "NOSSA SENHORA MEDIANEIRA")
             suffix_matches = [pn for pn in poly_names if pn.endswith(' ' + result) and pn != result]
             if len(suffix_matches) == 1:
