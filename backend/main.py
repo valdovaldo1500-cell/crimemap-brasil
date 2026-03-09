@@ -47,6 +47,43 @@ def normalize_fuzzy(s: str) -> str:
     n = normalize_name(s)
     return re.sub(r"[\s'\-]+", "", n)
 
+# Common bairro abbreviations found in RS crime data
+_BAIRRO_ABBREVIATIONS = {
+    "M VELHO": "MATHIAS VELHO",
+    "M GRANDE": "MATO GRANDE",
+    "MAL RONDON": "MARECHAL RONDON",
+    "EST VELHA": "ESTANCIA VELHA",
+    "NSA SRA DAS GRACAS": "NOSSA SENHORA DAS GRACAS",
+    "NS DAS GRACAS": "NOSSA SENHORA DAS GRACAS",
+}
+
+_BAIRRO_TYPE_PREFIXES = re.compile(
+    r'^(BAIRRO\s+DE\s+|BAIRRO\s+DO\s+|BAIRRO\s+)', re.IGNORECASE
+)
+
+def _normalize_bairro_for_matching(bairro_norm: str, poly_names: set[str] | None = None) -> str:
+    """Enhanced bairro name normalization for polygon matching.
+
+    Handles: type prefixes (BAIRRO X → X), abbreviations (M VELHO → MATHIAS VELHO),
+    and truncated names (NOSSA SENHORA DAS GR → NOSSA SENHORA DAS GRACAS).
+    """
+    result = bairro_norm
+    # Strip type prefixes
+    result = _BAIRRO_TYPE_PREFIXES.sub('', result).strip()
+    # Check abbreviation map
+    if result in _BAIRRO_ABBREVIATIONS:
+        result = _BAIRRO_ABBREVIATIONS[result]
+    # If we have polygon names available, try prefix matching for truncated names
+    if poly_names and result != bairro_norm:
+        # Already found a match via prefix strip or abbreviation
+        pass
+    elif poly_names and len(result) >= 8:
+        # Try prefix match for truncated names (e.g. "NOSSA SENHORA DAS GR" → "NOSSA SENHORA DAS GRACAS")
+        prefix_matches = [pn for pn in poly_names if pn.startswith(result) and pn != result]
+        if len(prefix_matches) == 1:
+            result = prefix_matches[0]
+    return result
+
 def _load_bairro_polygons():
     """Load rs-bairros.geojson into a spatial index keyed by municipio."""
     # Try local backend/bairro-geo/ first (baked into Docker image), then legacy paths
