@@ -569,10 +569,18 @@ def heatmap_bairros(request: Request,
         "PORTO ALEGRE": {
             "CENTRO": "CENTRO HISTORICO",
             "JARDIM DONA LEOPOLDINA": "JARDIM LEOPOLDINA",
+            "BONFIM": "BOM FIM",
         },
         "CAXIAS DO SUL": {
             "LOURDES": "NOSSA SENHORA DE LOURDES",
             "LURDES": "NOSSA SENHORA DE LOURDES",
+        },
+        "SANTA MARIA": {
+            "BOM FIM": "BONFIM",
+        },
+        "SANTA CRUZ DO SUL": {
+            "BONFIM": "BOM FIM",
+            "A GRANDE": "ARROIO GRANDE",
         },
     }
     polygon_names_by_mun: dict[str, set[str]] = {}
