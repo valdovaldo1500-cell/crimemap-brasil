@@ -484,7 +484,6 @@ export default function Home() {
         <div className="max-w-[1800px] mx-auto px-4 py-2 md:py-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 md:gap-3 shrink-0">
             <img src="/logo.svg" alt="Crime Brasil" className="h-8 sm:h-9" />
-            <p className="hidden sm:block text-[10px] text-[#94a3b8] uppercase tracking-widest">crimebrasil.com.br</p>
           </div>
           <div className="flex-1 max-w-md mx-2 md:mx-8 relative" ref={searchRef}>
             <input
