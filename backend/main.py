@@ -110,6 +110,8 @@ def _normalize_bairro_for_matching(bairro_norm: str, poly_names: set[str] | None
     and truncated names (NOSSA SENHORA DAS GR → NOSSA SENHORA DAS GRACAS).
     """
     result = bairro_norm
+    # Expand Portuguese contracted articles: "D'" → "DA " (e.g. "Passo d'Areia" → "Passo da Areia")
+    result = re.sub(r"\bD'", "DA ", result, flags=re.IGNORECASE).strip()
     # Strip type prefixes (BAIRRO X → X)
     result = _BAIRRO_TYPE_PREFIXES.sub('', result).strip()
     # Apply prefix expansions (VL → VILA, STA → SANTA, etc.)
