@@ -1568,6 +1568,7 @@ def heatmap_states(request: Request,
 def data_availability(request: Request,
     ano: Optional[str] = None,
     semestre: Optional[str] = None,
+    ultimos_meses: Optional[int] = None,
     selected_states: Optional[List[str]] = Query(None),
     db: Session = Depends(get_db)):
     """Check which selected states have data for the given period."""
@@ -1579,7 +1580,10 @@ def data_availability(request: Request,
     for state_code in selected_states:
         # Check crimes table (RS)
         cq = db.query(func.count(Crime.id)).filter(Crime.state == state_code)
-        if semestre:
+        if ultimos_meses:
+            threshold_date, _, _ = _ultimos_meses_range(ultimos_meses)
+            cq = cq.filter(Crime.data_fato >= threshold_date)
+        elif semestre:
             cq = cq.filter(Crime.year_month.in_(semester_months(semestre)))
         elif ano:
             cq = cq.filter(Crime.year_month.like(f"{ano}-%"))
@@ -1590,7 +1594,13 @@ def data_availability(request: Request,
             func.coalesce(func.sum(CrimeStaging.occurrences), 0) +
             func.coalesce(func.sum(CrimeStaging.victims), 0)
         ).filter(CrimeStaging.state == state_code)
-        if semestre:
+        if ultimos_meses:
+            _, thresh_year, thresh_month = _ultimos_meses_range(ultimos_meses)
+            sq = sq.filter(
+                (CrimeStaging.year > thresh_year) |
+                ((CrimeStaging.year == thresh_year) & (CrimeStaging.month >= thresh_month))
+            )
+        elif semestre:
             year_str, sem = semestre.split('-')
             sq = sq.filter(CrimeStaging.year == int(year_str))
             if sem == "S1": sq = sq.filter(CrimeStaging.month.between(1, 6))
