@@ -1427,6 +1427,7 @@ _load_municipio_centroids()
 def heatmap_states(request: Request,
     tipo: Optional[List[str]] = Query(None),
     ano: Optional[str] = None, semestre: Optional[str] = None,
+    ultimos_meses: Optional[int] = None,
     idade_min: Optional[int] = None, idade_max: Optional[int] = None,
     sexo: Optional[List[str]] = Query(None), cor: Optional[List[str]] = Query(None),
     selected_states: Optional[List[str]] = Query(None),
@@ -1435,7 +1436,7 @@ def heatmap_states(request: Request,
     validate_age_filters(idade_min, idade_max)
 
     # Check response cache
-    cache_key = f"heatmap_states:{tipo}:{ano}:{semestre}:{idade_min}:{idade_max}:{sexo}:{cor}:{selected_states}"
+    cache_key = f"heatmap_states:{tipo}:{ano}:{semestre}:{ultimos_meses}:{idade_min}:{idade_max}:{sexo}:{cor}:{selected_states}"
     cached = _cache_get(cache_key)
     if cached is not None:
         return cached
