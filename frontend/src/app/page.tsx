@@ -931,6 +931,7 @@ export default function Home() {
             <button onClick={() => setShowChangelog(true)} className="text-[10px] text-[#64748b] hover:text-[#94a3b8] transition-colors">Novidades</button>
             <button onClick={() => setShowSources(!showSources)} className="text-[10px] text-[#64748b] hover:text-[#94a3b8] transition-colors">Fontes</button>
             <a href="mailto:contato@crimebrasil.com.br" className="text-[10px] text-[#64748b] hover:text-[#94a3b8] transition-colors">Contato</a>
+            <a href="https://linkedin.com/in/israel-l-b00800116" target="_blank" rel="noopener noreferrer" className="text-[10px] text-[#a78bfa] hover:text-[#c4b5fd] transition-colors">Designed by I.L.S.</a>
           </div>
           <div className="absolute bottom-2 left-2 md:bottom-4 md:left-4 bg-[#111827]/90 backdrop-blur-xl border border-[#1e293b] rounded-xl md:rounded-2xl p-2 md:p-4 z-[1000] flex gap-3 md:gap-6 max-w-[calc(100vw-4rem)]">
             {initialLoading ? (
