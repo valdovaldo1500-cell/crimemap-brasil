@@ -662,6 +662,7 @@ export default function Home() {
               <button onClick={()=>{setShowChangelog(true);setShowMobileMenu(false);}} className="px-3 py-2 rounded-xl bg-[#1a2234] border border-[#1e293b] text-sm text-[#94a3b8]">Novidades</button>
               <button onClick={()=>{setShowSources(!showSources);setShowMobileMenu(false);}} className="px-3 py-2 rounded-xl bg-[#1a2234] border border-[#1e293b] text-sm text-[#94a3b8]">Fontes</button>
               <a href="mailto:contato@crimebrasil.com.br" className="px-3 py-2 rounded-xl bg-[#1a2234] border border-[#1e293b] text-sm text-[#94a3b8]">Contato</a>
+              <a href="https://linkedin.com/in/israel-l-b00800116" target="_blank" rel="noopener noreferrer" className="px-3 py-2 rounded-xl bg-[#1a2234] border border-[#1e293b] text-sm text-[#a78bfa] hover:text-[#c4b5fd]">Designed by I.L.S.</a>
             </div>
           </div>
         )}
