@@ -1296,7 +1296,24 @@ MUNICIPIO_CENTROIDS: dict[str, tuple[float, float]] = {}
 IBGE_CODE_CENTROIDS: dict[str, tuple[float, float]] = {}
 
 def _load_municipio_centroids():
-    """Build centroid lookup from all state GeoJSON files."""
+    """Build centroid lookup from static JSON (primary) or GeoJSON files (fallback)."""
+    # Primary: load from static JSON file (Docker-safe, no GeoJSON needed)
+    static_json_path = _os.path.join(_os.path.dirname(__file__), "data", "mun_centroids.json")
+    if _os.path.exists(static_json_path):
+        try:
+            with open(static_json_path, encoding='utf-8') as f:
+                raw = _json.load(f)
+            for key, coords in raw.items():
+                if key.isdigit():
+                    IBGE_CODE_CENTROIDS[key] = (coords[0], coords[1])
+                else:
+                    MUNICIPIO_CENTROIDS[key] = (coords[0], coords[1])
+            logging.info(f"Loaded {len(MUNICIPIO_CENTROIDS)} municipality centroids from mun_centroids.json")
+            return  # Skip GeoJSON loading
+        except Exception as e:
+            logging.warning(f"Failed to load mun_centroids.json: {e}")
+
+    # Fallback: build from GeoJSON files
     import glob as _glob
     geo_dirs = [
         _os.path.join(_os.path.dirname(__file__), "..", "frontend", "public", "geo"),
