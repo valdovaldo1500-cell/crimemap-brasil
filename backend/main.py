@@ -570,23 +570,30 @@ def heatmap_bairros(request: Request,
             merged[new_key] = {'municipio': old_data['municipio'], 'bairro': new_display,
                                 'cnt': old_data['cnt'], 'lat': old_data['lat'], 'lng': old_data['lng']}
 
-    # Build set of bairro keys that match a polygon by name (exact or fuzzy)
+    # Build set of bairro keys that match a polygon by name (exact, fuzzy, or enhanced)
     polygon_matched_keys: set[tuple[str, str]] = set()
     for key in merged:
         mun_norm, bairro_norm = key
         poly_names = polygon_names_by_mun.get(mun_norm, set())
+        enhanced = _normalize_bairro_for_matching(bairro_norm, poly_names)
+        # Check exact, fuzzy, enhanced exact, enhanced fuzzy
+        matched_pn = None
         if bairro_norm in poly_names:
             polygon_matched_keys.add(key)
+        elif enhanced in poly_names:
+            matched_pn = enhanced
         elif normalize_fuzzy(bairro_norm) in {normalize_fuzzy(pn) for pn in poly_names}:
+            matched_pn = next((pn for pn in poly_names if normalize_fuzzy(pn) == normalize_fuzzy(bairro_norm)), None)
+        elif normalize_fuzzy(enhanced) in {normalize_fuzzy(pn) for pn in poly_names}:
+            matched_pn = next((pn for pn in poly_names if normalize_fuzzy(pn) == normalize_fuzzy(enhanced)), None)
+        if matched_pn:
             polygon_matched_keys.add(key)
             # Update display name to match polygon's actual name for frontend GeoJSON matching
-            for pn in poly_names:
-                if normalize_fuzzy(pn) == normalize_fuzzy(bairro_norm) and pn != bairro_norm:
-                    merged[key]['bairro'] = next(
-                        (p[1] for p in BAIRRO_POLYGON_INDEX.get(mun_norm, []) if p[0] == pn),
-                        merged[key]['bairro']
-                    )
-                    break
+            if matched_pn != bairro_norm:
+                merged[key]['bairro'] = next(
+                    (p[1] for p in BAIRRO_POLYGON_INDEX.get(mun_norm, []) if p[0] == matched_pn),
+                    merged[key]['bairro']
+                )
 
     # Build municipality centroid lookup for "unknown bairro" detection
     from services.geocoder import MAJOR_CITIES_RS, _haversine_km
