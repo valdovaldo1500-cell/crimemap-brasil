@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { fetchStats, fetchCrimeTypes, fetchSemesters, fetchAutocomplete, fetchSexoValues, fetchCorValues, fetchGrupoValues, fetchFilterOptions, fetchCaptcha, submitBugReport, fetchAvailableStates, fetchStateFilterInfo, fetchLocationStats, fetchStateStats, fetchSystemInfo, fetchDataAvailability } from '@/lib/api';
 import { calcRate, formatRate } from '@/lib/rates';
+import DetailPanel from '@/components/DetailPanel';
 const CrimeMap = dynamic(() => import('@/components/CrimeMap'), { ssr: false });
 
 const DATA_SOURCES = [
