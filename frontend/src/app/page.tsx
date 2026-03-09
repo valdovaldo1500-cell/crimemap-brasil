@@ -317,13 +317,14 @@ export default function Home() {
       return;
     }
     const params: any = { selected_states: selectedStates };
-    if (selectedPeriod !== 'ano') params.semestre = `${selectedYear}-${selectedPeriod}`;
+    if (selectedPeriod === '12m') params.ultimos_meses = 12;
+    else if (selectedPeriod !== 'ano') params.semestre = `${selectedYear}-${selectedPeriod}`;
     else params.ano = selectedYear;
     fetchDataAvailability(params).then((res: any) => {
       const warnings: string[] = [];
       for (const [state, info] of Object.entries(res.states || {})) {
         if (!(info as any).has_data) {
-          const periodLabel = selectedPeriod !== 'ano' ? `${selectedPeriod === 'S1' ? 'Jan-Jun' : 'Jul-Dez'} ${selectedYear}` : selectedYear;
+          const periodLabel = selectedPeriod === '12m' ? 'últimos 12 meses' : selectedPeriod !== 'ano' ? `${selectedPeriod === 'S1' ? 'Jan-Jun' : 'Jul-Dez'} ${selectedYear}` : selectedYear;
           const stateName = STATE_FULL_NAMES[state] || state;
           warnings.push(`${stateName} não possui dados para ${periodLabel}.`);
         }
