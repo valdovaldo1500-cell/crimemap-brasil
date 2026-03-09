@@ -698,7 +698,7 @@ def heatmap_bairros(request: Request,
         # Check exact, fuzzy, enhanced, article-stripped, phonetic
         poly_fuzzy_map = {normalize_fuzzy(pn): pn for pn in poly_names}
         poly_art_fuzzy_map = {normalize_fuzzy(_strip_articles(pn)): pn for pn in poly_names}
-        poly_phonetic_map = {_phonetic_br(normalize_fuzzy(pn)): pn for pn in poly_names}
+        poly_phonetic_map = {normalize_fuzzy(_phonetic_br(pn)): pn for pn in poly_names}
         matched_pn = None
         if bairro_norm in poly_names:
             matched_pn = bairro_norm
@@ -712,10 +712,10 @@ def heatmap_bairros(request: Request,
             matched_pn = poly_art_fuzzy_map[normalize_fuzzy(_strip_articles(bairro_norm))]
         elif normalize_fuzzy(_strip_articles(enhanced)) in poly_art_fuzzy_map:
             matched_pn = poly_art_fuzzy_map[normalize_fuzzy(_strip_articles(enhanced))]
-        elif _phonetic_br(normalize_fuzzy(bairro_norm)) in poly_phonetic_map:
-            matched_pn = poly_phonetic_map[_phonetic_br(normalize_fuzzy(bairro_norm))]
-        elif _phonetic_br(normalize_fuzzy(enhanced)) in poly_phonetic_map:
-            matched_pn = poly_phonetic_map[_phonetic_br(normalize_fuzzy(enhanced))]
+        elif normalize_fuzzy(_phonetic_br(bairro_norm)) in poly_phonetic_map:
+            matched_pn = poly_phonetic_map[normalize_fuzzy(_phonetic_br(bairro_norm))]
+        elif normalize_fuzzy(_phonetic_br(enhanced)) in poly_phonetic_map:
+            matched_pn = poly_phonetic_map[normalize_fuzzy(_phonetic_br(enhanced))]
         # If matched via compound polygon part, remap to the full polygon name
         if matched_pn and (mun_norm, matched_pn) in polygon_compound_map:
             matched_pn = polygon_compound_map[(mun_norm, matched_pn)]
