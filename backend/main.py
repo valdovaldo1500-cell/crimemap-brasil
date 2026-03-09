@@ -142,7 +142,14 @@ def _normalize_bairro_for_matching(bairro_norm: str, poly_names: set[str] | None
         # Transformation already found a valid polygon match — stop here
         pass
     elif poly_names and result not in poly_names:
-        if len(result) >= 6:
+        # Try matching against D'-expanded polygon names: polygon "PASSO D'AREIA" → lookup key "PASSO DA AREIA"
+        # Needed when D' expansion at top produced result="PASSO DA AREIA" but polygon uses D' form
+        if "D'" in ''.join(poly_names):
+            da_map = {re.sub(r"\bD'", "DA ", pn, flags=re.IGNORECASE).strip(): pn
+                      for pn in poly_names if "D'" in pn}
+            if result in da_map:
+                result = da_map[result]
+        if result not in poly_names and len(result) >= 6:
             # Try prefix match: bairro name is a prefix of a unique polygon
             # e.g. "CENTRO" → "CENTRO HISTORICO", "FAXINAL" → "FAXINAL MENINO DEUS"
             prefix_matches = [pn for pn in poly_names if pn.startswith(result) and pn != result]
