@@ -173,6 +173,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
   const rateModeRef = useRef(rateMode);
   const compareModeRef = useRef(compareMode);
   const onCompareSelectRef = useRef(onCompareSelect);
+  const onDetailOpenRef = useRef(onDetailOpen);
 
   useEffect(() => {
     rateModeRef.current = rateMode;
