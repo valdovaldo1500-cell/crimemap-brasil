@@ -551,6 +551,9 @@ def heatmap_bairros(request: Request,
             continue
         mun_norm = normalize_name(r.municipio_fato)
         bairro_norm = normalize_name(r.bairro)
+        # Skip clearly invalid bairro names (noise data → Bairro desconhecido)
+        if _is_invalid_bairro(bairro_norm):
+            continue
         # Apply bairro name aliases before fuzzy merge
         alias_display = None
         alias_map = BAIRRO_ALIASES.get(mun_norm.upper())
@@ -565,7 +568,8 @@ def heatmap_bairros(request: Request,
         if bairro_matched != bairro_norm:
             bairro_norm = bairro_matched
         key = (mun_norm, bairro_norm)
-        # Fuzzy merge (BOM FIM / BOMFIM → same key)
+        # Fuzzy merge: also try article-stripped key for names like "LOMBA PINHEIRO" ↔ "LOMBA DO PINHEIRO"
+        art_key = (mun_norm, normalize_fuzzy(_strip_articles(bairro_norm)))
         fuzzy = (mun_norm, normalize_fuzzy(bairro_norm))
         if fuzzy in fuzzy_key_map:
             key = fuzzy_key_map[fuzzy]
