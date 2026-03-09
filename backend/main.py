@@ -1372,7 +1372,7 @@ IBGE_CODE_CENTROIDS: dict[str, tuple[float, float]] = {}
 def _load_municipio_centroids():
     """Build centroid lookup from static JSON (primary) or GeoJSON files (fallback)."""
     # Primary: load from static JSON file (Docker-safe, no GeoJSON needed)
-    static_json_path = _os.path.join(_os.path.dirname(__file__), "data", "mun_centroids.json")
+    static_json_path = _os.path.join(_os.path.dirname(__file__), "lookup", "mun_centroids.json")
     if _os.path.exists(static_json_path):
         try:
             with open(static_json_path, encoding='utf-8') as f:
