@@ -129,16 +129,14 @@ def _normalize_bairro_for_matching(bairro_norm: str, poly_names: set[str] | None
     # Check abbreviation map
     if result in _BAIRRO_ABBREVIATIONS:
         result = _BAIRRO_ABBREVIATIONS[result]
-    # Conditionally strip "VILA " prefix: if "Vila X" is not a polygon but "X" is
-    if poly_names and result.startswith('VILA '):
-        without_vila = result[5:].strip()
-        if without_vila in poly_names and result not in poly_names:
-            result = without_vila
-    # Conditionally strip "JARDIM " prefix: if "Jardim X" is not a polygon but "X" is
-    if poly_names and result.startswith('JARDIM '):
-        without_jardim = result[7:].strip()
-        if without_jardim in poly_names and result not in poly_names:
-            result = without_jardim
+    # Conditionally strip urban/real-estate type prefixes when the bare name IS a polygon
+    # These are generic Brazilian terms used across all states
+    for _strip_prefix in ('VILA ', 'JARDIM ', 'LOTEAMENTO ', 'RESIDENCIAL ', 'CONJUNTO ', 'CONDOMINIO '):
+        if poly_names and result.startswith(_strip_prefix) and result not in poly_names:
+            stripped = result[len(_strip_prefix):].strip()
+            if stripped in poly_names:
+                result = stripped
+                break
     # If we have polygon names available, try prefix/suffix matching for abbreviated/truncated names
     if poly_names and result != bairro_norm:
         # Already found a match via prefix strip or abbreviation — pass
