@@ -579,12 +579,31 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
                   const usePurple = compareModeRef.current && (comparisonLocationsRef.current?.length ?? 0) < 2;
                   (layer as any).setStyle({ fillOpacity: hasSelection && !isSelected ? 0.20 : 0.45, color: usePurple ? '#6d28d9' : '#3b82f6', weight: 1.5 });
                 });
-                layer.on('click', () => {
+                layer.on('click', async () => {
                   if (compareModeRef.current && onCompareSelectRef.current) {
                     onCompareSelectRef.current({ municipio: '', state: sigla, displayName: `${name} (${sigla})` });
                     return;
                   }
                   if (onToggleState) onToggleState(sigla);
+                  if (onDetailOpenRef.current) {
+                    const dn = `${name} (${sigla})`;
+                    onDetailOpenRef.current({ displayName: dn, municipio: '', state: sigla, total: 0, isUnknown: false });
+                    try {
+                      const f = filtersRef.current;
+                      const stats = await fetchStateStats({
+                        state: sigla, semestre: f.semestre, ano: f.ano, tipo: f.tipo,
+                        grupo: f.grupo, sexo: f.sexo, cor: f.cor,
+                        idade_min: f.idade_min, idade_max: f.idade_max,
+                        selected_states: selectedStates,
+                      });
+                      onDetailOpenRef.current({ displayName: dn, municipio: '', state: sigla,
+                        total: stats.total ?? 0, population: stats.population, isUnknown: false,
+                        ...(stats.crime_types ? { crime_types: stats.crime_types.map((ct: any) => ({ tipo: ct.tipo_enquadramento || ct.tipo, count: ct.count })) } : {}),
+                      } as any);
+                    } catch (err) {
+                      console.error('Failed to load state stats:', err);
+                    }
+                  }
                 });
               }
             }
