@@ -155,7 +155,7 @@ export default function Home() {
   useEffect(() => {
     Promise.all([
       fetchStats().then(setStats),
-      fetchSemesters().then((s: string[]) => { setSemesters(s); if (s.length > 0) { setSelectedYear(s[0].split('-')[0]); setSelectedPeriod('ano'); } }),
+      fetchSemesters().then((s: string[]) => { setSemesters(s); if (s.length > 0) { setSelectedYear(s[0].split('-')[0]); setSelectedPeriod('12m'); } }),
       fetchFilterOptions({}).then((opts: any) => {
         const VALID_GRUPOS = ['CRIMES', 'CONTRAVENCOES'];
         setCrimeTypes((opts.tipo || []).map((t: any) => ({ tipo_enquadramento: t.value, count: t.count })));
