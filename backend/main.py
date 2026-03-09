@@ -746,6 +746,10 @@ def heatmap_bairros(request: Request,
             )
             if canonical and canonical != merged[key]['bairro']:
                 merged[key]['bairro'] = canonical
+            # Also add canonical-display normalized form so cluster-merge protection works
+            # even when internal key (e.g. "PASSO DAREIA") differs from display ("PASSO D'AREIA")
+            if canonical:
+                polygon_matched_keys.add((mun_norm, normalize_name(canonical)))
 
     # Build municipality centroid lookup for "unknown bairro" detection
     from services.geocoder import MAJOR_CITIES_RS, _haversine_km
