@@ -585,7 +585,13 @@ def heatmap_bairros(request: Request,
         mun_norm, bairro_norm = key
         poly_names = polygon_names_by_mun.get(mun_norm, set())
         enhanced = _normalize_bairro_for_matching(bairro_norm, poly_names)
-        if bairro_norm in poly_names or enhanced in poly_names or normalize_fuzzy(bairro_norm) in {normalize_fuzzy(pn) for pn in poly_names} or normalize_fuzzy(enhanced) in {normalize_fuzzy(pn) for pn in poly_names}:
+        poly_fuzzy = {normalize_fuzzy(pn) for pn in poly_names}
+        poly_art_fuzzy = {normalize_fuzzy(_strip_articles(pn)) for pn in poly_names}
+        if (bairro_norm in poly_names or enhanced in poly_names
+                or normalize_fuzzy(bairro_norm) in poly_fuzzy
+                or normalize_fuzzy(enhanced) in poly_fuzzy
+                or normalize_fuzzy(_strip_articles(bairro_norm)) in poly_art_fuzzy
+                or normalize_fuzzy(_strip_articles(enhanced)) in poly_art_fuzzy):
             continue  # already matches a polygon — no remap needed
         # Don't PIP-remap established bairros (>= 50 records) — show as dot markers instead
         # EXCEPT for street/place names which should always be PIP-remapped
