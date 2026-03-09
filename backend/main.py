@@ -885,7 +885,13 @@ def filter_options(request: Request,
                 CrimeStaging.crime_type.isnot(None),
                 CrimeStaging.crime_type != ""
             )
-            if semestre:
+            if ultimos_meses:
+                _, thresh_year, thresh_month = _ultimos_meses_range(ultimos_meses)
+                staging_q = staging_q.filter(
+                    (CrimeStaging.year > thresh_year) |
+                    ((CrimeStaging.year == thresh_year) & (CrimeStaging.month >= thresh_month))
+                )
+            elif semestre:
                 year_str, sem_str = semestre.split('-')
                 month_range = list(range(1, 7) if sem_str == "S1" else range(7, 13))
                 staging_q = staging_q.filter(
