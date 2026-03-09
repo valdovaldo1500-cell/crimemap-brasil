@@ -95,6 +95,7 @@ export default function Home() {
   const [bugError, setBugError] = useState('');
   const [crimeTypeSearch, setCrimeTypeSearch] = useState('');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [detailData, setDetailData] = useState<any>(null);
 
   // State selection
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
