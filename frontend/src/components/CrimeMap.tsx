@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { fetchHeatmapMunicipios, fetchHeatmapBairros, fetchHeatmapStates, fetchLocationStats } from '@/lib/api';
+import { fetchHeatmapMunicipios, fetchHeatmapBairros, fetchHeatmapStates, fetchLocationStats, fetchStateStats } from '@/lib/api';
 import { normalizeGeoName } from '@/lib/normalize';
 interface Props {
   center:[number,number]; zoom:number; filters:any;
