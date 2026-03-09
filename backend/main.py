@@ -55,8 +55,10 @@ _BAIRRO_ABBREVIATIONS = {
     "EST VELHA": "ESTANCIA VELHA",
     "NSA SRA DAS GRACAS": "NOSSA SENHORA DAS GRACAS",
     "NS DAS GRACAS": "NOSSA SENHORA DAS GRACAS",
-    "M DEUS": "MENINO DEUS",   # Porto Alegre: "M Deus" → polygon "Menino Deus"
-    "LURDES": "LOURDES",       # Caxias do Sul: typo normalization
+    "M DEUS": "MENINO DEUS",      # Porto Alegre: "M Deus" → polygon "Menino Deus"
+    "LURDES": "LOURDES",          # Caxias do Sul: typo normalization
+    "SANTA TERESA": "SANTA TEREZA",  # São Leopoldo: spelling variant
+    "DIHEL": "DIEHL",             # Novo Hamburgo: transposition typo
 }
 
 _BAIRRO_TYPE_PREFIXES = re.compile(
