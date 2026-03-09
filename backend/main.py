@@ -502,6 +502,9 @@ def heatmap_bairros(request: Request,
     BAIRRO_ALIASES = {
         "PORTO ALEGRE": {"CENTRO": "CENTRO HISTORICO"},
     }
+    polygon_names_by_mun: dict[str, set[str]] = {}
+    for mun, polys in BAIRRO_POLYGON_INDEX.items():
+        polygon_names_by_mun[mun] = {p[0] for p in polys}
     merged: dict[tuple[str, str], dict] = {}
     fuzzy_key_map: dict[tuple[str, str], tuple[str, str]] = {}
     for r in rows:
@@ -517,6 +520,11 @@ def heatmap_bairros(request: Request,
             if alias:
                 bairro_norm = normalize_name(alias)
                 alias_display = alias
+        # Enhanced bairro name normalization (strip "BAIRRO" prefix, expand abbreviations)
+        poly_names = polygon_names_by_mun.get(mun_norm, set())
+        bairro_matched = _normalize_bairro_for_matching(bairro_norm, poly_names)
+        if bairro_matched != bairro_norm:
+            bairro_norm = bairro_matched
         key = (mun_norm, bairro_norm)
         # Fuzzy merge (BOM FIM / BOMFIM → same key)
         fuzzy = (mun_norm, normalize_fuzzy(bairro_norm))
@@ -532,9 +540,6 @@ def heatmap_bairros(request: Request,
 
     # PIP pass: for merged bairros that don't match any polygon by name,
     # check if their geocoded point falls inside an existing polygon → re-merge
-    polygon_names_by_mun: dict[str, set[str]] = {}
-    for mun, polys in BAIRRO_POLYGON_INDEX.items():
-        polygon_names_by_mun[mun] = {p[0] for p in polys}
 
     pip_remap: dict[tuple[str, str], tuple[str, str, str]] = {}
     for key, m in merged.items():
