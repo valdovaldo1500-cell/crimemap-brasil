@@ -621,16 +621,22 @@ def heatmap_bairros(request: Request,
         mun_norm, bairro_norm = key
         poly_names = polygon_names_by_mun.get(mun_norm, set())
         enhanced = _normalize_bairro_for_matching(bairro_norm, poly_names)
-        # Check exact, fuzzy, enhanced exact, enhanced fuzzy
+        # Check exact, fuzzy, enhanced exact, enhanced fuzzy, article-stripped fuzzy
+        poly_fuzzy_map = {normalize_fuzzy(pn): pn for pn in poly_names}
+        poly_art_fuzzy_map = {normalize_fuzzy(_strip_articles(pn)): pn for pn in poly_names}
         matched_pn = None
         if bairro_norm in poly_names:
             matched_pn = bairro_norm
         elif enhanced in poly_names:
             matched_pn = enhanced
-        elif normalize_fuzzy(bairro_norm) in {normalize_fuzzy(pn) for pn in poly_names}:
-            matched_pn = next((pn for pn in poly_names if normalize_fuzzy(pn) == normalize_fuzzy(bairro_norm)), None)
-        elif normalize_fuzzy(enhanced) in {normalize_fuzzy(pn) for pn in poly_names}:
-            matched_pn = next((pn for pn in poly_names if normalize_fuzzy(pn) == normalize_fuzzy(enhanced)), None)
+        elif normalize_fuzzy(bairro_norm) in poly_fuzzy_map:
+            matched_pn = poly_fuzzy_map[normalize_fuzzy(bairro_norm)]
+        elif normalize_fuzzy(enhanced) in poly_fuzzy_map:
+            matched_pn = poly_fuzzy_map[normalize_fuzzy(enhanced)]
+        elif normalize_fuzzy(_strip_articles(bairro_norm)) in poly_art_fuzzy_map:
+            matched_pn = poly_art_fuzzy_map[normalize_fuzzy(_strip_articles(bairro_norm))]
+        elif normalize_fuzzy(_strip_articles(enhanced)) in poly_art_fuzzy_map:
+            matched_pn = poly_art_fuzzy_map[normalize_fuzzy(_strip_articles(enhanced))]
         if matched_pn:
             polygon_matched_keys.add(key)
             # Always update display name to polygon's canonical name for frontend GeoJSON matching
