@@ -351,7 +351,8 @@ export default function Home() {
   const filters = useMemo(() => ({
     tipo: selectedTypes.length ? selectedTypes : undefined,
     grupo: selectedGrupo.length ? selectedGrupo[0] : undefined,
-    semestre: selectedPeriod !== 'ano' ? `${selectedYear}-${selectedPeriod}` : undefined,
+    ultimos_meses: selectedPeriod === '12m' ? 12 : undefined,
+    semestre: selectedPeriod !== 'ano' && selectedPeriod !== '12m' ? `${selectedYear}-${selectedPeriod}` : undefined,
     ano: selectedPeriod === 'ano' ? selectedYear : undefined,
     sexo: selectedSexo.length ? selectedSexo : undefined,
     cor: selectedCor.length ? selectedCor : undefined,
