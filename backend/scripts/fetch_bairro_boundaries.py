@@ -464,6 +464,79 @@ out geom;
 
     print(f"Place-tagged features: added {place_added}, skipped {place_skipped}")
 
+    # Phase 4: fetch place=suburb/neighbourhood nodes (no polygon geometry)
+    # Generate approximate circular polygon (~400m radius) for each missing node
+    print(f"\nPhase 4: fetching place=suburb/neighbourhood nodes (point-only features)...")
+    node_query = f"""
+[out:json][timeout:120];
+area["name"="{osm_name}"][admin_level=4]->.state;
+node[place~"^(suburb|neighbourhood)$"](area.state);
+out tags center;
+"""
+    node_data = overpass_request(node_query, timeout_secs=180)
+    node_elements = node_data.get("elements", [])
+    print(f"Got {len(node_elements)} place-tagged nodes")
+
+    node_added = 0
+    node_skipped = 0
+
+    for el in node_elements:
+        if el.get("type") != "node":
+            node_skipped += 1
+            continue
+
+        tags = el.get("tags", {})
+        name = tags.get("name", "")
+        if not name:
+            node_skipped += 1
+            continue
+
+        lon = el.get("lon")
+        lat = el.get("lat")
+        if lon is None or lat is None:
+            node_skipped += 1
+            continue
+
+        # Municipality assignment: tags first, then PIP fallback
+        municipio = tags.get("addr:city", "") or tags.get("is_in:city", "")
+        if not municipio:
+            is_in = tags.get("is_in", "")
+            if is_in:
+                parts = [p.strip() for p in is_in.split(",")]
+                if parts:
+                    municipio = parts[0]
+
+        if not municipio and muni_polys:
+            parent = find_parent_municipio(lon, lat, muni_polys)
+            if parent:
+                municipio = parent
+
+        name_normalized = normalize_name(name)
+        municipio_normalized = normalize_name(municipio) if municipio else ""
+
+        key = (municipio_normalized, name_normalized)
+        if key in existing_keys:
+            node_skipped += 1
+            continue
+
+        coords = make_circle_polygon(lon, lat)
+        feature = {
+            "type": "Feature",
+            "properties": {
+                "name": name,
+                "name_normalized": name_normalized,
+                "municipio": municipio,
+                "municipio_normalized": municipio_normalized,
+                "source": "osm_node_approx",
+            },
+            "geometry": {"type": "Polygon", "coordinates": [coords]},
+        }
+        features.append(feature)
+        existing_keys.add(key)
+        node_added += 1
+
+    print(f"Node-approx features: added {node_added}, skipped {node_skipped}")
+
     # Supplement with IBGE data
     features = supplement_with_ibge(features, ibge_code)
 
