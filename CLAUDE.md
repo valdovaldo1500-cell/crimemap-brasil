@@ -157,3 +157,23 @@ Source: IBGE API for municipality/state boundaries.
 - **Three zoom levels**: states (zoom < 7), municipios (7-10), bairros (≥ 11, RS only)
 - **Rate mode**: /100K hab. uses fixed thresholds; Total uses quantile-based coloring
 - **Cascading filters**: changing any filter re-fetches available options
+
+## Anti-Regression Rules
+
+### Before committing:
+- Run `cd backend && python -m pytest tests/ -v` (blocked by pre-commit hook anyway)
+- For bairro matching changes: run `pytest tests/test_bairro_matching.py -v`
+- For filter logic changes: verify with `curl` against the live API after deploy
+
+### Behavioral constraints:
+- If a fix requires changes to more than 3 files, STOP and use /plan mode first
+- If tests fail after your change, REVERT and rethink — do NOT modify existing tests
+- Never add city-specific or state-specific matching rules — all fixes must be general-purpose
+- After every deploy, verify the specific fix with curl + verify no regression on POA unknown%
+
+### Module dependency map (what to test when you change what):
+- `_normalize_bairro_for_matching()` → run test_bairro_matching.py
+- `_phonetic_br()`, `normalize_name()` → run test_bairro_matching.py
+- heatmap_bairros endpoint → check detail panel consistency (location-stats must match)
+- filter-options endpoint → verify cascading filters still work for RS, RJ, MG
+- fetch_bairro_boundaries.py → re-run for RS, check feature count, check POA unknown%
