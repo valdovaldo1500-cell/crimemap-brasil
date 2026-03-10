@@ -6,3 +6,4 @@ __pycache__
 backend/data
 .env
 test-results/
+backend/.hypothesis/

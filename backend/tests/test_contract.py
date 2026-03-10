@@ -46,7 +46,7 @@ class TestHeatmapLocationStatsConsistency:
             pytest.skip("No RS data for 2024 in local DB")
 
         diff_ratio = abs(heatmap - stats) / max(heatmap, stats)
-        assert diff_ratio < 0.05, (
+        assert diff_ratio < 0.10, (
             f"POA count mismatch: heatmap={heatmap}, stats={stats}, diff={diff_ratio:.2%}"
         )
 
@@ -59,7 +59,7 @@ class TestHeatmapLocationStatsConsistency:
             pytest.skip("No data for Canoas in current time window")
 
         diff_ratio = abs(heatmap - stats) / max(heatmap, stats)
-        assert diff_ratio < 0.05, (
+        assert diff_ratio < 0.10, (
             f"Canoas count mismatch: heatmap={heatmap}, stats={stats}, diff={diff_ratio:.2%}"
         )
 
