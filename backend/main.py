@@ -1460,7 +1460,7 @@ def state_stats(request: Request,
             CrimeStaging.crime_type,
             (func.coalesce(func.sum(CrimeStaging.occurrences), 0) +
              func.coalesce(func.sum(CrimeStaging.victims), 0)).label("cnt")
-        ).filter(*staging_filters).group_by(CrimeStaging.crime_type).order_by(desc(literal_column("cnt"))).limit(10).all()
+        ).filter(*staging_filters).group_by(CrimeStaging.crime_type).order_by(desc(literal_column("cnt"))).all()
         crime_types = [{"tipo_enquadramento": r.crime_type, "count": r.cnt} for r in rows if r.cnt > 0]
     pop = get_state_population(state)
     # Fix #9: return None instead of 0 so frontend never divides by zero
