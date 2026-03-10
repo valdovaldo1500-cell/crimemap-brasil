@@ -193,11 +193,12 @@ export default function DetailPanel({ data, onClose, stackIndex = 0, onFocus }: 
                 <div className="text-[10px] text-[#94a3b8] uppercase tracking-wider mb-1">
                   Tipos de crime
                 </div>
-                <div className="space-y-0.5">
+                <div className="space-y-0.5 max-h-60 overflow-y-auto">
                   {data.crime_types.map((ct, i) => (
-                    <div key={i} className="flex justify-between text-xs">
-                      <span className="text-[#cbd5e1] truncate">{ct.tipo}</span>
-                      <span className="font-mono text-[#94a3b8] ml-2">{ct.count.toLocaleString()}</span>
+                    <div key={i} className="flex items-center text-xs gap-1">
+                      <span className="text-[#cbd5e1] truncate flex-1">{ct.tipo}</span>
+                      <span className="font-mono text-[#64748b] whitespace-nowrap">{data.total > 0 ? ((ct.count / data.total) * 100).toFixed(1) : '0.0'}%</span>
+                      <span className="font-mono text-[#94a3b8] whitespace-nowrap w-14 text-right">{ct.count.toLocaleString()}</span>
                     </div>
                   ))}
                 </div>
