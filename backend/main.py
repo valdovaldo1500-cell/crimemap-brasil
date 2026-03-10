@@ -57,6 +57,7 @@ _BAIRRO_ABBREVIATIONS = {
     "NS DAS GRACAS": "NOSSA SENHORA DAS GRACAS",
     "M DEUS": "MENINO DEUS",      # Porto Alegre: "M Deus" → polygon "Menino Deus"
     "LURDES": "LOURDES",          # common name variant (Lurdes/Lourdes)
+    "BONFIM": "BOM FIM",          # common contracted spelling (Bonfim/Bom Fim)
     "DIHEL": "DIEHL",             # transposition typo (edit-distance-1)
     "JABOTICABAL": "JABUTICABAL", # Erechim: O/U spelling variant
 }
