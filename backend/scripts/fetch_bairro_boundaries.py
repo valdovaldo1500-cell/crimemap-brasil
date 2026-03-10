@@ -563,7 +563,7 @@ out tags center;
         existing_keys.add(key)
         node_added += 1
 
-    print(f"Node-approx features: added {node_added}, skipped {node_skipped}, inside existing polygon: {node_inside}")
+    print(f"Node-approx features: added {node_added}, skipped {node_skipped}, inside existing (50m radius): {node_inside}")
 
     # Supplement with IBGE data
     features = supplement_with_ibge(features, ibge_code)
