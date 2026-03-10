@@ -1292,7 +1292,7 @@ def location_stats(request: Request,
 
     if total > 0:
         breakdown = q.with_entities(Crime.tipo_enquadramento, func.count(Crime.id)) \
-            .group_by(Crime.tipo_enquadramento).order_by(func.count(Crime.id).desc()).limit(10).all()
+            .group_by(Crime.tipo_enquadramento).order_by(func.count(Crime.id).desc()).all()
         crime_types = [{"tipo_enquadramento": t[0], "count": t[1]} for t in breakdown]
     else:
         # Fallback: query CrimeStaging for non-RS municipalities
