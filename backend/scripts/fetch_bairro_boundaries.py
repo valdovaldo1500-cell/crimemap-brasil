@@ -459,6 +459,14 @@ out geom;
     with open(output_path, "w") as f:
         json.dump(geojson, f, separators=(",", ":"))
 
+    # Also copy to backend/bairro-geo/ (baked into Docker image)
+    backend_geo_dir = os.path.join(PROJECT_ROOT, "backend", "bairro-geo")
+    backend_output_path = os.path.join(backend_geo_dir, f"{state_sigla}-bairros.geojson")
+    if os.path.exists(backend_geo_dir):
+        with open(backend_output_path, "w") as f:
+            json.dump(geojson, f, separators=(",", ":"))
+        print(f"Also wrote backend copy to {backend_output_path}")
+
     file_size = os.path.getsize(output_path)
     print(f"\nDone! Wrote {len(features)} bairro features to {output_path}")
     print(f"File size: {file_size / 1024:.0f} KB")
