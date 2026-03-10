@@ -1,0 +1,20 @@
+[
+  {"input": "M VELHO", "municipality": "CANOAS", "expected": "MATHIAS VELHO"},
+  {"input": "NOSSA SENHORA DAS GR", "municipality": "CANOAS", "expected_startswith": "NOSSA SENHORA DAS GR"},
+  {"input": "SAO CRISTOVAO", "municipality": "CANOAS", "expected": "SAO CRISTOVAO"},
+  {"input": "BAIRRO FATIMA", "municipality": "CANOAS", "expected": "FATIMA"},
+  {"input": "MOINHOS DE VENTO", "municipality": "CANOAS", "expected": "MOINHOS DE VENTO"},
+  {"input": "PASSO D'AREIA", "municipality": "PORTO ALEGRE", "expected": "PASSO DA AREIA"},
+  {"input": "PASSO DAREIA", "municipality": "PORTO ALEGRE", "expected": "PASSO DA AREIA"},
+  {"input": "BOM FIM", "municipality": "PORTO ALEGRE", "expected": "BOM FIM"},
+  {"input": "BONFIM", "municipality": "PORTO ALEGRE", "expected": "BOM FIM"},
+  {"input": "PRAIA DE BELAS", "municipality": "PORTO ALEGRE", "expected": "PRAIA DE BELAS"},
+  {"input": "VL NOVA", "municipality": "ANY", "expected_startswith": "VILA NOVA"},
+  {"input": "STA CECILIA", "municipality": "ANY", "expected_startswith": "SANTA CECILIA"},
+  {"input": "JD BOTANICO", "municipality": "ANY", "expected_startswith": "JARDIM BOTANICO"},
+  {"input": "NSA SRA DAS GRACAS", "municipality": "ANY", "expected_startswith": "NOSSA SENHORA DAS GRACAS"},
+  {"input": "M DEUS", "municipality": "PORTO ALEGRE", "expected": "MENINO DEUS"},
+  {"input": "MAL RONDON", "municipality": "ANY", "expected": "MARECHAL RONDON"},
+  {"input": "EST VELHA", "municipality": "ANY", "expected": "ESTANCIA VELHA"},
+  {"input": "LURDES", "municipality": "ANY", "expected": "LOURDES"}
+]
