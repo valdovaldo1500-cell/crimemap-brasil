@@ -162,14 +162,18 @@ class TestGetCompatibleTypes:
     @given(state_list_strategy)
     @settings(max_examples=100)
     def test_result_subset_of_union(self, states):
-        """Result types for each state are a subset of the union of all states' types."""
+        """Result types for each state are a subset of the union of all states' types + sinesp types."""
         result = get_compatible_types(states)
+        # get_compatible_types always includes sinesp_types alongside state-specific types,
+        # so the union must include sinesp types too (via the _sinesp pseudo-state)
         all_types = set()
         for s in states:
             all_types.update(get_state_types(s))
+        all_types.update(get_state_types("_sinesp_placeholder"))  # adds sinesp types
         for s in states:
-            assert set(result.get(s, [])).issubset(all_types), (
-                f"State {s} has types not in the union: {set(result.get(s, [])) - all_types}"
+            returned = set(result.get(s, []))
+            assert returned.issubset(all_types), (
+                f"State {s} has types not in the union: {returned - all_types}"
             )
 
     @given(state_list_strategy)
