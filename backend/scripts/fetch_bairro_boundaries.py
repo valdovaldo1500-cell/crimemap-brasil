@@ -478,17 +478,40 @@ out tags center;
     node_elements = node_data.get("elements", [])
     print(f"Got {len(node_elements)} place-tagged nodes")
 
-    # Build per-municipality index of existing polygon outer rings for containment check
+    # Build per-municipality index of existing polygon outer rings for containment check.
+    # Only include polygons smaller than AREA_THRESHOLD_KM2 — large polygons are likely
+    # macro-districts (e.g. Viamão's Martinica=3.4 km², São Tomé=6 km²) that contain
+    # legitimate sub-neighbourhoods we want to keep.
+    import math
     from collections import defaultdict
+    AREA_THRESHOLD_KM2 = 2.0
+
+    def _approx_area_km2(ring):
+        n = len(ring) - 1
+        if n < 3:
+            return 0
+        area = 0
+        for i in range(n):
+            x1, y1 = ring[i]
+            x2, y2 = ring[(i + 1) % n]
+            area += x1 * y2 - x2 * y1
+        area = abs(area) / 2
+        avg_lat = sum(p[1] for p in ring[:n]) / n
+        return area * 111.32 * math.cos(math.radians(avg_lat)) * 111.32
+
     bairro_polys_by_muni = defaultdict(list)
     for feat in features:
         muni_norm = feat["properties"].get("municipio_normalized", "")
         geom = feat["geometry"]
         if geom["type"] == "Polygon":
-            bairro_polys_by_muni[muni_norm].append(geom["coordinates"][0])
+            ring = geom["coordinates"][0]
+            if _approx_area_km2(ring) < AREA_THRESHOLD_KM2:
+                bairro_polys_by_muni[muni_norm].append(ring)
         elif geom["type"] == "MultiPolygon":
             for poly in geom["coordinates"]:
-                bairro_polys_by_muni[muni_norm].append(poly[0])
+                ring = poly[0]
+                if _approx_area_km2(ring) < AREA_THRESHOLD_KM2:
+                    bairro_polys_by_muni[muni_norm].append(ring)
 
     node_added = 0
     node_skipped = 0
