@@ -8,19 +8,20 @@ def test_auto_ingest_no_new_urls():
          patch('services.data_ingestion.ingest_and_geocode') as mock_ingest:
         auto_ingest_job()
 
-    mock_urls.assert_called_once()
+    # Called once per state (RS, SP)
+    assert mock_urls.call_count == 2
     mock_ingest.assert_not_called()
 
 
 def test_auto_ingest_with_new_urls():
-    """Each new URL should trigger ingest_and_geocode."""
+    """Each new URL should trigger ingest_and_geocode for each state."""
     urls = ["http://example.com/a.zip", "http://example.com/b.zip"]
     with patch('services.update_checker.get_new_urls', return_value=urls), \
          patch('services.data_ingestion.ingest_and_geocode', return_value=100) as mock_ingest:
         auto_ingest_job()
 
-    assert mock_ingest.call_count == 2
-    mock_ingest.assert_has_calls([call(urls[0]), call(urls[1])])
+    # 2 URLs × 2 states (RS, SP) = 4 calls
+    assert mock_ingest.call_count == 4
 
 
 def test_scheduler_starts_stops():
