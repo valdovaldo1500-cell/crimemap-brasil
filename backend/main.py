@@ -1430,7 +1430,7 @@ def state_stats(request: Request,
         breakdown = (q.with_entities(Crime.tipo_enquadramento, func.count(Crime.id))
             .group_by(Crime.tipo_enquadramento)
             .order_by(func.count(Crime.id).desc())
-            .limit(10).all())
+            .all())
         crime_types = [{"tipo_enquadramento": t[0], "count": t[1]} for t in breakdown]
     else:
         # Fall back to CrimeStaging for states without detailed Crime data
