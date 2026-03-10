@@ -1386,6 +1386,7 @@ def state_stats(request: Request,
     tipo: Optional[List[str]] = Query(None), grupo: Optional[str] = None,
     semestre: Optional[str] = None,
     ano: Optional[str] = None,
+    ultimos_meses: Optional[int] = None,
     selected_states: Optional[List[str]] = Query(None),
     idade_min: Optional[int] = None, idade_max: Optional[int] = None,
     sexo: Optional[List[str]] = Query(None), cor: Optional[List[str]] = Query(None),
@@ -1405,7 +1406,10 @@ def state_stats(request: Request,
                     effective_tipo = list(all_types)
     # Try detailed Crime table first
     q = db.query(Crime).filter(Crime.state == state, Crime.latitude.isnot(None))
-    if semestre:
+    if ultimos_meses:
+        threshold_date, _, _ = _ultimos_meses_range(ultimos_meses)
+        q = q.filter(Crime.data_fato >= threshold_date)
+    elif semestre:
         q = q.filter(Crime.year_month.in_(semester_months(semestre)))
     elif ano:
         q = q.filter(Crime.year_month.like(f"{ano}-%"))
@@ -1430,26 +1434,33 @@ def state_stats(request: Request,
         crime_types = [{"tipo_enquadramento": t[0], "count": t[1]} for t in breakdown]
     else:
         # Fall back to CrimeStaging for states without detailed Crime data
-        sq = db.query(
+        staging_filters = [CrimeStaging.state == state, CrimeStaging.crime_type.isnot(None)]
+        if ultimos_meses:
+            _, thresh_year, thresh_month = _ultimos_meses_range(ultimos_meses)
+            staging_filters.append(
+                (CrimeStaging.year > thresh_year) |
+                ((CrimeStaging.year == thresh_year) & (CrimeStaging.month >= thresh_month))
+            )
+        elif semestre:
+            year_str, sem_str = semestre.split('-')
+            month_range = range(1, 7) if sem_str == "S1" else range(7, 13)
+            staging_filters.append(CrimeStaging.year == int(year_str))
+            staging_filters.append(CrimeStaging.month.in_(list(month_range)))
+        elif ano:
+            staging_filters.append(CrimeStaging.year == int(ano))
+        if effective_tipo:
+            staging_filters.append(CrimeStaging.crime_type.in_(effective_tipo))
+        # Total from ALL types (not limited to top 10)
+        total = int(db.query(
+            func.coalesce(func.sum(CrimeStaging.occurrences), 0) +
+            func.coalesce(func.sum(CrimeStaging.victims), 0)
+        ).filter(*staging_filters).scalar() or 0)
+        # Type breakdown (top 10 for display)
+        rows = db.query(
             CrimeStaging.crime_type,
             (func.coalesce(func.sum(CrimeStaging.occurrences), 0) +
              func.coalesce(func.sum(CrimeStaging.victims), 0)).label("cnt")
-        ).filter(CrimeStaging.state == state)
-        if semestre:
-            year_str, sem_str = semestre.split('-')
-            month_range = range(1, 7) if sem_str == "S1" else range(7, 13)
-            sq = sq.filter(
-                CrimeStaging.year == int(year_str),
-                CrimeStaging.month.in_(list(month_range))
-            )
-        elif ano:
-            sq = sq.filter(CrimeStaging.year == int(ano))
-        if effective_tipo:
-            sq = sq.filter(CrimeStaging.crime_type.in_(effective_tipo))
-        # Fix: use desc(literal_column(...)) instead of func.text(...) — valid SQLAlchemy/SQLite
-        sq = sq.group_by(CrimeStaging.crime_type).order_by(desc(literal_column("cnt"))).limit(10)
-        rows = sq.all()
-        total = sum(r.cnt for r in rows)
+        ).filter(*staging_filters).group_by(CrimeStaging.crime_type).order_by(desc(literal_column("cnt"))).limit(10).all()
         crime_types = [{"tipo_enquadramento": r.crime_type, "count": r.cnt} for r in rows if r.cnt > 0]
     pop = get_state_population(state)
     # Fix #9: return None instead of 0 so frontend never divides by zero
