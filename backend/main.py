@@ -78,7 +78,7 @@ _BAIRRO_PREFIX_EXPANSIONS = [
 ]
 
 # Articles/prepositions to strip when doing article-normalized fuzzy matching
-_PT_ARTICLES = re.compile(r'\b(DO|DA|DOS|DAS|DE|D|BOM|PASSO)\b\s*', re.IGNORECASE)
+_PT_ARTICLES = re.compile(r'\b(DO|DA|DOS|DAS|DE|D)\b\s*', re.IGNORECASE)
 
 # Short first-word prefixes that are Portuguese particles (not abbreviations)
 # Used to exclude false matches in the short-first-word suffix rule
