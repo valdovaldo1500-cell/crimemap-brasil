@@ -538,7 +538,12 @@ def heatmap_municipios(request: Request,
         CrimeStaging.municipio, CrimeStaging.state,
         (func.coalesce(func.sum(CrimeStaging.occurrences), 0) +
          func.coalesce(func.sum(CrimeStaging.victims), 0)).label("cnt")
-    ).filter(CrimeStaging.municipio.isnot(None), CrimeStaging.state.in_(["RS", "RJ", "MG"]))
+    ).filter(
+        CrimeStaging.municipio.isnot(None),
+        CrimeStaging.municipio.notin_(["NÃO INFORMADO", "NAO INFORMADO", "NÃO INFORMADA", "NAO INFORMADA",
+                                        "DESCONHECIDO", "DESCONHECIDA", "IGNORADO", "IGNORADA"]),
+        CrimeStaging.state.in_(["RS", "RJ", "MG"])
+    )
     if effective_tipo: q2 = q2.filter(CrimeStaging.crime_type.in_(effective_tipo))
     if ultimos_meses:
         _, thresh_year, thresh_month = _ultimos_meses_range(ultimos_meses)
