@@ -447,17 +447,17 @@ export default function Home() {
   }, []);
 
   // Re-fetch open DetailPanels when filters change
-  const filtersRef = useRef(filters);
+  const detailPanelsRef = useRef(detailPanels);
+  detailPanelsRef.current = detailPanels;
+  const prevFiltersRef = useRef(filters);
   useEffect(() => {
-    const prev = filtersRef.current;
-    filtersRef.current = filters;
-    // Skip initial render
-    if (prev === filters) return;
-    // Re-fetch each open panel
-    detailPanels.forEach(async (panel) => {
+    if (prevFiltersRef.current === filters) return;
+    prevFiltersRef.current = filters;
+    const panels = detailPanelsRef.current;
+    if (!panels.length) return;
+    panels.forEach(async (panel) => {
       try {
         if (panel.state && !panel.municipio) {
-          // State-level panel
           const stats = await fetchStateStats({
             state: panel.state, ...filters, selected_states: selectedStates,
           });
@@ -467,7 +467,6 @@ export default function Home() {
               crime_categories: stats.crime_categories ?? p.crime_categories } : p
           ));
         } else if (panel.municipio) {
-          // Municipality or bairro panel
           const stats = await fetchLocationStats({
             municipio: panel.municipio, bairro: panel.bairro, state: panel.state, ...filters,
           });
