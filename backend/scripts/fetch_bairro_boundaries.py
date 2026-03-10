@@ -217,6 +217,20 @@ def supplement_with_ibge(features, ibge_code):
     return features
 
 
+def make_circle_polygon(lon, lat, radius_m=400, n_sides=16):
+    """Generate an approximate circular polygon around a point (no shapely needed)."""
+    import math
+    lat_deg = 1 / 111320
+    lon_deg = 1 / (111320 * math.cos(math.radians(lat)))
+    coords = []
+    for i in range(n_sides):
+        angle = 2 * math.pi * i / n_sides
+        coords.append([round(lon + radius_m * lon_deg * math.cos(angle), 5),
+                       round(lat + radius_m * lat_deg * math.sin(angle), 5)])
+    coords.append(coords[0])  # close ring
+    return coords
+
+
 def overpass_request(query, timeout_secs=600):
     """Send query to Overpass API (GET preferred, POST fallback), trying mirror URLs."""
     last_exc = None
