@@ -273,6 +273,23 @@ def _load_bairro_centroids():
 
 BAIRRO_CENTROIDS = _load_bairro_centroids()
 
+# Fuzzy municipality name indexes: strip apostrophes/hyphens/spaces for matching
+# e.g. "SANT'ANA DO LIVRAMENTO" (GeoJSON) ↔ "SANTANA DO LIVRAMENTO" (crime data)
+_POLYGON_MUN_FUZZY = {normalize_fuzzy(mun): mun for mun in BAIRRO_POLYGON_INDEX}
+_CENTROIDS_MUN_FUZZY = {normalize_fuzzy(mun): mun for mun in BAIRRO_CENTROIDS}
+
+def _resolve_polygon_mun(mun_norm: str) -> str:
+    """Resolve municipality name to BAIRRO_POLYGON_INDEX key. Exact first, then fuzzy."""
+    if mun_norm in BAIRRO_POLYGON_INDEX:
+        return mun_norm
+    return _POLYGON_MUN_FUZZY.get(normalize_fuzzy(mun_norm), mun_norm)
+
+def _resolve_centroid_mun(mun_norm: str) -> str:
+    """Resolve municipality name to BAIRRO_CENTROIDS key. Exact first, then fuzzy."""
+    if mun_norm in BAIRRO_CENTROIDS:
+        return mun_norm
+    return _CENTROIDS_MUN_FUZZY.get(normalize_fuzzy(mun_norm), mun_norm)
+
 def _point_in_polygon(px, py, polygon):
     """Ray-casting PIP test. polygon is [[lon,lat], ...]."""
     n = len(polygon)
@@ -289,7 +306,7 @@ def _point_in_polygon(px, py, polygon):
 def _find_containing_polygon(lat, lng, mun_norm):
     """Find which bairro polygon contains point (lat, lng) for a given municipality.
     Returns (name_normalized, display_name) or None."""
-    polys = BAIRRO_POLYGON_INDEX.get(mun_norm, [])
+    polys = BAIRRO_POLYGON_INDEX.get(_resolve_polygon_mun(mun_norm), [])
     for name_norm, display_name, rings in polys:
         for ring in rings:
             if _point_in_polygon(lng, lat, ring):  # PIP takes (lon, lat)
@@ -694,7 +711,7 @@ def heatmap_bairros(request: Request,
                 bairro_norm = normalize_name(alias)
                 alias_display = alias
         # Enhanced bairro name normalization (strip "BAIRRO" prefix, expand abbreviations)
-        poly_names = polygon_names_by_mun.get(mun_norm, set())
+        poly_names = polygon_names_by_mun.get(_resolve_polygon_mun(mun_norm), set())
         bairro_matched = _normalize_bairro_for_matching(bairro_norm, poly_names)
         if bairro_matched != bairro_norm:
             bairro_norm = bairro_matched
@@ -722,7 +739,7 @@ def heatmap_bairros(request: Request,
     pip_remap: dict[tuple[str, str], tuple[str, str, str]] = {}
     for key, m in merged.items():
         mun_norm, bairro_norm = key
-        poly_names = polygon_names_by_mun.get(mun_norm, set())
+        poly_names = polygon_names_by_mun.get(_resolve_polygon_mun(mun_norm), set())
         enhanced = _normalize_bairro_for_matching(bairro_norm, poly_names)
         poly_fuzzy = {normalize_fuzzy(pn) for pn in poly_names}
         poly_art_fuzzy = {normalize_fuzzy(_strip_articles(pn)) for pn in poly_names}
@@ -761,7 +778,7 @@ def heatmap_bairros(request: Request,
     polygon_matched_keys: set[tuple[str, str]] = set()
     for key in merged:
         mun_norm, bairro_norm = key
-        poly_names = polygon_names_by_mun.get(mun_norm, set())
+        poly_names = polygon_names_by_mun.get(_resolve_polygon_mun(mun_norm), set())
         enhanced = _normalize_bairro_for_matching(bairro_norm, poly_names)
         # Check exact, fuzzy, enhanced, article-stripped, phonetic
         poly_fuzzy_map = {normalize_fuzzy(pn): pn for pn in poly_names}
@@ -791,7 +808,7 @@ def heatmap_bairros(request: Request,
             polygon_matched_keys.add(key)
             # Always update display name to polygon's canonical name for frontend GeoJSON matching
             canonical = next(
-                (p[1] for p in BAIRRO_POLYGON_INDEX.get(mun_norm, []) if p[0] == matched_pn),
+                (p[1] for p in BAIRRO_POLYGON_INDEX.get(_resolve_polygon_mun(mun_norm), []) if p[0] == matched_pn),
                 None
             )
             if canonical and canonical != merged[key]['bairro']:
@@ -816,7 +833,7 @@ def heatmap_bairros(request: Request,
     for key, m in merged.items():
         mun_norm, bairro_norm = key
         # Prefer pre-computed polygon centroid > geocode cache > crime average
-        mun_centroids_poly = BAIRRO_CENTROIDS.get(mun_norm, {})
+        mun_centroids_poly = BAIRRO_CENTROIDS.get(_resolve_centroid_mun(mun_norm), {})
         poly_coord = mun_centroids_poly.get(bairro_norm)
         if not poly_coord:
             # Fuzzy fallback: internal key may differ from centroid key by apostrophe/spacing
