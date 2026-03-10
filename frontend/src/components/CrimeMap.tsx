@@ -418,6 +418,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
             state: sigla, semestre: f.semestre, ano: f.ano, tipo: f.tipo,
             grupo: f.grupo, sexo: f.sexo, cor: f.cor,
             idade_min: f.idade_min, idade_max: f.idade_max,
+            ultimos_meses: f.ultimos_meses,
             selected_states: selectedStates,
           });
           onDetailOpenRef.current({ displayName: displayName2, municipio: '', state: sigla,
