@@ -598,8 +598,9 @@ def heatmap_municipios(request: Request,
             population=get_municipio_population(mun_name, r.state)))
 
     # Merge: crimes data takes priority over staging for same municipality
-    crimes_munis = {r.municipio for r in crimes_results}
-    deduped_staging = [r for r in staging_results if r.municipio not in crimes_munis]
+    # Normalize names (strip accents) to avoid duplicates like SAO LEOPOLDO vs SÃO LEOPOLDO
+    crimes_munis = {normalize_name(r.municipio) for r in crimes_results if r.municipio}
+    deduped_staging = [r for r in staging_results if not r.municipio or normalize_name(r.municipio) not in crimes_munis]
     return crimes_results + deduped_staging
 
 @app.get("/api/heatmap/bairros", response_model=List[HeatmapPoint])
