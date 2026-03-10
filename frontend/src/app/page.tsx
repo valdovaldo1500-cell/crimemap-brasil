@@ -446,6 +446,43 @@ export default function Home() {
     });
   }, []);
 
+  // Re-fetch open DetailPanels when filters change
+  const filtersRef = useRef(filters);
+  useEffect(() => {
+    const prev = filtersRef.current;
+    filtersRef.current = filters;
+    // Skip initial render
+    if (prev === filters) return;
+    // Re-fetch each open panel
+    detailPanels.forEach(async (panel) => {
+      try {
+        if (panel.state && !panel.municipio) {
+          // State-level panel
+          const stats = await fetchStateStats({
+            state: panel.state, ...filters, selected_states: selectedStates,
+          });
+          setDetailPanels(prev => prev.map(p =>
+            p.id === panel.id ? { ...p, total: stats.total ?? p.total, population: stats.population ?? p.population,
+              crime_types: stats.crime_types?.map((ct: any) => ({ tipo: ct.tipo_enquadramento || ct.tipo, count: ct.count })) ?? p.crime_types,
+              crime_categories: stats.crime_categories ?? p.crime_categories } : p
+          ));
+        } else if (panel.municipio) {
+          // Municipality or bairro panel
+          const stats = await fetchLocationStats({
+            municipio: panel.municipio, bairro: panel.bairro, state: panel.state, ...filters,
+          });
+          setDetailPanels(prev => prev.map(p =>
+            p.id === panel.id ? { ...p, total: stats.total ?? p.total, population: stats.population ?? p.population,
+              crime_types: stats.crime_types?.map((ct: any) => ({ tipo: ct.tipo_enquadramento || ct.tipo, count: ct.count })) ?? p.crime_types,
+              crime_categories: stats.crime_categories ?? p.crime_categories } : p
+          ));
+        }
+      } catch (err) {
+        console.error('Failed to refresh panel:', err);
+      }
+    });
+  }, [filters]);
+
   const activeFilterCount = selectedTypes.length + selectedGrupo.length + selectedSexo.length + selectedCor.length + (idadeMin ? 1 : 0) + (idadeMax ? 1 : 0);
 
   const stateResults = suggestions.filter(s => s.type === 'state');
