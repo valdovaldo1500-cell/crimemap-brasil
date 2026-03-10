@@ -151,5 +151,70 @@
 
 ---
 
+## FAIL-2 Investigation (2026-03-10)
+
+### Methodology
+Queried `crimes` and `crimes_staging` tables directly via SQLite for three cities cited in the QA report: São Leopoldo (RS), Porto Alegre (RS), and Itatiaia (RJ).
+
+### Finding 1: Municipality name accent mismatch (São Leopoldo)
+
+The `crimes` table stores municipality names **without accents**: `"SAO LEOPOLDO"`.
+The `crimes_staging` table (SINESP VDE source) stores them **with accents**: `"SÃO LEOPOLDO"`.
+
+The heatmap_municipios dedup at main.py:595 does exact string comparison:
+```python
+crimes_munis = {r.municipio for r in crimes_results}  # {"SAO LEOPOLDO"}
+deduped_staging = [r for r in staging_results if r.municipio not in crimes_munis]
+# "SÃO LEOPOLDO" not in {"SAO LEOPOLDO"} → passes dedup → creates second dot
+```
+
+Result: **two dots for the same city** — one from `crimes` (20,947 in last 12mo, rich breakdown) and one from `crimes_staging` (2 in last 12mo, only violent SINESP types).
+
+When the user clicks the accented "SÃO LEOPOLDO" dot, `location-stats` searches `crimes` for `municipio_fato == 'SÃO LEOPOLDO'`, finds 0 rows (no accent match), falls back to staging which shows total=2, types: Tentativa de feminicídio: 1, Homicídio doloso: 1.
+
+**Raw data:**
+| Table | Name | Count (all time) | Count (12mo) | Types |
+|-------|------|-------------------|--------------|-------|
+| crimes | SAO LEOPOLDO | 61,957 | 20,947 | 50+ types (ESTELIONATO 7856, AMEACA 7372, ...) |
+| crimes_staging | SÃO LEOPOLDO | 1,431 | 2 | 6 types (all SINESP VDE violent: Homicídio, Feminicídio, ...) |
+
+### Finding 2: Staging total derived from limited breakdown (Itatiaia)
+
+Itatiaia (RJ) has **40 crime types** in staging, but `location-stats` staging fallback uses `.limit(10)` and derives total from the limited result:
+```python
+sq = sq.group_by(CrimeStaging.crime_type).order_by(...).limit(10)
+total = sum(r.cnt for r in rows)  # Only sums top 10!
+```
+
+| Measure | Value |
+|---------|-------|
+| All 40 types sum | 62,205 |
+| Top 10 types sum | 56,877 |
+| Missing from total | 5,328 (8.6%) |
+
+Same issue exists in `state-stats` staging fallback (main.py:1442-1444).
+
+### Finding 3: Porto Alegre — names match, no issue
+
+Porto Alegre stores as `"PORTO ALEGRE"` in both tables. No accent mismatch. The heatmap shows a single dot with correct weight from `crimes` table (509,142). Staging data (10,914 SINESP VDE victims) is correctly deduplicated away.
+
+### Finding 4: Overlap relationship
+
+For cities that exist in BOTH tables (e.g., Porto Alegre, São Leopoldo):
+- `crimes` has **individual incident records** from SSP/RS (all crime types, demographics, location)
+- `crimes_staging` has **SINESP VDE aggregate victims** (only violent crimes, yearly, no demographics)
+- These are **overlapping sources** — SINESP data includes the same incidents that SSP reports
+- The `crimes` data is **authoritative and richer** for cities in RS
+- The staging data should be **suppressed** (not added) when crimes data exists for the same municipality
+
+### Proposed Fix
+
+1. **Normalize municipality names** in heatmap_municipios dedup: strip accents before comparison so "SÃO LEOPOLDO" matches "SAO LEOPOLDO"
+2. **Normalize municipality name** in location-stats query: strip accents when searching the `crimes` table
+3. **Fix staging total derivation**: compute total with a separate unlimited query, use `.limit(10)` only for the type breakdown display
+4. Same fixes for `state-stats` endpoint
+
+---
+
 ## Cleanup Required
 - Remove `(window as any).__leafletMap = map;` from `CrimeMap.tsx:217` after all fixes are done
