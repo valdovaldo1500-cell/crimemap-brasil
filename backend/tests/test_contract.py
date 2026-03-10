@@ -97,3 +97,103 @@ class TestFilterOptions:
         assert resp.status_code == 200
         data = resp.json()
         assert len(data.get('tipo', [])) > 0, "RJ should have crime types"
+
+
+class TestAccentNormalizedDedup:
+    """Regression: municipality names with/without accents must not create duplicate dots.
+
+    Root cause (2026-03-10): crimes table stores "SAO LEOPOLDO" (no accents),
+    crimes_staging stores "SÃO LEOPOLDO" (SINESP source preserves accents).
+    Exact-string dedup missed the match, creating a phantom second dot.
+    """
+
+    def test_no_duplicate_municipio_dots(self):
+        """Each municipality should appear at most once in heatmap response."""
+        from main import normalize_name
+        resp = client.get("/api/heatmap/municipios", params={
+            "selected_states": "RS", "ano": "2024",
+        })
+        assert resp.status_code == 200
+        data = resp.json()
+        if not data:
+            pytest.skip("No municipality data for RS 2024")
+
+        # Group by normalized name and check for duplicates
+        seen: dict[str, list[str]] = {}
+        for item in data:
+            mun = item.get("municipio")
+            if not mun or mun == "-":
+                continue
+            norm = normalize_name(mun)
+            seen.setdefault(norm, []).append(mun)
+
+        duplicates = {k: v for k, v in seen.items() if len(v) > 1}
+        assert not duplicates, (
+            f"Duplicate municipality dots (accent mismatch?): {duplicates}"
+        )
+
+    def test_nao_informado_excluded(self):
+        """'NÃO INFORMADO' must not appear as a municipality dot."""
+        resp = client.get("/api/heatmap/municipios", params={
+            "selected_states": ["RS", "RJ", "MG"],
+        })
+        assert resp.status_code == 200
+        data = resp.json()
+        bad = [d for d in data if d.get("municipio") and
+               "INFORMADO" in d["municipio"].upper()]
+        assert not bad, f"Found NÃO INFORMADO dot(s): {bad}"
+
+
+class TestTotalGteBreakdownSum:
+    """Contract: total must always >= sum of type breakdown.
+
+    Root cause (2026-03-10): staging fallback derived total from .limit(10)
+    breakdown, silently undercounting cities with >10 crime types.
+    """
+
+    def _check_total_gte_breakdown(self, endpoint: str, params: dict):
+        resp = client.get(endpoint, params=params)
+        assert resp.status_code == 200
+        data = resp.json()
+        total = data.get("total", 0)
+        type_sum = sum(ct.get("count", 0) for ct in data.get("crime_types", []))
+        if total == 0 and type_sum == 0:
+            pytest.skip(f"No data for {params}")
+        assert total >= type_sum, (
+            f"{endpoint} total ({total}) < type breakdown sum ({type_sum}) for {params}"
+        )
+
+    def test_location_stats_rs_municipality(self):
+        self._check_total_gte_breakdown("/api/location-stats", {
+            "municipio": "PORTO ALEGRE", "state": "RS", "ano": "2024",
+        })
+
+    def test_location_stats_rj_municipality(self):
+        """RJ uses staging fallback — previously undercounted."""
+        self._check_total_gte_breakdown("/api/location-stats", {
+            "municipio": "Itatiaia", "state": "RJ",
+        })
+
+    def test_state_stats_rs(self):
+        self._check_total_gte_breakdown("/api/state-stats", {
+            "state": "RS", "ano": "2024",
+        })
+
+    def test_state_stats_rj(self):
+        """RJ uses staging fallback — previously undercounted."""
+        self._check_total_gte_breakdown("/api/state-stats", {
+            "state": "RJ",
+        })
+
+    def test_state_stats_with_ultimos_meses(self):
+        """Verify ultimos_meses param works on state-stats (added 2026-03-10)."""
+        resp = client.get("/api/state-stats", params={
+            "state": "RS", "ultimos_meses": 12,
+        })
+        assert resp.status_code == 200
+        data = resp.json()
+        total = data.get("total", 0)
+        type_sum = sum(ct.get("count", 0) for ct in data.get("crime_types", []))
+        if total == 0:
+            pytest.skip("No RS data in last 12 months")
+        assert total >= type_sum
