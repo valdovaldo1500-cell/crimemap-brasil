@@ -1325,7 +1325,7 @@ def location_stats(request: Request,
             CrimeStaging.crime_type,
             (func.coalesce(func.sum(CrimeStaging.occurrences), 0) +
              func.coalesce(func.sum(CrimeStaging.victims), 0)).label("cnt")
-        ).filter(*staging_filters).group_by(CrimeStaging.crime_type).order_by(desc(literal_column("cnt"))).limit(10).all()
+        ).filter(*staging_filters).group_by(CrimeStaging.crime_type).order_by(desc(literal_column("cnt"))).all()
         crime_types = [{"tipo_enquadramento": r.crime_type, "count": r.cnt} for r in rows if r.cnt > 0]
 
     # Population lookup with state-aware fallback
