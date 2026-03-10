@@ -466,6 +466,7 @@ out geom;
 
     # Phase 4: fetch place=suburb/neighbourhood nodes (no polygon geometry)
     # Generate approximate circular polygon (~400m radius) for each missing node
+    # Skip nodes whose center falls inside an existing polygon bairro (same municipality)
     print(f"\nPhase 4: fetching place=suburb/neighbourhood nodes (point-only features)...")
     node_query = f"""
 [out:json][timeout:120];
@@ -477,8 +478,21 @@ out tags center;
     node_elements = node_data.get("elements", [])
     print(f"Got {len(node_elements)} place-tagged nodes")
 
+    # Build per-municipality index of existing polygon outer rings for containment check
+    from collections import defaultdict
+    bairro_polys_by_muni = defaultdict(list)
+    for feat in features:
+        muni_norm = feat["properties"].get("municipio_normalized", "")
+        geom = feat["geometry"]
+        if geom["type"] == "Polygon":
+            bairro_polys_by_muni[muni_norm].append(geom["coordinates"][0])
+        elif geom["type"] == "MultiPolygon":
+            for poly in geom["coordinates"]:
+                bairro_polys_by_muni[muni_norm].append(poly[0])
+
     node_added = 0
     node_skipped = 0
+    node_inside = 0
 
     for el in node_elements:
         if el.get("type") != "node":
@@ -519,6 +533,16 @@ out tags center;
             node_skipped += 1
             continue
 
+        # Skip if node center falls inside any existing polygon bairro in same municipality
+        inside_existing = False
+        for ring in bairro_polys_by_muni.get(municipio_normalized, []):
+            if point_in_polygon(lon, lat, ring):
+                inside_existing = True
+                break
+        if inside_existing:
+            node_inside += 1
+            continue
+
         coords = make_circle_polygon(lon, lat)
         feature = {
             "type": "Feature",
@@ -535,7 +559,7 @@ out tags center;
         existing_keys.add(key)
         node_added += 1
 
-    print(f"Node-approx features: added {node_added}, skipped {node_skipped}")
+    print(f"Node-approx features: added {node_added}, skipped {node_skipped}, inside existing polygon: {node_inside}")
 
     # Supplement with IBGE data
     features = supplement_with_ibge(features, ibge_code)
