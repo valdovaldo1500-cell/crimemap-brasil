@@ -897,7 +897,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
                   return { fillColor: getColor(info.intensity, usePurple), fillOpacity: isCompareSelected ? 0.55 : 0.35, color: isCompareSelected ? '#a78bfa' : (usePurple ? '#2d1f4e' : '#1e293b'), weight: isCompareSelected ? 3 : 1 };
                 }
                 const usePurpleNoData = compareModeRef.current && (comparisonLocationsRef.current?.length ?? 0) < 2;
-                return { fillColor: usePurpleNoData ? '#2d1f4e' : '#1e293b', fillOpacity: 0.1, color: usePurpleNoData ? '#2d1f4e' : '#1e293b', weight: 0.5 };
+                return { fillColor: usePurpleNoData ? '#2d1f4e' : '#1e293b', fillOpacity: 0.1, color: usePurpleNoData ? '#2d1f4e' : '#1e293b', weight: 0.5, interactive: false };
               },
               onEachFeature: (feature, layer) => {
                 const props = feature?.properties || {};
