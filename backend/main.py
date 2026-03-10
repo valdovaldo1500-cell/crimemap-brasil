@@ -1298,71 +1298,34 @@ def location_stats(request: Request,
         # Fallback: query CrimeStaging for non-RS municipalities
         # Try both original and accent-stripped name
         staging_names = list({municipio, normalize_name(municipio)})
-        sq_base = db.query(CrimeStaging).filter(CrimeStaging.municipio.in_(staging_names))
-        if state:
-            sq_base = sq_base.filter(CrimeStaging.state == state)
+        staging_filters = [CrimeStaging.municipio.in_(staging_names), CrimeStaging.crime_type.isnot(None)]
+        if state: staging_filters.append(CrimeStaging.state == state)
         if ultimos_meses:
             _, thresh_year, thresh_month = _ultimos_meses_range(ultimos_meses)
-            sq_base = sq_base.filter(
+            staging_filters.append(
                 (CrimeStaging.year > thresh_year) |
                 ((CrimeStaging.year == thresh_year) & (CrimeStaging.month >= thresh_month))
             )
         elif semestre:
             year_str, sem_str = semestre.split('-')
             month_range = range(1, 7) if sem_str == "S1" else range(7, 13)
-            sq_base = sq_base.filter(
-                CrimeStaging.year == int(year_str),
-                CrimeStaging.month.in_(list(month_range))
-            )
+            staging_filters.append(CrimeStaging.year == int(year_str))
+            staging_filters.append(CrimeStaging.month.in_(list(month_range)))
         elif ano:
-            sq_base = sq_base.filter(CrimeStaging.year == int(ano))
-        if tipo:
-            sq_base = sq_base.filter(CrimeStaging.crime_type.in_(tipo))
-        if sexo:
-            sq_base = sq_base.filter(CrimeStaging.sexo_vitima.in_(sexo))
-        sq_base = sq_base.filter(CrimeStaging.crime_type.isnot(None))
-        # Compute total from ALL types (not limited)
-        total = db.query(
+            staging_filters.append(CrimeStaging.year == int(ano))
+        if tipo: staging_filters.append(CrimeStaging.crime_type.in_(tipo))
+        if sexo: staging_filters.append(CrimeStaging.sexo_vitima.in_(sexo))
+        # Total from ALL types (not limited to top 10)
+        total = int(db.query(
             func.coalesce(func.sum(CrimeStaging.occurrences), 0) +
             func.coalesce(func.sum(CrimeStaging.victims), 0)
-        ).filter(
-            CrimeStaging.municipio.in_(staging_names),
-            CrimeStaging.crime_type.isnot(None),
-        )
-        if state: total = total.filter(CrimeStaging.state == state)
-        if ultimos_meses:
-            _, thresh_year, thresh_month = _ultimos_meses_range(ultimos_meses)
-            total = total.filter(
-                (CrimeStaging.year > thresh_year) |
-                ((CrimeStaging.year == thresh_year) & (CrimeStaging.month >= thresh_month))
-            )
-        elif semestre:
-            total = total.filter(CrimeStaging.year == int(year_str), CrimeStaging.month.in_(list(month_range)))
-        elif ano:
-            total = total.filter(CrimeStaging.year == int(ano))
-        if tipo: total = total.filter(CrimeStaging.crime_type.in_(tipo))
-        if sexo: total = total.filter(CrimeStaging.sexo_vitima.in_(sexo))
-        total = int(total.scalar() or 0)
+        ).filter(*staging_filters).scalar() or 0)
         # Type breakdown (top 10 for display)
-        sq = db.query(
+        rows = db.query(
             CrimeStaging.crime_type,
             (func.coalesce(func.sum(CrimeStaging.occurrences), 0) +
              func.coalesce(func.sum(CrimeStaging.victims), 0)).label("cnt")
-        ).filter(CrimeStaging.municipio.in_(staging_names), CrimeStaging.crime_type.isnot(None))
-        if state: sq = sq.filter(CrimeStaging.state == state)
-        if ultimos_meses:
-            sq = sq.filter(
-                (CrimeStaging.year > thresh_year) |
-                ((CrimeStaging.year == thresh_year) & (CrimeStaging.month >= thresh_month))
-            )
-        elif semestre:
-            sq = sq.filter(CrimeStaging.year == int(year_str), CrimeStaging.month.in_(list(month_range)))
-        elif ano:
-            sq = sq.filter(CrimeStaging.year == int(ano))
-        if tipo: sq = sq.filter(CrimeStaging.crime_type.in_(tipo))
-        if sexo: sq = sq.filter(CrimeStaging.sexo_vitima.in_(sexo))
-        sq = sq.group_by(CrimeStaging.crime_type).order_by(desc(literal_column("cnt"))).limit(10)
-        rows = sq.all()
+        ).filter(*staging_filters).group_by(CrimeStaging.crime_type).order_by(desc(literal_column("cnt"))).limit(10).all()
         crime_types = [{"tipo_enquadramento": r.crime_type, "count": r.cnt} for r in rows if r.cnt > 0]
 
     # Population lookup with state-aware fallback
