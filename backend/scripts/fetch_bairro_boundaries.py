@@ -536,7 +536,8 @@ out tags center;
             node_skipped += 1
             continue
 
-        # Skip if node center falls inside any existing polygon bairro in same municipality
+        # If node center falls inside an existing polygon bairro, use tiny radius (50m)
+        # to avoid visual overlap. Full radius (400m) for genuinely uncovered areas.
         inside_existing = False
         for ring in bairro_polys_by_muni.get(municipio_normalized, []):
             if point_in_polygon(lon, lat, ring):
@@ -544,9 +545,9 @@ out tags center;
                 break
         if inside_existing:
             node_inside += 1
-            continue
 
-        coords = make_circle_polygon(lon, lat)
+        radius = 50 if inside_existing else 400
+        coords = make_circle_polygon(lon, lat, radius_m=radius)
         feature = {
             "type": "Feature",
             "properties": {
