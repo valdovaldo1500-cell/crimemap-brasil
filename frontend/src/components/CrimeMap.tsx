@@ -214,6 +214,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
     map.on("zoomend", onMove);
     map.on("moveend", onMove);
     mapRef.current = map;
+    (window as any).__leafletMap = map;
     markersRef.current = L.layerGroup().addTo(map);
     // Initial view: frame the 3 interactive states (RS, RJ, MG)
     map.fitBounds(L.latLngBounds([-33.8, -57.7], [-14.2, -40.9]), { padding: [20, 20] });
