@@ -1,31 +1,33 @@
 const API = '';
 
-export async function fetchHeatmapMunicipios(p: any = {}) {
+export async function fetchHeatmapMunicipios(p: any = {}, signal?: AbortSignal) {
   const params = new URLSearchParams();
   Object.entries(p).forEach(([k, v]) => {
     if (Array.isArray(v)) v.forEach(val => params.append(k, String(val)));
     else if (v !== undefined && v !== null) params.set(k, String(v));
   });
   try {
-    const res = await fetch(`${API}/api/heatmap/municipios?${params}`);
+    const res = await fetch(`${API}/api/heatmap/municipios?${params}`, { signal });
     if (!res.ok) throw new Error(`API error: ${res.status}`);
     return res.json();
   } catch (err: any) {
+    if (err.name === 'AbortError') return [];
     throw new Error(`fetchHeatmapMunicipios failed: ${err.message}`);
   }
 }
 
-export async function fetchHeatmapBairros(p: any = {}) {
+export async function fetchHeatmapBairros(p: any = {}, signal?: AbortSignal) {
   const params = new URLSearchParams();
   Object.entries(p).forEach(([k, v]) => {
     if (Array.isArray(v)) v.forEach(val => params.append(k, String(val)));
     else if (v !== undefined && v !== null) params.set(k, String(v));
   });
   try {
-    const res = await fetch(`${API}/api/heatmap/bairros?${params}`);
+    const res = await fetch(`${API}/api/heatmap/bairros?${params}`, { signal });
     if (!res.ok) throw new Error(`API error: ${res.status}`);
     return res.json();
   } catch (err: any) {
+    if (err.name === 'AbortError') return [];
     throw new Error(`fetchHeatmapBairros failed: ${err.message}`);
   }
 }
@@ -175,17 +177,18 @@ export async function fetchGrupoValues() {
   }
 }
 
-export async function fetchHeatmapStates(p: any = {}) {
+export async function fetchHeatmapStates(p: any = {}, signal?: AbortSignal) {
   const params = new URLSearchParams();
   Object.entries(p).forEach(([k, v]) => {
     if (Array.isArray(v)) v.forEach(val => params.append(k, String(val)));
     else if (v !== undefined && v !== null) params.set(k, String(v));
   });
   try {
-    const res = await fetch(`${API}/api/heatmap/states?${params}`);
+    const res = await fetch(`${API}/api/heatmap/states?${params}`, { signal });
     if (!res.ok) throw new Error(`API error: ${res.status}`);
     return res.json();
   } catch (err: any) {
+    if (err.name === 'AbortError') return [];
     throw new Error(`fetchHeatmapStates failed: ${err.message}`);
   }
 }

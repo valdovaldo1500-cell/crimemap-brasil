@@ -170,6 +170,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
   const boundsAtPopupOpenRef = useRef<string|null>(null);
   const pendingPopupRef = useRef<{municipio:string, bairro?:string, displayName:string, latlng:[number,number]}|null>(null);
   const cachedDataRef = useRef<{level: string, data: any[]} | null>(null);
+  const heatmapAbortRef = useRef<AbortController | null>(null);
   const rateModeRef = useRef(rateMode);
   const compareModeRef = useRef(compareMode);
   const onCompareSelectRef = useRef(onCompareSelect);
@@ -451,6 +452,9 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
     const thisLoadId = ++loadIdRef.current;
     setLoading(true);
     setEmptyResult(false);
+    if (heatmapAbortRef.current) heatmapAbortRef.current.abort();
+    const ac = new AbortController();
+    heatmapAbortRef.current = ac;
     const bounds = mapRef.current.getBounds();
     const params: any = {
       south: bounds.getSouth(),
@@ -488,7 +492,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
       if (zoomLevel === 'states') {
         // State-level view
         setBairroMixedInfo(false);
-        const data = useCache ? cachedDataRef.current!.data : await fetchHeatmapStates(params);
+        const data = useCache ? cachedDataRef.current!.data : await fetchHeatmapStates(params, ac.signal);
         if (!useCache) {
           if (thisLoadId !== loadIdRef.current) return; // stale request
           cachedDataRef.current = { level: cacheKey, data };
@@ -672,8 +676,8 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
         const useChoropleth = viewMode === 'choropleth' && (zoomLevel === 'municipios' || !effectiveBairro);
         const useBubbleChoropleth = viewMode === 'choropleth' && effectiveBairro;
         let data = useCache ? cachedDataRef.current!.data : (!effectiveBairro
-          ? await fetchHeatmapMunicipios(params)
-          : await fetchHeatmapBairros(params));
+          ? await fetchHeatmapMunicipios(params, ac.signal)
+          : await fetchHeatmapBairros(params, ac.signal));
         if (!useCache) {
           if (thisLoadId !== loadIdRef.current) return; // stale request
           cachedDataRef.current = { level: cacheKey, data };
@@ -1034,7 +1038,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
       }
       // Keep Brazil outline behind data layers
       if (brazilOutlineRef.current) brazilOutlineRef.current.bringToBack();
-    } catch (e) { console.error('Load error:', e); } finally { if (thisLoadId === loadIdRef.current) setLoading(false); }
+    } catch (e: any) { if (e?.name !== 'AbortError') console.error('Load error:', e); } finally { if (thisLoadId === loadIdRef.current) setLoading(false); }
   // Fix #17: rateMode intentionally excluded from deps — rate is client-side only
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentZoom, zoomLevel, filters, mapVersion, viewMode, aggregationOverride, selectedStates, availableStates, compareMode, comparisonLocations]);

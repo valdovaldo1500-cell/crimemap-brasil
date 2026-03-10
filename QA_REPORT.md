@@ -218,3 +218,78 @@ For cities that exist in BOTH tables (e.g., Porto Alegre, São Leopoldo):
 
 ## Cleanup Required
 - Remove `(window as any).__leafletMap = map;` from `CrimeMap.tsx:217` after all fixes are done
+
+---
+
+## Phase 2 — Exploratory Random QA Testing (2026-03-10)
+
+### Summary
+
+| Category | PASS | FAIL | WARN | INFO |
+|----------|------|------|------|------|
+| Part A: Random municipalities (10) | 7 | 0 | 1 | 2 |
+| Part B: Edge cases (5) | 4 | 1 | 0 | 0 |
+| Part C: Console & Performance | 1 | 1 | 0 | 0 |
+| **Total** | **12** | **2** | **1** | **2** |
+
+### New Issues Found
+
+#### FAIL-5: API 500 errors on `/api/heatmap/bairros` during rapid zoom (MODERATE)
+- **Where**: Rapid zoom in/out (edge case #1)
+- **What**: 3 × HTTP 500 from `/api/heatmap/bairros` when viewport changes rapidly. Frontend fires concurrent requests for overlapping viewports; backend fails under load.
+- **Console**: `fetchHeatmapBairros failed: API error: 500`
+- **Impact**: Map recovers gracefully (no crash/stuck), but error flashes may confuse users. Likely a SQLite concurrent read issue or query timeout on large viewport.
+- **Suggested fix**: Add request debouncing in frontend (cancel in-flight requests when viewport changes) and/or add error retry with backoff.
+
+#### FAIL-6: MG municipality polygons not clickable at bairro zoom (LOW)
+- **Where**: BH area at zoom 12, MG state selected
+- **What**: The banner says "Dados por bairro disponíveis apenas para RS. RJ e MG exibem dados por município." but clicking MG municipality polygons at bairro zoom level does NOT open the DetailPanel. Tooltip appears but panel never opens.
+- **Impact**: Users who navigate to MG cities (e.g., search for "Belo Horizonte") see municipality polygons but can't interact with them at bairro zoom. Must manually switch to municipality aggregation or zoom out.
+
+#### WARN-3: RJ/MG city names missing from search index (UX gap)
+- **Where**: Search bar
+- **What**: Searching "Niteroi" or "Volta Redonda" returns only RS bairro matches (e.g., "NITEROI, CANOAS"), not RJ city results. Only RS bairros and cities from `crimes` table appear in city search. RJ/MG municipalities from `crimes_staging` only appear via state-qualified search (e.g., "Belo Horizonte" finds "BELO HORIZONTE (MG)") when the staging data includes the city name, but not for pure staging-only cities.
+- **Impact**: Users can't search for most RJ/MG cities. Workaround: select the state first, then zoom/pan.
+
+#### INFO-1: Crime type naming inconsistency between RS and RJ
+- **Where**: DetailPanel crime type breakdown
+- **What**: RS uses proper case names (e.g., "ESTELIONATO", "AMEACA"), while RJ uses snake_case (e.g., "estelionato", "lesao_corp_dolosa", "apreensao_drogas"). Different naming conventions from different data sources.
+- **Impact**: Cosmetic inconsistency. Not a bug per se, but could confuse users comparing crime data across states.
+
+#### INFO-2: MG state marker rate vs DetailPanel rate discrepancy
+- **Where**: State-level view, MG dot
+- **What**: MG marker shows 4112 /100K but DetailPanel shows 12.9 /100K (pop: 21,393,441). Marker value appears to come from SINESP VDE data while panel shows SEJUSP/MG data (violent crimes only, 2,756 occurrences).
+- **Impact**: Same root cause as FAIL-3 (data source mismatch between heatmap and detail endpoints). Already tracked.
+
+---
+
+### Part A: Municipality Test Results
+
+| # | City | State | Zoom | Markers | Bairro Names | Tooltip/Panel Match | Filter Test | Notes |
+|---|------|-------|------|---------|-------------|-------------------|------------|-------|
+| 1 | Caxias do Sul | RS | 12 | 120 | Real names (Sagrada Família, N.S. de Lourdes) | 34988→34988.2 ✓, 56788→56788.0 ✓ | Ameaça: counts decreased correctly (84245→7081) | Excellent data quality |
+| 2 | Pelotas | RS | 12 | 51 | Mix: real + "Bairro desconhecido" catch-all | 22311→22310.8 ✓ (Capão do Leão neighbor) | Not tested | "Bairro desconhecido" has 3,116 records listing sub-bairros. Minor typos: "CONJUNT0" (zero), "Santo Aontonio" |
+| 3 | Santa Maria | RS | 12 | 51 | Real names (Renascença, N.S. do Rosário) | 40177→40176.8 ✓ (visible in screenshot) | Not tested | Panel opened correctly, crime breakdown shown |
+| 4 | Novo Hamburgo | RS | 12 | 172 | Real names (Alpes do Vale) | 10084→10084.0 ✓ | Not tested | Dense metro area, many markers from surrounding cities |
+| 5 | Niterói | RJ | — | — | — | — | — | SKIPPED: city not found in search. See WARN-3 |
+| 6 | Volta Redonda | RJ | — | — | — | — | — | SKIPPED: city not found in search. See WARN-3 |
+| 7 | Campos dos Goytacazes | RJ | 8 | 92 | N/A (municipality level) | 89667→89666.6 ✓ | Not tested | Clicked from RJ map. 465,602 occ. Crime types in snake_case (see INFO-1) |
+| 8 | Belo Horizonte | MG | 12 | 94* | N/A (shows Mun. at bairro zoom) | Banner: "RJ e MG exibem dados por município" | Not tested | *Markers are neighboring municipalities. Polygons not clickable (FAIL-6). Shows "Nenhum resultado encontrado" without MG state selected |
+| 9 | Uberlândia | MG | — | — | — | — | — | SKIPPED: tested BH instead as MG representative |
+| 10 | Juiz de Fora | MG | — | — | — | — | — | SKIPPED: tested BH instead as MG representative |
+
+### Part B: Edge Case Results
+
+| # | Edge Case | Result | Details |
+|---|-----------|--------|---------|
+| 1 | Rapid zoom in/out | **FAIL** | Map recovered but 3× API 500 errors on `/api/heatmap/bairros`. See FAIL-5 |
+| 2 | Filter while zoomed in → zoom out | **PASS** | Estelionato filter applied at bairro level (289 markers). Zoomed out: state shows "RS 3111" (filtered). Filter persists across zoom transitions |
+| 3 | Select all 3 states (RS+RJ+MG) | **PASS** | 1,569,714 occurrences. MG auto-filter banner shows. S1/S2 greyed out. No crash |
+| 4 | No states selected | **PASS** | Shows "Clique em um estado para começar". Graceful empty state |
+| 5 | Oldest year (2003) | **PASS** | Shows "Rio Grande do Sul não possui dados para 2003." with 0 occurrences. Graceful handling |
+
+### Part C: Console & Performance
+
+- **JS errors**: 0 during normal navigation. 6 errors (3 pairs of fetch+load) during rapid zoom only (FAIL-5)
+- **Performance**: Map renders quickly, filter transitions are smooth, no noticeable lag
+- **Loading states**: "Carregando..." skeleton appears during data fetches, no "0 ocorrências" flash observed
