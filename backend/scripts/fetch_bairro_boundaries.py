@@ -349,7 +349,106 @@ out geom;
         }
         features.append(feature)
 
-    print(f"OSM features: {len(features)}, skipped: {skipped}")
+    print(f"OSM admin_level=10 features: {len(features)}, skipped: {skipped}")
+
+    # Phase 3: fetch place=suburb/neighbourhood ways and relations
+    print(f"\nPhase 3: fetching place=suburb/neighbourhood features...")
+    place_query = f"""
+[out:json][timeout:300];
+area["name"="{osm_name}"][admin_level=4]->.state;
+(
+  way[place~"^(suburb|neighbourhood)$"](area.state);
+  rel[place~"^(suburb|neighbourhood)$"](area.state);
+);
+out geom;
+"""
+    place_data = overpass_request(place_query, timeout_secs=360)
+    place_elements = place_data.get("elements", [])
+    print(f"Got {len(place_elements)} place-tagged elements")
+
+    # Build dedup set from existing admin_level=10 features (admin_level=10 wins on collision)
+    existing_keys = set()
+    for feat in features:
+        props = feat["properties"]
+        existing_keys.add((props.get("municipio_normalized", ""), props.get("name_normalized", "")))
+
+    place_added = 0
+    place_skipped = 0
+
+    for el in place_elements:
+        tags = el.get("tags", {})
+        name = tags.get("name", "")
+        if not name:
+            place_skipped += 1
+            continue
+
+        el_type = el.get("type")
+
+        if el_type == "way":
+            geom_nodes = el.get("geometry", [])
+            if not geom_nodes:
+                place_skipped += 1
+                continue
+            ring = [(round(n["lon"], 5), round(n["lat"], 5)) for n in geom_nodes]
+            # Must be closed (first == last) and have at least 4 vertices
+            if len(ring) < 4 or ring[0] != ring[-1]:
+                place_skipped += 1
+                continue
+            rings = [ring]
+            geometry = {"type": "Polygon", "coordinates": round_coords(rings)}
+
+        elif el_type == "relation":
+            members = el.get("members", [])
+            rings = stitch_ways(members)
+            if not rings:
+                place_skipped += 1
+                continue
+            if len(rings) == 1:
+                geometry = {"type": "Polygon", "coordinates": round_coords(rings)}
+            else:
+                geometry = {"type": "MultiPolygon", "coordinates": round_coords([[r] for r in rings])}
+        else:
+            place_skipped += 1
+            continue
+
+        # Municipality assignment: tags first, then PIP fallback
+        municipio = tags.get("addr:city", "") or tags.get("is_in:city", "")
+        if not municipio:
+            is_in = tags.get("is_in", "")
+            if is_in:
+                parts = [p.strip() for p in is_in.split(",")]
+                if parts:
+                    municipio = parts[0]
+
+        if not municipio and muni_polys:
+            cx, cy = polygon_centroid(rings[0])
+            parent = find_parent_municipio(cx, cy, muni_polys)
+            if parent:
+                municipio = parent
+
+        name_normalized = normalize_name(name)
+        municipio_normalized = normalize_name(municipio) if municipio else ""
+
+        key = (municipio_normalized, name_normalized)
+        if key in existing_keys:
+            place_skipped += 1
+            continue
+
+        feature = {
+            "type": "Feature",
+            "properties": {
+                "name": name,
+                "name_normalized": name_normalized,
+                "municipio": municipio,
+                "municipio_normalized": municipio_normalized,
+            },
+            "geometry": geometry,
+        }
+        features.append(feature)
+        existing_keys.add(key)
+        place_added += 1
+
+    print(f"Place-tagged features: added {place_added}, skipped {place_skipped}")
 
     # Supplement with IBGE data
     features = supplement_with_ibge(features, ibge_code)
