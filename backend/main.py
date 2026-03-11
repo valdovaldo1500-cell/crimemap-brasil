@@ -1327,10 +1327,12 @@ def location_stats(request: Request,
         crime_types = [{"tipo_enquadramento": t[0], "count": t[1]} for t in breakdown]
     else:
         # Fallback: query CrimeStaging for non-RS municipalities
-        # Use func.upper() for case-insensitive match: staging stores mixed-case names
-        # (e.g. "Rio de Janeiro") but the incoming municipio param is often uppercase
-        staging_upper_names = list({municipio.upper(), normalize_name(municipio).upper()})
-        staging_filters = [func.upper(CrimeStaging.municipio).in_(staging_upper_names), CrimeStaging.crime_type.isnot(None)]
+        # Use normalize_text() SQLite UDF for accent+case-insensitive match:
+        # staging stores mixed-case accented names (e.g. "Niterói") but the
+        # incoming municipio param may be either accented or accent-stripped.
+        # normalize_text() strips accents and uppercases, matching normalize_name().
+        staging_norm_names = list({normalize_name(municipio), normalize_name(normalize_name(municipio))})
+        staging_filters = [func.normalize_text(CrimeStaging.municipio).in_(staging_norm_names), CrimeStaging.crime_type.isnot(None)]
         if state: staging_filters.append(CrimeStaging.state == state)
         if ultimos_meses:
             _, thresh_year, thresh_month = _ultimos_meses_range(ultimos_meses)
