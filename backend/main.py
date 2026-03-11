@@ -149,11 +149,21 @@ def _normalize_bairro_for_matching(bairro_norm: str, poly_names: set[str] | None
         result = _BAIRRO_ABBREVIATIONS[result]
     # Conditionally strip urban/real-estate type prefixes when the bare name IS a polygon
     # These are generic Brazilian terms used across all states
-    for _strip_prefix in ('VILA ', 'JARDIM ', 'PARQUE ', 'NUCLEO ', 'LOTEAMENTO ', 'RESIDENCIAL ', 'CONJUNTO ', 'CONDOMINIO '):
+    # COHAB added: "COHAB GUABIROBA" → "GUABIROBA" when the bare name is a polygon
+    # Article stripping after prefix: "PARQUE DO OBELISCO" → strip "PARQUE " → "DO OBELISCO"
+    #   → strip leading article → "OBELISCO" → check polys (handles PARQUE DO/DA/DAS/DOS X)
+    _LEADING_ARTICLE_RE = re.compile(r'^(DO|DA|DOS|DAS|DE)\s+', re.IGNORECASE)
+    for _strip_prefix in ('VILA ', 'JARDIM ', 'PARQUE ', 'NUCLEO ', 'LOTEAMENTO ', 'RESIDENCIAL ', 'CONJUNTO ', 'CONDOMINIO ', 'COHAB '):
         if poly_names and result.startswith(_strip_prefix) and result not in poly_names:
             stripped = result[len(_strip_prefix):].strip()
             if stripped in poly_names:
                 result = stripped
+                break
+            # Also try stripping a leading article after prefix removal
+            # e.g. "PARQUE DO OBELISCO" → stripped="DO OBELISCO" → art_stripped="OBELISCO"
+            art_stripped = _LEADING_ARTICLE_RE.sub('', stripped).strip()
+            if art_stripped != stripped and art_stripped in poly_names:
+                result = art_stripped
                 break
     # If we have polygon names available, try prefix/suffix matching for abbreviated/truncated names
     if poly_names and result != bairro_norm and result in poly_names:
