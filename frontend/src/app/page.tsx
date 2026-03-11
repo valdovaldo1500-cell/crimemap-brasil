@@ -114,6 +114,12 @@ export default function Home() {
   const [compareMode, setCompareMode] = useState(false);
   const [comparisonLocations, setComparisonLocations] = useState<any[]>([]);
   const [comparisonStats, setComparisonStats] = useState<any[]>([]);
+  const [comparePos, setComparePos] = useState<{x: number, y: number} | null>(null);
+  const [compareSize, setCompareSize] = useState({ w: 483 });
+  const [compareDragging, setCompareDragging] = useState(false);
+  const [compareResizing, setCompareResizing] = useState(false);
+  const compareDragStart = useRef<{x: number, y: number, px: number, py: number} | null>(null);
+  const compareResizeStart = useRef<{x: number, y: number, w: number} | null>(null);
 
   // System-wide static info
   const [systemInfo, setSystemInfo] = useState<any>(null);
