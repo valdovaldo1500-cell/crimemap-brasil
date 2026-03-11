@@ -8,10 +8,10 @@ import csv
 import io
 import json
 import os
+import subprocess
 import sys
 import zipfile
 from pathlib import Path
-from urllib.request import urlopen
 
 BASE = Path(__file__).resolve().parent
 DATA = BASE / "backend" / "data"
