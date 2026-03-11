@@ -247,11 +247,15 @@ def main():
         source_totals[("RS", year)] = count
         print(f"  RS {year} source CSV rows: {count:,}")
 
-    # RJ 2024 & 2023
+    # RJ 2024 & 2023 (both municipal + CISP sources)
     for year in [2024, 2023]:
-        total = sum_rj_isp(year)
-        source_totals[("RJ", year)] = total
-        print(f"  RJ {year} ISP sum(crime_cols): {total:,}")
+        mun_total = sum_rj_isp(year, "rj_isp_municipal.csv")
+        cisp_total = sum_rj_isp(year, "rj_isp_cisp.csv")
+        combined = mun_total + cisp_total
+        source_totals[("RJ", year)] = combined
+        source_totals[("RJ_mun", year)] = mun_total
+        source_totals[("RJ_cisp", year)] = cisp_total
+        print(f"  RJ {year} ISP municipal: {mun_total:,}  CISP: {cisp_total:,}  combined: {combined:,}")
 
     # MG 2024 & 2023
     for year in [2024, 2023]:
