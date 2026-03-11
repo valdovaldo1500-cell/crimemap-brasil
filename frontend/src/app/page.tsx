@@ -445,6 +445,7 @@ export default function Home() {
   }, [filters]);
 
   const clearComparison = useCallback(() => {
+    compareLocationsRef.current = [];
     setComparisonLocations([]);
     setComparisonStats([]);
   }, []);
