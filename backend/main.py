@@ -955,10 +955,16 @@ def heatmap_bairros(request: Request,
         centroid = mun_centroids.get(mun_norm)
         # Validate bairro coords against municipality centroid; snap if too far (cross-city geocoding error)
         if centroid and _haversine_km(lat, lng, centroid[0], centroid[1]) > 30:
-            lat, lng = centroid[0], centroid[1]
+            crime_avg_lat, crime_avg_lng = m['lat'], m['lng']
+            if (crime_avg_lat and crime_avg_lng and
+                    _haversine_km(crime_avg_lat, crime_avg_lng, centroid[0], centroid[1]) <= 5):
+                lat, lng = crime_avg_lat, crime_avg_lng
+            else:
+                lat, lng = centroid[0], centroid[1]
         is_at_centroid = centroid and _haversine_km(lat, lng, centroid[0], centroid[1]) < 0.5
         is_low_count = m['cnt'] < 3
-        if (is_at_centroid or is_low_count) and key not in polygon_matched_keys:
+        is_high_count = m['cnt'] >= MIN_COUNT_FORCE_NAMED
+        if (is_at_centroid or is_low_count) and not is_high_count and key not in polygon_matched_keys:
             if mun_norm not in unknown_bucket:
                 c_lat, c_lng = centroid if centroid else (lat, lng)
                 unknown_bucket[mun_norm] = {'municipio': m['municipio'], 'cnt': 0,
