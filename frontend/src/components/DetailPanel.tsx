@@ -15,9 +15,10 @@ interface DetailPanelProps {
   onClose: () => void;
   stackIndex?: number;
   onFocus?: () => void;
+  rateMode?: 'rate' | 'absolute';
 }
 
-export default function DetailPanel({ data, onClose, stackIndex = 0, onFocus }: DetailPanelProps) {
+export default function DetailPanel({ data, onClose, stackIndex = 0, onFocus, rateMode = 'absolute' }: DetailPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const [size, setSize] = useState({ w: 320, h: 0 }); // h=0 means auto
