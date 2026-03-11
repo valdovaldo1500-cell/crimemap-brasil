@@ -11,6 +11,7 @@ interface DetailPanelProps {
     components?: { bairro: string; weight: number }[];
     isUnknown?: boolean;
     loading?: boolean;
+    periodLabel?: string;
   } | null;
   onClose: () => void;
   stackIndex?: number;
