@@ -1060,6 +1060,15 @@ export default function Home() {
                     )}
                   </div>
                 )}
+                {/* Resize handle */}
+                <div
+                  className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    compareResizeStart.current = { x: e.clientX, y: e.clientY, w: compareSize.w };
+                    setCompareResizing(true);
+                  }}
+                />
               </div>
             </div>
           )}
