@@ -1333,8 +1333,7 @@ export default function Home() {
               <h3 className="text-sm font-bold text-[#3b82f6] uppercase tracking-wider mb-2">Modo Comparação</h3>
               <p className="text-sm text-[#94a3b8] mb-2">Ative o <strong>Modo Comparação</strong> no painel de filtros e clique em dois locais (estados, cidades ou bairros) para ver os dados lado a lado:</p>
               <ul className="space-y-1 ml-4 text-sm text-[#94a3b8]">
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Exibe total de ocorrências, população e taxa /100K hab. de cada local</li>
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">No modo <strong>/100K</strong>, o "Total /100K" substitui o total absoluto para facilitar a comparação</li>
+                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Exibe total de ocorrências, população e taxa /100K hab. de cada local (ambos sempre visíveis)</li>
                 <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Ao comparar MG com outro estado, um aviso indica que os dados de MG são parciais e que o filtro de compatibilidade foi aplicado</li>
                 <li className="before:content-['•'] before:mr-2 before:text-[#475569]">O painel pode ser arrastado e redimensionado</li>
               </ul>
