@@ -41,19 +41,26 @@ RJ_CRIME_COLS = [
 ]
 
 
-def api_get(path, params=None, timeout=10, retries=2):
+def api_get(path, params=None, timeout=15, retries=4):
     url = f"{BASE_URL}{path}"
     for attempt in range(retries + 1):
         try:
             t0 = time.time()
             r = requests.get(url, params=params, timeout=timeout)
             ms = (time.time() - t0) * 1000
+            if r.status_code == 429:
+                wait = 15 * (attempt + 1)
+                print(f"  [429 rate limit] waiting {wait}s...")
+                time.sleep(wait)
+                continue
             r.raise_for_status()
             return r.json(), ms
+        except requests.exceptions.HTTPError:
+            raise RuntimeError(f"HTTP {r.status_code} on {path} {params}")
         except Exception as e:
             if attempt == retries:
                 raise RuntimeError(f"API error {path} {params}: {e}")
-            time.sleep(1)
+            time.sleep(5)
 
 
 def check(label, src, api, ms, perf_key="city", tol=0.0):
