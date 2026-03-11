@@ -630,8 +630,28 @@ out tags center;
 
     print(f"Node-approx features: added {node_added}, skipped {node_skipped}, inside existing (50m radius): {node_inside}")
 
-    # Supplement with IBGE data
-    features = supplement_with_ibge(features, ibge_code)
+    # Phase 5: Supplement with IBGE 2022 Census neighborhood boundaries
+    print(f"\nPhase 5: supplementing with IBGE 2022 boundaries...")
+    new_ibge_features, ibge_replacements = supplement_with_ibge_2022(
+        features, state_sigla, str(ibge_code)
+    )
+    if new_ibge_features:
+        # Remove osm_node_approx features that IBGE replaces with real polygons
+        if ibge_replacements:
+            before = len(features)
+            features = [
+                f for f in features
+                if not (
+                    f["properties"].get("source") == "osm_node_approx"
+                    and (
+                        f["properties"].get("municipio_normalized", ""),
+                        f["properties"].get("name_normalized", ""),
+                    ) in ibge_replacements
+                )
+            ]
+            removed = before - len(features)
+            print(f"Removed {removed} osm_node_approx features replaced by IBGE polygons")
+        features.extend(new_ibge_features)
 
     geojson = {"type": "FeatureCollection", "features": features}
 
