@@ -1,4 +1,4 @@
-import os
+import os, unicodedata
 from sqlalchemy import (create_engine, Column, Integer, String, Float,
     Index, DateTime, func, event)
 from sqlalchemy.ext.declarative import declarative_base
@@ -9,6 +9,16 @@ engine = create_engine(DATABASE_URL,
     connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
     echo=False)
 
+def _normalize_text_sqlite(s: str) -> str:
+    """SQLite UDF: strip accents + uppercase (mirrors normalize_name in main.py).
+    Used in queries where SQLite's built-in upper() fails for accented chars
+    (e.g. 'Niterói' → upper() stays 'NITERóI' in SQLite).
+    """
+    if not s:
+        return ''
+    nfkd = unicodedata.normalize('NFD', s)
+    return ''.join(c for c in nfkd if unicodedata.category(c) != 'Mn').upper().strip()
+
 if "sqlite" in DATABASE_URL:
     @event.listens_for(engine, "connect")
     def _set_sqlite_pragma(dbapi_conn, connection_record):
@@ -17,6 +27,8 @@ if "sqlite" in DATABASE_URL:
         cursor.execute("PRAGMA cache_size=-256000")   # 256 MB
         cursor.execute("PRAGMA mmap_size=2147483648")  # 2 GB
         cursor.execute("PRAGMA temp_store=MEMORY")
+        # Register custom normalize function for accent-insensitive comparisons
+        dbapi_conn.create_function("normalize_text", 1, _normalize_text_sqlite)
         cursor.close()
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
