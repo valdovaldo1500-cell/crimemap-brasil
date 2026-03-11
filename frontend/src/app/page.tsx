@@ -387,17 +387,21 @@ export default function Home() {
   }), [selectedTypes, selectedGrupo, selectedYear, selectedPeriod, selectedSexo, selectedCor, idadeMin, idadeMax, selectedStates]);
 
   const onCompareSelect = useCallback(async (location: { municipio: string; bairro?: string; state?: string; displayName: string }) => {
-    if (comparisonLocations.length >= 2) return;
-    const isDup = comparisonLocations.some(l =>
+    const currentLocations = compareLocationsRef.current;
+    if (currentLocations.length >= 2) return;
+    const isDup = currentLocations.some(l =>
       l.state === location.state && l.municipio === location.municipio && l.bairro === location.bairro
     );
     if (isDup) return;
-    setComparisonLocations(prev => [...prev, location]);
+    // Synchronously update ref so concurrent calls see the updated list immediately
+    const newLocations = [...currentLocations, location];
+    compareLocationsRef.current = newLocations;
+    setComparisonLocations(newLocations);
     try {
       let stats;
       if (!location.municipio && location.state) {
         // State-level comparison
-        const allStates = [...comparisonLocations.filter(l => l.state && !l.municipio).map(l => l.state!), location.state];
+        const allStates = [...newLocations.filter(l => l.state && !l.municipio).map(l => l.state!)];
         stats = await fetchStateStats({
           state: location.state,
           selected_states: allStates,
@@ -406,10 +410,10 @@ export default function Home() {
           idade_min: filters.idade_min, idade_max: filters.idade_max,
         });
         // Re-fetch first state with compatible types filter when 2nd state added
-        if (comparisonLocations.length === 1 && comparisonLocations[0].state && !comparisonLocations[0].municipio) {
+        if (currentLocations.length === 1 && currentLocations[0].state && !currentLocations[0].municipio) {
           try {
             const firstStats = await fetchStateStats({
-              state: comparisonLocations[0].state,
+              state: currentLocations[0].state,
               selected_states: allStates,
               semestre: filters.semestre, ano: filters.ano, tipo: filters.tipo,
               grupo: filters.grupo, sexo: filters.sexo, cor: filters.cor,
@@ -417,7 +421,7 @@ export default function Home() {
             });
             // Single atomic update with both states — avoids race between replace + append
             setComparisonStats([
-              { ...firstStats, displayName: comparisonLocations[0].displayName },
+              { ...firstStats, displayName: currentLocations[0].displayName },
               { ...stats, displayName: location.displayName },
             ]);
             return;
@@ -438,7 +442,7 @@ export default function Home() {
     } catch {
       setComparisonStats(prev => [...prev, { displayName: location.displayName, total: 0, crime_types: [] }]);
     }
-  }, [comparisonLocations, filters]);
+  }, [filters]);
 
   const clearComparison = useCallback(() => {
     setComparisonLocations([]);
