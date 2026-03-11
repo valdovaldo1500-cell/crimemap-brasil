@@ -527,7 +527,7 @@ export default function Home() {
           setDetailPanels(prev => prev.map(p =>
             p.id === panel.id ? { ...p, total: stats.total ?? p.total, population: stats.population ?? p.population,
               crime_types: stats.crime_types?.map((ct: any) => ({ tipo: ct.tipo_enquadramento || ct.tipo, count: ct.count })) ?? p.crime_types,
-              crime_categories: stats.crime_categories ?? p.crime_categories } : p
+              crime_categories: stats.crime_categories ?? p.crime_categories, periodLabel } : p
           ));
         } else if (panel.municipio) {
           const stats = await fetchLocationStats({
@@ -536,7 +536,7 @@ export default function Home() {
           setDetailPanels(prev => prev.map(p =>
             p.id === panel.id ? { ...p, total: stats.total ?? p.total, population: stats.population ?? p.population,
               crime_types: stats.crime_types?.map((ct: any) => ({ tipo: ct.tipo_enquadramento || ct.tipo, count: ct.count })) ?? p.crime_types,
-              crime_categories: stats.crime_categories ?? p.crime_categories } : p
+              crime_categories: stats.crime_categories ?? p.crime_categories, periodLabel } : p
           ));
         }
       } catch (err) {
