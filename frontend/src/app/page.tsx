@@ -167,8 +167,7 @@ export default function Home() {
       title: 'Lançamento',
       items: [
         'Mapa interativo com dados oficiais de segurança pública',
-        'Dados de RS, RJ, MG e todos os 27 estados via SINESP',
-        'Visualização por estado, município e bairro',
+        'Dados detalhados de RS, RJ e MG com visualização por estado, município e bairro',
         'Filtros por tipo de crime e período',
       ],
     },
@@ -1351,13 +1350,12 @@ export default function Home() {
 
             <section className="mb-5">
               <h3 className="text-sm font-bold text-[#3b82f6] uppercase tracking-wider mb-2">Fontes de Dados</h3>
-              <p className="text-sm text-[#94a3b8] mb-2">Os dados vêm de múltiplas fontes com diferentes níveis de qualidade:</p>
+              <p className="text-sm text-[#94a3b8] mb-2">Atualmente o Crime Brasil cobre três estados com dados detalhados:</p>
               <div className="space-y-2 ml-4">
                 <div className="flex items-start gap-2"><div className="w-2 h-2 rounded-full bg-green-500 mt-1.5 flex-shrink-0" /><span className="text-sm text-[#94a3b8]"><strong>Completo</strong> (RS, RJ) — registros individuais com dados demográficos da vítima, bairro e geolocalização</span></div>
                 <div className="flex items-start gap-2"><div className="w-2 h-2 rounded-full bg-amber-500 mt-1.5 flex-shrink-0" /><span className="text-sm text-[#94a3b8]"><strong>Parcial</strong> (MG) — apenas crimes violentos; crimes patrimoniais e drogas não disponíveis</span></div>
-                <div className="flex items-start gap-2"><div className="w-2 h-2 rounded-full bg-gray-500 mt-1.5 flex-shrink-0" /><span className="text-sm text-[#94a3b8]"><strong>Básico</strong> (demais estados) — dados agregados do SINESP/Ministério da Justiça, 15 tipos de crime</span></div>
               </div>
-              <p className="text-sm text-[#94a3b8] mt-2">Os dados são atualizados automaticamente toda semana. Clique em "Fontes" para ver detalhes de cada fonte.</p>
+              <p className="text-sm text-[#94a3b8] mt-2">Os demais estados aparecem no mapa mas ainda não possuem dados interativos. Os dados são atualizados automaticamente toda semana. Clique em "Fontes" para ver detalhes de cada fonte.</p>
             </section>
 
             <section className="mb-5">
@@ -1366,7 +1364,6 @@ export default function Home() {
               <ul className="space-y-1 ml-4 text-sm text-[#94a3b8]">
                 <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Filtros de sexo, cor e idade da vítima só têm dados detalhados para RS e RJ</li>
                 <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Selecionar MG junto com outros estados ativa filtro automático de compatibilidade</li>
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Dados do SINESP são anuais — filtro por semestre fica desabilitado para estados com apenas dados SINESP</li>
                 <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Clique diretamente nos estados no mapa para selecioná-los rapidamente</li>
               </ul>
             </section>
@@ -1374,9 +1371,8 @@ export default function Home() {
             <section>
               <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider mb-2">Limitações</h3>
               <ul className="space-y-1 ml-4 text-sm text-[#94a3b8]">
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Dados por bairro disponíveis apenas para RS, RJ e MG</li>
+                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Dados interativos disponíveis apenas para RS, RJ e MG — demais estados ainda não possuem dados detalhados</li>
                 <li className="before:content-['•'] before:mr-2 before:text-[#475569]">MG reporta apenas crimes violentos — não há dados de crimes patrimoniais ou drogas</li>
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Dados do SINESP são anuais — não é possível filtrar por semestre para demais estados</li>
                 <li className="before:content-['•'] before:mr-2 before:text-[#475569]">A frequência de atualização varia: RS/SP verificados semanalmente; os órgãos de origem publicam em cadências diferentes</li>
                 <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Alguns municípios podem ter geolocalização imprecisa</li>
                 <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Dados populacionais são estimativas do IBGE — taxas per capita são aproximadas</li>

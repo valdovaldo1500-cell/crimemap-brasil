@@ -152,9 +152,9 @@ Source: IBGE API for municipality/state boundaries.
 
 ## Frontend Behavior
 
-- **State selection**: greyed-out when no states selected, auto-filter for partial states (MG warning modal)
-- **Granularity gating**: semester buttons disabled when SINESP-only states selected (yearly data only)
-- **Three zoom levels**: states (zoom < 7), municipios (7-10), bairros (≥ 11, RS only)
+- **Interactive states**: Only RS, RJ, MG are interactive (clickable, selectable, drill-down). Other 24 states appear greyed-out on the map but have no click handlers or data surfaced to users.
+- **State selection**: sidebar shows only RS/RJ/MG; auto-filter for partial states (MG warning modal)
+- **Three zoom levels**: states (zoom < 7), municipios (7-10), bairros (≥ 11, RS/RJ/MG only)
 - **Rate mode**: /100K hab. uses fixed thresholds; Total uses quantile-based coloring
 - **Cascading filters**: changing any filter re-fetches available options
 
