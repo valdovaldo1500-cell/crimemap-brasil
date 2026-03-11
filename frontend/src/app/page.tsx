@@ -129,29 +129,44 @@ export default function Home() {
 
   const CHANGELOG = [
     {
-      date: '2026-03-06',
-      title: 'Comparação e visualização',
+      date: '2026-03-11',
+      title: 'Comparação aprimorada e melhorias de UI',
       items: [
-        'Modo comparação entre estados, cidades e bairros',
-        'Dados de RS, RJ e MG com filtro automático de compatibilidade',
-        'Visualização por bairros para RS, RJ e MG',
+        'Painel comparativo exibe população ("Hab.") de cada local lado a lado',
+        'Modo /100K no comparativo unifica o "Total" na taxa per capita e oculta linha redundante',
+        'Aviso de dados parciais quando MG é comparada com outro estado',
+        'Cabeçalho "Tipos de crime" indica "/100K" quando taxa per capita está ativa',
+        'Botão "Reportar Problema" agora exibe ícone e texto em destaque vermelho',
+      ],
+    },
+    {
+      date: '2026-03-06',
+      title: 'Modo comparação e visualização por bairros',
+      items: [
+        'Modo comparação lado a lado entre dois estados, cidades ou bairros',
+        'Painel de detalhes flutuante e arrastável ao clicar em qualquer região',
+        'Visualização por bairros disponível para RS, RJ e MG (zoom aproximado)',
+        'Filtro automático de compatibilidade ao comparar RS/RJ com MG',
       ],
     },
     {
       date: '2026-03-01',
-      title: 'Multi-estado e filtros',
+      title: 'Taxa per capita, coropleto e filtros avançados',
       items: [
-        'Taxa por 100 mil habitantes e modo regiões (coropleto)',
-        'Filtros por tipo de crime, grupo, sexo, cor e idade',
+        'Taxa por 100 mil habitantes com escala de cores fixa',
+        'Modo regiões (coropleto) como alternativa aos pontos',
+        'Filtros por tipo de crime, grupo, sexo, cor da vítima e faixa etária',
         'Busca por cidade ou bairro com autocomplete',
+        'Filtros em cascata: opções disponíveis se atualizam automaticamente',
       ],
     },
     {
       date: '2026-02-01',
       title: 'Lançamento',
       items: [
-        'Mapa de crimes com dados oficiais',
-        'Visualização por município e bairro',
+        'Mapa interativo com dados oficiais de segurança pública',
+        'Dados de RS, RJ, MG e todos os 27 estados via SINESP',
+        'Visualização por estado, município e bairro',
         'Filtros por tipo de crime e período',
       ],
     },
