@@ -922,9 +922,10 @@ def run_full_staging_load() -> dict:
                 logger.warning(f"MG violent crimes {i} failed: {e}")
                 results[f"mg_violent_{i}"] = f"SKIPPED: {e}"
 
-        # Deduplicate: for states with dedicated importers (RJ from ISP),
-        # SINESP VDE data overlaps. Prefer dedicated importers.
-        # Keep MG VDE since it adds property crime types MG Violent lacks.
+        # Deduplicate: for states with dedicated importers (RJ from ISP, MG from SEJUSP),
+        # SINESP VDE data overlaps and inflates violent crime totals. Prefer dedicated importers.
+        # MG is "partial" quality (violent crimes only from SEJUSP); removing VDE avoids
+        # double-counting violent crimes that appear in both mg_violent and sinesp_vde.
         try:
             vde_rj_deleted = db.query(CrimeStaging).filter(
                 CrimeStaging.source.like("sinesp_vde%"),
@@ -934,6 +935,15 @@ def run_full_staging_load() -> dict:
             if vde_rj_deleted:
                 logger.info(f"Dedup: removed {vde_rj_deleted} SINESP VDE rows for RJ (ISP data preferred)")
                 results["_dedup_rj_vde"] = vde_rj_deleted
+
+            vde_mg_deleted = db.query(CrimeStaging).filter(
+                CrimeStaging.source.like("sinesp_vde%"),
+                CrimeStaging.state == "MG"
+            ).delete(synchronize_session=False)
+            db.commit()
+            if vde_mg_deleted:
+                logger.info(f"Dedup: removed {vde_mg_deleted} SINESP VDE rows for MG (SEJUSP data preferred)")
+                results["_dedup_mg_vde"] = vde_mg_deleted
         except Exception as e:
             logger.warning(f"Dedup step failed: {e}")
             db.rollback()
