@@ -11,7 +11,7 @@
 - **Issue**: `_BAIRRO_ABBREVIATIONS` maps `BONFIM -> BOM FIM` unconditionally. Santa Maria has a polygon named `BONFIM` (not `BOM FIM`). The alias fires before the polygon check, converting `BONFIM` to `BOM FIM`, which is not in Santa Maria's polygon set → goes to Bairro desconhecido. Same issue in Bossoroca (BONFIM polygon only). Also causes 70 Porto Alegre `Bonfim` records to land on `BOM FIM` polygon instead of the distinct `BONFIM` polygon.
 - **Evidence**: `rs-bairros.geojson` has `BONFIM` polygon for Santa Maria, Bossoroca, Porto Alegre. DB has 907 `Bonfim` + 20 `BONFIM` records for Santa Maria. Porto Alegre has both `BONFIM` and `BOM FIM` polygons (separate neighborhoods).
 - **Fix needed**: Remove `'BONFIM': 'BOM FIM'` from `_BAIRRO_ABBREVIATIONS`. Instead, add conditional alias logic: in the poly-check section, try `BOM FIM` only if `BONFIM` is NOT in poly_names. This is the only alias that conflicts with an existing polygon name.
-- **Status**: OPEN
+- **Status**: FIXED (removed global alias; added poly-conditional BONFIM→BOM FIM; updated golden test)
 
 ### [BUG-002] MISSING-ABBREV | PELOTAS, GRAVATAI | COHAB [NAME]
 - **Issue**: `COHAB GUABIROBA`, `COHAB TABLADA`, `COHAB LINDOIA` (Pelotas) and similar patterns fail to match because `COHAB` is not in the prefix-strip list. The bare names (`GUABIROBA`, `TABLADA`, `LINDOIA`) ARE valid polygons in Pelotas. The strip_prefix list includes `VILA `, `JARDIM `, `PARQUE ` etc. but not `COHAB `.
