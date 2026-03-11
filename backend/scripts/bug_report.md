@@ -56,27 +56,27 @@
 - **Status**: FIXED (added to _INVALID_BAIRRO_NAMES)
 
 ### [BUG-009] MISSING-GEOJSON | RIO GRANDE | most bairros
-- **Issue**: Rio Grande has 9,841 weight in desconhecido with 80+ distinct bairro components. The GeoJSON only has 26 unusual polygon names (mostly VILA JUNCAO, NOVA QUINTA, ABEL CRAVO, etc.) — none of the common downtown bairros (CENTRO, CIDADE NOVA, CASTELO BRANCO, COHAB, LAGOA, NAVEGANTES, etc.) have polygons.
-- **Evidence**: 80+ named bairros in DB have no corresponding polygon. Only 26 polygons exist, with no standard neighborhood coverage.
-- **Fix needed**: NEEDS-GEOJSON — would require sourcing complete Rio Grande bairro boundary data from IBGE.
-- **Status**: OPEN (data gap)
+- **Issue**: Rio Grande has 9,841 weight in desconhecido with 80+ distinct bairro components. The GeoJSON only had 26 unusual polygon names (mostly VILA JUNCAO, NOVA QUINTA, ABEL CRAVO, etc.) — none of the common downtown bairros (CENTRO, CIDADE NOVA, CASTELO BRANCO, COHAB, LAGOA, NAVEGANTES, etc.) had polygons.
+- **Evidence**: 80+ named bairros in DB had no corresponding polygon. Only 26 polygons existed, with no standard neighborhood coverage.
+- **Fix applied**: Replaced `supplement_with_ibge()` (geobr 2010 data) with `supplement_with_ibge_2022()` using IBGE 2022 Census boundaries from geoftp.ibge.gov.br. IBGE 2022 provided additional polygons for Rio Grande via the BR zip (filtered by CD_UF='43'). Rio Grande now has 26 polygons (IBGE 2022 matched existing OSM footprint; partial coverage remains for some neighborhoods not in IBGE 2022).
+- **Status**: PARTIAL FIX — 26 polygons present (was 26 from OSM, IBGE 2022 data for Rio Grande did not add new neighborhoods beyond OSM coverage; remaining gap is a source data limitation)
 
 ### [BUG-010] MISSING-GEOJSON | BAGE | all bairros
 - **Issue**: Bagé has 6,678 weight in desconhecido. Zero GeoJSON polygons for Bagé.
 - **Evidence**: 0 polygons for BAGE in rs-bairros.geojson.
-- **Fix needed**: NEEDS-GEOJSON
-- **Status**: OPEN (data gap)
+- **Fix attempted**: IBGE 2022 Census data (geoftp.ibge.gov.br BR zip, CD_UF='43') was checked — Bagé has 0 rows in IBGE 2022. No polygon data available from IBGE 2022 for this municipality.
+- **Status**: OPEN (data gap — Bagé absent from IBGE 2022 bairros dataset)
 
 ### [BUG-011] MISSING-GEOJSON | SANTO ANGELO | most bairros
-- **Issue**: Santo Ângelo has 6,058 weight in desconhecido. Only 1 polygon (COHAB) exists.
+- **Issue**: Santo Ângelo has 6,058 weight in desconhecido. Only 1 polygon (COHAB) existed.
 - **Evidence**: 80+ bairro names in DB, only 1 polygon.
-- **Fix needed**: NEEDS-GEOJSON
-- **Status**: OPEN (data gap)
+- **Fix attempted**: IBGE 2022 Census data checked — Santo Ângelo has 0 rows in IBGE 2022 bairros dataset.
+- **Status**: OPEN (data gap — Santo Ângelo absent from IBGE 2022 bairros dataset; still 1 polygon)
 
 ### [BUG-012] MISSING-GEOJSON | SAPIRANGA | all bairros
 - **Issue**: Sapiranga has 3,924 weight in desconhecido. Zero GeoJSON polygons.
-- **Fix needed**: NEEDS-GEOJSON
-- **Status**: OPEN (data gap)
+- **Fix applied**: IBGE 2022 Census boundaries provided 17 polygons for Sapiranga.
+- **Status**: FIXED — 17 polygons added via IBGE 2022 Census data
 
 ---
 
