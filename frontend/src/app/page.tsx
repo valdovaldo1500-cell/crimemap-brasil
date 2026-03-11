@@ -993,6 +993,9 @@ export default function Home() {
                 {comparisonLocations.length === 1 && comparisonStats.length < 2 && !comparisonLoading && (
                   <p className="text-xs text-[#94a3b8] mt-1">Selecione outro local para comparar.</p>
                 )}
+                {comparisonLocations.length >= 2 && !comparisonLoading && comparisonStats.length >= 2 && (
+                  <p className="text-[10px] text-amber-400/80 mt-1">Comparação completa — clique em <span className="font-semibold">Limpar</span> para escolher novos locais.</p>
+                )}
                 {comparisonLoading && (
                   <div className="mt-2 space-y-1.5 animate-pulse">
                     <div className="h-3 bg-[#1e293b] rounded w-3/4" />
