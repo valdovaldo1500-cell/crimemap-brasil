@@ -40,8 +40,13 @@ def ok_float(label, expected, actual, tol=0.15):
 
 def api_get(path):
     url = f"{API}{path}"
-    with urlopen(url, timeout=30) as r:
-        return json.loads(r.read())
+    result = subprocess.run(
+        ["curl", "-s", "--max-time", "30", url],
+        capture_output=True, text=True
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"curl failed: {result.stderr}")
+    return json.loads(result.stdout)
 
 # ── Step 1: Source file totals ───────────────────────────────────────────
 
