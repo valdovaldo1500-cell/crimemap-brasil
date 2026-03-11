@@ -249,7 +249,6 @@ def main():
     # (some rows lack geocoding). We check API < source, not equality.
     for year in [2024, 2025]:
         resp = verify_api_state("RS", year)
-        print(f"    DEBUG RS {year} resp keys: {list(resp.keys()) if isinstance(resp, dict) else type(resp)}")
         api_total = resp["total"]
         api_results[("RS", year)] = resp
         src = source_totals[("RS", year)]
