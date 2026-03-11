@@ -41,7 +41,7 @@
 - **Issue**: DB has `MEDIANEIRA` (206 records) as short form. Santa Maria has two polygons ending in `MEDIANEIRA`: `NOSSA SENHORA MEDIANEIRA` and `VILA MEDIANEIRA`. The suffix match requires exactly 1 result, so with 2 matches it fails → desconhecido.
 - **Evidence**: Santa Maria polygons: `NOSSA SENHORA MEDIANEIRA`, `VILA MEDIANEIRA`. DB has 206 `MEDIANEIRA` records (distinct from `Nossa Senhora Medianeira` which has 2417 and already matches via normalization). The short form `MEDIANEIRA` alone is ambiguous in Santa Maria's polygon set.
 - **Fix needed**: Add `'MEDIANEIRA': 'NOSSA SENHORA MEDIANEIRA'` to `BAIRRO_ALIASES` (this is the dominant/official neighborhood; `Vila Medianeira` is a street-level subdivision). Verify: `Nossa Senhora Medianeira` exists only in Santa Maria and Faxinal do Soturno — no conflicts.
-- **Status**: OPEN
+- **Status**: FIXED (poly-conditional alias: MEDIANEIRA→NOSSA SENHORA MEDIANEIRA when no exact MEDIANEIRA polygon but NOSSA SENHORA MEDIANEIRA exists)
 
 ### [BUG-007] NAME-MISMATCH | SANTA MARIA | DORES (ambiguous suffix)
 - **Issue**: DB has `DORES` (120 records) as short form. Santa Maria has two polygons ending in `DORES`: `NOSSA SENHORA DAS DORES` and `LOTEAMENTO PAROQUIA DAS DORES`. Suffix match finds 2 → fails.
