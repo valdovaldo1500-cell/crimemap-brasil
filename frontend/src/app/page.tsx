@@ -573,7 +573,7 @@ export default function Home() {
               onChange={e => onSearchChange(e.target.value)}
               onFocus={() => { setSearchFocused(true); if (suggestions.length > 0) setShowSuggestions(true); }}
               onBlur={() => { setSearchFocused(false); setTimeout(() => setShowSuggestions(false), 200); }}
-              placeholder="Buscar estado, cidade ou bairro..."
+              placeholder="Buscar cidade ou bairro (ex: Porto Alegre, Centro)"
               className="w-full bg-[#1a2234] border border-[#1e293b] rounded-xl px-4 py-2.5 text-sm text-[#f1f5f9] placeholder-[#475569] focus:outline-none focus:border-[#3b82f6]"
             />
             {searchFocused && searchQ.trim().length < 3 && !showSuggestions && (
