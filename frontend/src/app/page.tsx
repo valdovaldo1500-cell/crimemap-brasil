@@ -1111,8 +1111,9 @@ export default function Home() {
           )}
           {/* Bottom-right utility links */}
           <div className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 z-[1000] hidden sm:flex items-center gap-3">
-            <button onClick={openBugReport} className="text-[#64748b] hover:text-[#94a3b8] transition-colors" title="Reportar Bug">
+            <button onClick={openBugReport} className="flex items-center gap-1.5 text-[#b91c1c] hover:text-[#dc2626] transition-colors" title="Reportar Problema">
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2l1.88 1.88M14.12 3.88L16 2M9 7.13v-1a3.003 3.003 0 116 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 014-4h4a4 4 0 014 4v3c0 3.3-2.7 6-6 6z"/><path d="M12 20v-9M6.53 9C4.6 8.8 3 7.1 3 5M6 13H2M6 17l-4 1M17.47 9c1.93-.2 3.53-1.9 3.53-4M18 13h4M18 17l4 1"/></svg>
+              <span className="text-xs">Reportar Problema</span>
             </button>
             <button onClick={() => setShowHelp(true)} className="text-[#64748b] hover:text-[#94a3b8] transition-colors" title="Como usar">
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r=".5"/></svg>
