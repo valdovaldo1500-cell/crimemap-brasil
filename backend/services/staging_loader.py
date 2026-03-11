@@ -803,7 +803,7 @@ def load_mg_violent(db, csv_path: str) -> int:
     logger.info("Loading MG violent crimes data...")
 
     df = None
-    for enc in ["latin-1", "utf-8", "cp1252"]:
+    for enc in ["utf-8-sig", "utf-8", "latin-1", "cp1252"]:
         try:
             df = pd.read_csv(csv_path, sep=";", encoding=enc, low_memory=False)
             break
@@ -813,7 +813,8 @@ def load_mg_violent(db, csv_path: str) -> int:
         logger.error("Failed to read MG CSV with any encoding")
         return 0
 
-    df.columns = [c.strip().lower() for c in df.columns]
+    # Strip BOM and whitespace from column names (handles latin-1 misread of UTF-8 BOM)
+    df.columns = [c.lstrip('\ufeffï»¿').strip().lower() for c in df.columns]
 
     count = 0
     batch = []
