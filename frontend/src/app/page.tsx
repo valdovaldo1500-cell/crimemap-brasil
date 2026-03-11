@@ -507,7 +507,7 @@ export default function Home() {
       const newPanels = [...prev, newPanel];
       return newPanels.length > 5 ? newPanels.slice(-5) : newPanels;
     });
-  }, []);
+  }, [periodLabel]);
 
   // Re-fetch open DetailPanels when filters change
   const detailPanelsRef = useRef(detailPanels);
