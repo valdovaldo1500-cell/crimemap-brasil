@@ -36,7 +36,7 @@ export default function DetailPanel({ data, onClose, stackIndex = 0, onFocus, ra
       // Position: right side on desktop, center-bottom on mobile
       const isMobile = vw < 640;
       setPos({
-        x: (isMobile ? Math.max(8, (vw - 300) / 2) : vw - 340) + stackIndex * 30,
+        x: (isMobile ? Math.max(8, (vw - 300) / 2) : vw - 400) + stackIndex * 30,
         y: (isMobile ? vh - 350 : 100) + stackIndex * 30,
       });
       setSize({ w: isMobile ? Math.min(300, vw - 16) : 320, h: 0 });
