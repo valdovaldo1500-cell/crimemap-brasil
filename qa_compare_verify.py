@@ -122,6 +122,7 @@ def sum_mg_registros(year: int) -> int:
 
 def verify_api_state(state: str, ano: int, selected_states=None):
     """Call /api/state-stats and return parsed response."""
+    _time.sleep(1.5)  # avoid rate limiter (60/min)
     url = f"/api/state-stats?state={state}&ano={ano}"
     if selected_states:
         for s in selected_states:
