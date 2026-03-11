@@ -23,7 +23,7 @@
 - **Issue**: `PARQUE DO OBELISCO` → strip `PARQUE ` → `DO OBELISCO` → `DO OBELISCO` not in polys (only `OBELISCO` is). The current strip logic only strips the prefix, leaving the article `DO`/`DA`/`DOS`/`DAS` which prevents the bare-name match.
 - **Evidence**: Pelotas: `Parque do Obelisco` (528 records) → should map to `OBELISCO` polygon. Gravatai: `Parque do Itatiaia` (617 records) → should map to `ITATIAIA` polygon. Canela: `Parque das Hortensias` (28 records) → should map to `HORTENSIAS` polygon. Triunfo: `Vila do Estaleiro` (68 records) → should map to `ESTALEIRO` polygon.
 - **Fix needed**: After stripping a prefix (e.g. `PARQUE `), also apply article-stripping to the result before the poly-check: `stripped = re.sub(r'^(DO|DA|DOS|DAS|DE)\s+', '', stripped)`.
-- **Status**: OPEN
+- **Status**: FIXED (added _LEADING_ARTICLE_RE stripping after prefix removal)
 
 ### [BUG-004] NAME-MISMATCH | CAMPO BOM | VILA OPERARIA / OPERARIA
 - **Issue**: DB has `VILA OPERARIA` and `OPERARIA` (feminine form) but Campo Bom polygon is `OPERARIO` (masculine). Strip `VILA ` → `OPERARIA` → not in polys (only `OPERARIO` exists).
