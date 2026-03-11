@@ -150,15 +150,30 @@ export default function DetailPanel({ data, onClose, stackIndex = 0, onFocus, ra
           </div>
         ) : (
           <>
-            <div className="flex items-baseline gap-3 mb-2">
-              <span className="text-lg font-bold font-mono text-[#f1f5f9]">{data.total.toLocaleString()}</span>
-              <span className="text-xs text-[#94a3b8]">ocorrências</span>
-            </div>
-            {rate && (
-              <div className="text-xs text-[#94a3b8] mb-3">
-                <span className="font-mono text-[#f1f5f9]">{rate}</span> /100K hab.
-                {data.population && <span className="ml-2 text-[#64748b]">(pop: {data.population.toLocaleString()})</span>}
-              </div>
+            {rateMode === 'rate' && rate ? (
+              <>
+                <div className="flex items-baseline gap-3 mb-2">
+                  <span className="text-lg font-bold font-mono text-[#f1f5f9]">{rate}</span>
+                  <span className="text-xs text-[#94a3b8]">/100K hab.</span>
+                </div>
+                <div className="text-xs text-[#94a3b8] mb-3">
+                  <span className="font-mono text-[#f1f5f9]">{data.total.toLocaleString()}</span> ocorrências
+                  {data.population && <span className="ml-2 text-[#64748b]">(pop: {data.population.toLocaleString()})</span>}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-baseline gap-3 mb-2">
+                  <span className="text-lg font-bold font-mono text-[#f1f5f9]">{data.total.toLocaleString()}</span>
+                  <span className="text-xs text-[#94a3b8]">ocorrências</span>
+                </div>
+                {rate && (
+                  <div className="text-xs text-[#94a3b8] mb-3">
+                    <span className="font-mono text-[#f1f5f9]">{rate}</span> /100K hab.
+                    {data.population && <span className="ml-2 text-[#64748b]">(pop: {data.population.toLocaleString()})</span>}
+                  </div>
+                )}
+              </>
             )}
 
             {/* Unknown bairro components */}
