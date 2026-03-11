@@ -17,7 +17,7 @@
 - **Issue**: `COHAB GUABIROBA`, `COHAB TABLADA`, `COHAB LINDOIA` (Pelotas) and similar patterns fail to match because `COHAB` is not in the prefix-strip list. The bare names (`GUABIROBA`, `TABLADA`, `LINDOIA`) ARE valid polygons in Pelotas. The strip_prefix list includes `VILA `, `JARDIM `, `PARQUE ` etc. but not `COHAB `.
 - **Evidence**: Pelotas has `GUABIROBA`, `TABLADA`, `LINDOIA` polygons. DB has 781 `COHAB Guabiroba`, 277 `COHAB Tablada`, 24 `Cohab Lindóia` records all going to desconhecido. Gravatai has `COHAB A`, `COHAB B`, `COHAB C` as full polygon names → those already match directly and won't be affected by stripping.
 - **Fix needed**: Add `'COHAB '` to the strip_prefix loop in `_normalize_bairro_for_matching()`. The strip is conditional on the bare name being in poly_names, so false positives are impossible.
-- **Status**: OPEN
+- **Status**: FIXED (added COHAB to strip_prefix list)
 
 ### [BUG-003] MISSING-ABBREV | PELOTAS, GRAVATAI, CANELA | PARQUE DO/DA [NAME]
 - **Issue**: `PARQUE DO OBELISCO` → strip `PARQUE ` → `DO OBELISCO` → `DO OBELISCO` not in polys (only `OBELISCO` is). The current strip logic only strips the prefix, leaving the article `DO`/`DA`/`DOS`/`DAS` which prevents the bare-name match.
