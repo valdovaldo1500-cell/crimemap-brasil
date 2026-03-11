@@ -17,7 +17,7 @@ BASE = Path(__file__).resolve().parent
 DATA = BASE / "backend" / "data"
 STAGING = DATA / "staging"
 POPULATION_FILE = BASE / "backend" / "lookup" / "population.json"
-API = "https://crimebrasil.com.br/api"
+API = "https://crimebrasil.com.br"
 
 POPULATIONS = {"RS": 11_233_263, "RJ": 17_223_547, "MG": 21_393_441}
 
