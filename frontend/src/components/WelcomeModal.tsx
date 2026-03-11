@@ -2,19 +2,28 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-const FULL_MESSAGE = `Seja bem-vindo!
+type Segment = { text: string; bold?: true; italic?: true };
 
-Quando minha sogra estava se mudando de bairro, procuramos uma ferramenta que mostrasse dados reais de criminalidade por região — e não encontramos nada.
-Então criei CrimeBrasil.com.br — o mapa de criminalidade mais completo do país!
+const SEGMENTS: Segment[] = [
+  { text: "Seja bem-vindo!\n\nQuando minha sogra estava se mudando, procuramos uma ferramenta que mostrasse dados reais de criminalidade por região — e não encontramos nada.\nEntão criei CrimeBrasil.com.br — O mapa de criminalidade mais completo do país!\n\n• Dados de criminalidade por estado, cidade e bairro\n• Compare diferentes regiões lado a lado\n• Veja estatísticas totais ou por 100 mil habitantes\n• Dados detalhados do RS, RJ e MG, cobrindo 2003 a 2026.\n\nAjude a manter o site no ar — " },
+  { text: "compartilhe!", bold: true },
+  { text: "\n\n— " },
+  { text: "Israel Lehnen Silva", italic: true },
+];
 
-- Dados de criminalidade por estado, cidade e bairro
-- Compare diferentes regiões lado a lado
-- Veja estatísticas totais ou por 100 mil habitantes
-- Dados detalhados do RS, RJ e MG, cobrindo 2003 a 2026.
+const FULL_MESSAGE = SEGMENTS.map(s => s.text).join('');
 
-Ajude a manter o site no ar — compartilhe!
-
-— Israel Lehnen Silva`;
+function renderSegments(charIndex: number): React.ReactNode[] {
+  let remaining = charIndex;
+  return SEGMENTS.map((seg, i) => {
+    if (remaining <= 0) return null;
+    const visible = seg.text.slice(0, remaining);
+    remaining -= seg.text.length;
+    if (seg.bold) return <strong key={i} style={{ color: '#ffffff', fontWeight: 700 }}>{visible}</strong>;
+    if (seg.italic) return <em key={i} style={{ color: '#aaffcc', fontStyle: 'italic' }}>{visible}</em>;
+    return <span key={i}>{visible}</span>;
+  });
+}
 
 const CHAR_DELAY = 30;
 const PARAGRAPH_PAUSE = 200;
