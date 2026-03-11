@@ -438,9 +438,9 @@ export default function Home() {
           ultimos_meses: filters.ultimos_meses,
         });
       }
-      setComparisonStats(prev => [...prev, { ...stats, displayName: location.displayName }]);
+      setComparisonStats(prev => prev.length >= 2 ? prev : [...prev, { ...stats, displayName: location.displayName }]);
     } catch {
-      setComparisonStats(prev => [...prev, { displayName: location.displayName, total: 0, crime_types: [] }]);
+      setComparisonStats(prev => prev.length >= 2 ? prev : [...prev, { displayName: location.displayName, total: 0, crime_types: [] }]);
     }
   }, [filters]);
 
