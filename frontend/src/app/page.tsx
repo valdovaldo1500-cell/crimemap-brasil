@@ -135,7 +135,7 @@ export default function Home() {
       title: 'Comparação aprimorada e melhorias de UI',
       items: [
         'Painel comparativo exibe população ("Hab.") de cada local lado a lado',
-        'Modo /100K no comparativo unifica o "Total" na taxa per capita e oculta linha redundante',
+        'Painel comparativo sempre exibe total absoluto e taxa /100K lado a lado',
         'Aviso de dados parciais quando MG é comparada com outro estado',
         'Cabeçalho "Tipos de crime" indica "/100K" quando taxa per capita está ativa',
         'Botão "Reportar Problema" agora exibe ícone e texto em destaque vermelho',
