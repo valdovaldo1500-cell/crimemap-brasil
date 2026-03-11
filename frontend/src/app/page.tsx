@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { fetchStats, fetchCrimeTypes, fetchSemesters, fetchAutocomplete, fetchSexoValues, fetchCorValues, fetchGrupoValues, fetchFilterOptions, submitBugReport, fetchAvailableStates, fetchStateFilterInfo, fetchLocationStats, fetchStateStats, fetchSystemInfo, fetchDataAvailability } from '@/lib/api';
 import { calcRate, formatRate } from '@/lib/rates';
 import DetailPanel from '@/components/DetailPanel';
+import WelcomeModal from '@/components/WelcomeModal';
 const CrimeMap = dynamic(() => import('@/components/CrimeMap'), { ssr: false });
 
 const DATA_SOURCES = [
