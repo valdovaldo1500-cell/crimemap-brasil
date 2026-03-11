@@ -27,17 +27,25 @@ WARNS = 0
 
 PERF_MS = {"state": 2000, "city": 1500, "bairro": 2000, "filter": 1000}
 
-# RJ 42 individual crime columns (excludes composites)
+# RJ ISP CISP crime columns — must match backend services/staging_loader.py RJ_CRIME_COLUMNS
+# Excludes admin columns (apf, aaapai, cmp, cmba, aisp, risp) and composite summaries
 RJ_CRIME_COLS = [
-    'hom_doloso', 'lesao_corp_morte', 'latrocinio', 'hom_por_interv_policial', 'feminicidio',
-    'tentat_hom', 'tentativa_feminicidio', 'lesao_corp_dolosa', 'estupro',
-    'roubo_transeunte', 'roubo_celular', 'roubo_em_coletivo', 'roubo_rua', 'roubo_veiculo',
-    'roubo_carga', 'roubo_comercio', 'roubo_residencia', 'roubo_banco', 'roubo_cx_eletronico',
-    'roubo_conducao_saque', 'roubo_apos_saque', 'roubo_bicicleta', 'outros_roubos',
-    'furto_veiculos', 'furto_transeunte', 'furto_coletivo', 'furto_celular', 'furto_bicicleta',
-    'outros_furtos', 'sequestro', 'extorsao', 'sequestro_relampago', 'estelionato',
-    'apreensao_drogas', 'posse_drogas', 'trafico_drogas', 'apreensao_drogas_sem_autor',
-    'recuperacao_veiculos', 'apf', 'aaapai', 'cmp', 'cmba',
+    'hom_doloso', 'lesao_corp_morte', 'latrocinio', 'hom_por_interv_policial',
+    'tentat_hom', 'lesao_corp_dolosa', 'estupro', 'hom_culposo',
+    'lesao_corp_culposa', 'feminicidio', 'tentativa_feminicidio',
+    'roubo_transeunte', 'roubo_corp_am_am',
+    'roubo_em_coletivo', 'roubo_veiculo', 'roubo_carga', 'roubo_celular',
+    'roubo_conducao_saque', 'roubo_bicicleta', 'roubo_comercio',
+    'roubo_residencia', 'roubo_rua', 'roubo_banco', 'roubo_cx_eletronico',
+    'roubo_apos_saque', 'outros_roubos',
+    'furto_veiculos', 'furto_transeunte', 'furto_coletivo',
+    'furto_celular', 'furto_bicicleta', 'outros_furtos',
+    'sequestro', 'extorsao',
+    'sequestro_relampago', 'estelionato', 'apreensao_drogas',
+    'posse_drogas', 'trafico_drogas', 'recuperacao_veiculos',
+    'ameaca', 'pessoas_desaparecidas', 'encontro_cadaver',
+    'encontro_ossada', 'pol_militares_mortos_serv',
+    'pol_civis_mortos_serv',
 ]
 
 
