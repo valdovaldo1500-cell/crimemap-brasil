@@ -82,7 +82,7 @@
 
 ## Summary
 
-**Code-fixable bugs**: BUG-001 through BUG-008 (8 bugs)
-**Data gaps (NEEDS-GEOJSON)**: BUG-009 through BUG-012 (4 cities documented, ~30+ similar cities)
+**Code-fixable bugs**: BUG-001 through BUG-008 (8 bugs) — ALL FIXED ✓
+**Data gaps (NEEDS-GEOJSON)**: BUG-009 through BUG-012 (4 cities documented, ~30+ similar cities) — require IBGE boundary data
 
-**Highest impact**: BUG-005 (all RJ/MG city detail panels show 0), BUG-002 (COHAB prefix), BUG-003 (PARQUE DO prefix)
+**Highest impact fixed**: BUG-005 (all RJ city detail panels were showing 0; now show correct totals), BUG-001 (Santa Maria BONFIM now shows 652 in correct polygon), BUG-002/003 (COHAB + PARQUE DO prefix stripping)
