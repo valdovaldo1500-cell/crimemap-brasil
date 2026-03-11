@@ -149,35 +149,87 @@ def polygon_centroid(ring):
     return (cx, cy)
 
 
-def supplement_with_ibge(features, ibge_code):
-    """Supplement OSM bairro features with IBGE neighborhood data from geobr."""
+def supplement_with_ibge_2022(existing_features, state_abbrev, state_ibge_code):
+    """Supplement OSM bairro features with IBGE 2022 Census neighborhood boundaries.
+
+    Downloads from geoftp.ibge.gov.br: tries state-specific zip first, falls back
+    to the full BR zip with a fiona SQL filter to avoid loading all Brazil into memory.
+
+    Returns (new_features, replaced_keys) where:
+      - new_features: list of GeoJSON Feature dicts to add
+      - replaced_keys: set of (municipio_normalized, name_normalized) tuples for
+        osm_node_approx features that should be replaced by the IBGE polygon
+    """
     try:
-        import geobr
         import geopandas as gpd
     except ImportError:
-        print("geobr/geopandas not installed — skipping IBGE supplement")
-        return features
+        print("geopandas not installed — skipping IBGE 2022 supplement")
+        return [], set()
 
-    print(f"\nFetching IBGE neighborhood boundaries via geobr (code_state={ibge_code})...")
+    state_abbrev_upper = state_abbrev.upper()
+    state_abbrev_lower = state_abbrev.lower()
+
+    rs_url = (
+        f"zip+https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/"
+        f"malhas_de_setores_censitarios__divisoes_intramunicipais/censo_2022/bairros/shp/"
+        f"UF/{state_abbrev_upper}/{state_abbrev_upper}_bairros_CD2022.zip"
+    )
+    br_url = (
+        f"zip+https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/"
+        f"malhas_de_setores_censitarios__divisoes_intramunicipais/censo_2022/bairros/shp/"
+        f"BR/BR_bairros_CD2022.zip"
+    )
+
+    print(f"\nFetching IBGE 2022 neighborhood boundaries for {state_abbrev_upper}...")
+
+    gdf = None
+
+    # Try state-specific zip first
+    head_url = rs_url.replace("zip+", "")
     try:
-        gdf = geobr.read_neighborhood(year=2010)
+        head_resp = requests.head(head_url, timeout=30, allow_redirects=True)
+        if head_resp.status_code == 200:
+            print(f"  Downloading state-specific zip: {head_url}")
+            gdf = gpd.read_file(rs_url, timeout=60)
+            print(f"  Got {len(gdf)} features from state-specific zip")
+        else:
+            print(f"  State-specific zip returned {head_resp.status_code}, falling back to BR zip")
     except Exception as e:
-        print(f"Failed to fetch IBGE data: {e}")
-        return features
+        print(f"  State-specific zip check failed ({e}), falling back to BR zip")
 
-    state_gdf = gdf[gdf["code_state"] == ibge_code].copy()
-    print(f"Got {len(state_gdf)} IBGE neighborhoods for state {ibge_code}")
+    if gdf is None:
+        print(f"  Downloading BR zip with state filter CD_UF='{state_ibge_code}'...")
+        try:
+            gdf = gpd.read_file(br_url, where=f"CD_UF='{state_ibge_code}'", timeout=180)
+            print(f"  Got {len(gdf)} features from BR zip (filtered by CD_UF={state_ibge_code})")
+        except Exception as e:
+            print(f"Failed to fetch IBGE 2022 data: {e}")
+            return [], set()
 
-    existing = set()
-    for f in features:
-        props = f["properties"]
-        key = (props.get("municipio_normalized", ""), props.get("name_normalized", ""))
-        existing.add(key)
+    # Fail fast if expected columns are missing
+    EXPECTED_COLS = {"NM_BAIRRO", "NM_MUN"}
+    missing = EXPECTED_COLS - set(gdf.columns)
+    assert not missing, (
+        f"IBGE 2022 schema changed. Missing cols: {missing}. Found: {list(gdf.columns)}"
+    )
 
-    added = 0
-    for _, row in state_gdf.iterrows():
-        name = row.get("name_neighborhood", "")
-        mun_name = row.get("name_muni", "")
+    print(f"Columns in IBGE 2022 data: {list(gdf.columns)}")
+
+    # Build deduplication index: (municipio_normalized, name_normalized) -> source
+    existing_index = {
+        (
+            f["properties"].get("municipio_normalized", ""),
+            f["properties"].get("name_normalized", ""),
+        ): f["properties"].get("source", "real")
+        for f in existing_features
+    }
+
+    new_features = []
+    replaced_keys = set()
+
+    for _, row in gdf.iterrows():
+        name = row.get("NM_BAIRRO", "")
+        mun_name = row.get("NM_MUN", "")
         # Guard against NaN (pandas float) values
         if not isinstance(name, str) or not isinstance(mun_name, str):
             continue
@@ -185,16 +237,28 @@ def supplement_with_ibge(features, ibge_code):
         mun_name = mun_name.strip()
         if not name or not mun_name:
             continue
-        name_norm = normalize_name(name)
-        mun_norm = normalize_name(mun_name)
-        if (mun_norm, name_norm) in existing:
-            continue
+
         geom = row.geometry
         if geom is None or geom.is_empty:
             continue
+
+        name_norm = normalize_name(name)
+        mun_norm = normalize_name(mun_name)
+        key = (mun_norm, name_norm)
+
+        existing_source = existing_index.get(key)
+
+        if existing_source is not None and existing_source != "osm_node_approx":
+            # Already have a real polygon — skip
+            continue
+
+        if existing_source == "osm_node_approx":
+            # IBGE polygon is better than the approximate circle — mark for replacement
+            replaced_keys.add(key)
+
         try:
-            from shapely.geometry import mapping
-            geojson_geom = mapping(geom)
+            geojson_geom = geom.__geo_interface__
+            geojson_geom = dict(geojson_geom)
             geojson_geom["coordinates"] = round_coords(geojson_geom["coordinates"])
         except Exception:
             continue
@@ -206,15 +270,16 @@ def supplement_with_ibge(features, ibge_code):
                 "name_normalized": name_norm,
                 "municipio": mun_name,
                 "municipio_normalized": mun_norm,
+                "source": "ibge_2022",
             },
             "geometry": geojson_geom,
         }
-        features.append(feature)
-        existing.add((mun_norm, name_norm))
-        added += 1
+        new_features.append(feature)
+        # Update index so subsequent duplicates within gdf are also deduplicated
+        existing_index[key] = "ibge_2022"
 
-    print(f"Added {added} IBGE neighborhoods not in OSM data")
-    return features
+    print(f"IBGE 2022: {len(new_features)} new features, {len(replaced_keys)} osm_node_approx replacements")
+    return new_features, replaced_keys
 
 
 def make_circle_polygon(lon, lat, radius_m=400, n_sides=16):
