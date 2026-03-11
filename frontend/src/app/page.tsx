@@ -203,7 +203,8 @@ export default function Home() {
     setSearchQ(val);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (abortRef.current) abortRef.current.abort();
-    if (val.trim().length < 3) { setSuggestions([]); setShowSuggestions(false); return; }
+    if (val.trim().length < 3) { setSuggestions([]); setShowSuggestions(false); setSearchLoading(false); return; }
+    setSearchLoading(true);
     debounceRef.current = setTimeout(async () => {
       const ac = new AbortController();
       abortRef.current = ac;
@@ -212,9 +213,10 @@ export default function Home() {
         if (!ac.signal.aborted) {
           setSuggestions(results);
           setShowSuggestions(results.length > 0);
+          setSearchLoading(false);
         }
-      } catch { /* aborted */ }
-    }, 350);
+      } catch { setSearchLoading(false); /* aborted */ }
+    }, 500);
   };
 
   const onSelect = (item: any) => {
