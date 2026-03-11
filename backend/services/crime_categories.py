@@ -245,6 +245,48 @@ def categorize_crime_types(crime_types: list[dict]) -> list[dict]:
     )
 
 
+def expand_tipos_across_states(tipos: list[str], selected_states: list[str]) -> list[str]:
+    """Expand user-supplied tipo names to equivalent names across all selected states.
+
+    E.g. if user selected "ESTUPRO" (RS name) with RS+RJ+MG selected,
+    returns ["ESTUPRO", "estupro", "Estupro Consumado", ...] so all states match.
+    """
+    if not tipos or not selected_states or len(selected_states) < 2:
+        return tipos
+
+    # Build reverse map: type_name -> category_name
+    reverse = {}
+    for cat_name, cat in CRIME_CATEGORIES.items():
+        for key in cat:
+            if key.endswith("_types"):
+                for t in cat[key]:
+                    reverse[t] = cat_name
+                    reverse[t.upper()] = cat_name
+                    reverse[t.lower()] = cat_name
+
+    # Find categories matching the given tipos
+    matched_cats = set()
+    for t in tipos:
+        cat = reverse.get(t) or reverse.get(t.upper()) or reverse.get(t.lower())
+        if cat:
+            matched_cats.add(cat)
+
+    if not matched_cats:
+        return tipos  # no mapping found, return as-is
+
+    # Collect all equivalent type names from matched categories for all selected states
+    expanded = set(tipos)  # keep originals
+    for cat_name in matched_cats:
+        cat = CRIME_CATEGORIES[cat_name]
+        for state in selected_states:
+            type_key = f"{state.lower()}_types"
+            if type_key in cat:
+                expanded.update(cat[type_key])
+            expanded.update(cat.get("sinesp_types", []))
+
+    return list(expanded)
+
+
 def get_filter_info(selected_states: list[str]) -> dict:
     """Get complete filter info for the selected states.
 
