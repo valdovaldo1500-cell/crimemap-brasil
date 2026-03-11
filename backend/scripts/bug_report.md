@@ -34,8 +34,8 @@
 ### [BUG-005] PANEL-ZERO-TOTAL | ALL RJ CITIES | location-stats
 - **Issue**: `location-stats` endpoint returns `total=0` for ALL RJ and MG cities. The staging fallback query uses `CrimeStaging.municipio.in_(staging_names)` where `staging_names` contains uppercase names (e.g. `['RIO DE JANEIRO']`). But the DB stores mixed-case names (e.g. `'Rio de Janeiro'`). SQLite comparison is case-sensitive, so no records match.
 - **Evidence**: DB has 305,875 rows for `municipio='Rio de Janeiro'` (mixed case) but 0 rows for `municipio='RIO DE JANEIRO'` (exact uppercase). Heatmap endpoint works because it queries all staging by state without municipio name filter. `location-stats` at `?state=RJ&municipio=RIO DE JANEIRO` returns `total=0` even though staging has ~700K records for Rio de Janeiro.
-- **Fix needed**: Change line 1301 in `main.py` from `CrimeStaging.municipio.in_(staging_names)` to `func.upper(CrimeStaging.municipio).in_([n.upper() for n in staging_names])` (or use `.ilike()` with exact match). This fix applies to both the `total` and `crime_types` queries.
-- **Status**: OPEN
+- **Fix needed**: Register `normalize_text()` SQLite UDF in database.py that strips accents + uppercases (SQLite's upper() only handles ASCII). Use `func.normalize_text(CrimeStaging.municipio).in_(staging_norm_names)` in location-stats fallback query.
+- **Status**: FIXED (normalize_text SQLite UDF registered; all RJ cities now return correct totals)
 
 ### [BUG-006] NAME-MISMATCH | SANTA MARIA | MEDIANEIRA (ambiguous suffix)
 - **Issue**: DB has `MEDIANEIRA` (206 records) as short form. Santa Maria has two polygons ending in `MEDIANEIRA`: `NOSSA SENHORA MEDIANEIRA` and `VILA MEDIANEIRA`. The suffix match requires exactly 1 result, so with 2 matches it fails → desconhecido.
