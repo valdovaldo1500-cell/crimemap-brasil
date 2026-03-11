@@ -994,6 +994,11 @@ export default function Home() {
                         </div>
                         {/* Crime type breakdown comparison */}
                         {(() => {
+                          const useRate = rateMode === 'rate'
+                            && comparisonStats[0].population && comparisonStats[1].population;
+                          const fmt = (v: number) => useRate ? v.toFixed(1) : v.toLocaleString();
+                          const toRate = (count: number, stats: any) =>
+                            useRate && stats.population ? (count / stats.population) * 100000 : count;
                           // Use canonical categories for cross-state comparison
                           const useCats = comparisonStats.every((s: any) => s.crime_categories?.length > 0);
                           if (useCats) {
@@ -1009,14 +1014,16 @@ export default function Home() {
                               return cc ? cc.count : 0;
                             };
                             return <div className="max-h-60 overflow-y-auto">{catArr.map(cat => {
-                              const c0 = getCatCount(comparisonStats[0], cat);
-                              const c1 = getCatCount(comparisonStats[1], cat);
+                              const raw0 = getCatCount(comparisonStats[0], cat);
+                              const raw1 = getCatCount(comparisonStats[1], cat);
+                              const c0 = toRate(raw0, comparisonStats[0]);
+                              const c1 = toRate(raw1, comparisonStats[1]);
                               const diff = c0 > 0 ? (((c1 - c0) / c0) * 100) : 0;
                               return (
                                 <div key={cat} className="grid grid-cols-4 gap-1 text-[10px]">
                                   <div className="text-[#94a3b8] truncate" title={cat}>{cat}</div>
-                                  <div className="text-center font-mono">{c0.toLocaleString()}</div>
-                                  <div className="text-center font-mono">{c1.toLocaleString()}</div>
+                                  <div className="text-center font-mono">{fmt(c0)}</div>
+                                  <div className="text-center font-mono">{fmt(c1)}</div>
                                   <div className={`text-center font-mono ${diff > 0 ? 'text-red-400' : diff < 0 ? 'text-green-400' : 'text-[#94a3b8]'}`}>
                                     {c0 > 0 ? `${diff > 0 ? '+' : ''}${diff.toFixed(0)}%` : '—'}
                                   </div>
@@ -1037,14 +1044,16 @@ export default function Home() {
                             return ct ? ct.count : 0;
                           };
                           return <div className="max-h-60 overflow-y-auto">{typeArr.map(tipo => {
-                            const c0 = getCount(comparisonStats[0], tipo);
-                            const c1 = getCount(comparisonStats[1], tipo);
+                            const raw0 = getCount(comparisonStats[0], tipo);
+                            const raw1 = getCount(comparisonStats[1], tipo);
+                            const c0 = toRate(raw0, comparisonStats[0]);
+                            const c1 = toRate(raw1, comparisonStats[1]);
                             const diff = c0 > 0 ? (((c1 - c0) / c0) * 100) : 0;
                             return (
                               <div key={tipo} className="grid grid-cols-4 gap-1 text-[10px]">
                                 <div className="text-[#94a3b8] truncate" title={prettifyCrimeType(tipo)}>{prettifyCrimeType(tipo)}</div>
-                                <div className="text-center font-mono">{c0.toLocaleString()}</div>
-                                <div className="text-center font-mono">{c1.toLocaleString()}</div>
+                                <div className="text-center font-mono">{fmt(c0)}</div>
+                                <div className="text-center font-mono">{fmt(c1)}</div>
                                 <div className={`text-center font-mono ${diff > 0 ? 'text-red-400' : diff < 0 ? 'text-green-400' : 'text-[#94a3b8]'}`}>
                                   {c0 > 0 ? `${diff > 0 ? '+' : ''}${diff.toFixed(0)}%` : '—'}
                                 </div>
