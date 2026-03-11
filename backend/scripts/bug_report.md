@@ -83,6 +83,13 @@
 ## Summary
 
 **Code-fixable bugs**: BUG-001 through BUG-008 (8 bugs) — ALL FIXED ✓
-**Data gaps (NEEDS-GEOJSON)**: BUG-009 through BUG-012 (4 cities documented, ~30+ similar cities) — require IBGE boundary data
+**Data gaps (NEEDS-GEOJSON)**: BUG-009 through BUG-012 — partially addressed via IBGE 2022 Census supplement
+- BUG-009 (Rio Grande): 26 polygons present; IBGE 2022 matched existing OSM coverage, no new neighborhoods added
+- BUG-010 (Bagé): OPEN — absent from IBGE 2022 dataset
+- BUG-011 (Santo Ângelo): OPEN — absent from IBGE 2022 dataset (1 polygon, COHAB only)
+- BUG-012 (Sapiranga): FIXED — 17 polygons added from IBGE 2022
+
+**IBGE 2022 supplement** (2026-03-11): replaced geobr 2010 source with direct IBGE 2022 Census download.
+Added 305 new polygons, replaced 94 osm_node_approx circles with real IBGE boundaries. Total RS: 4878 features (was 4810).
 
 **Highest impact fixed**: BUG-005 (all RJ city detail panels were showing 0; now show correct totals), BUG-001 (Santa Maria BONFIM now shows 652 in correct polygon), BUG-002/003 (COHAB + PARQUE DO prefix stripping)
