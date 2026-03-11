@@ -165,6 +165,11 @@ def _normalize_bairro_for_matching(bairro_norm: str, poly_names: set[str] | None
             if art_stripped != stripped and art_stripped in poly_names:
                 result = art_stripped
                 break
+    # Poly-conditional alias: BONFIM → BOM FIM only when BONFIM is NOT a polygon
+    # (Cities like Guaibá, Rio Pardo, Santa Cruz do Sul have only BOM FIM; cities like
+    #  Santa Maria, Bossoroca have only BONFIM; Porto Alegre has both — handled by BAIRRO_ALIASES)
+    if poly_names and result == 'BONFIM' and result not in poly_names and 'BOM FIM' in poly_names:
+        result = 'BOM FIM'
     # If we have polygon names available, try prefix/suffix matching for abbreviated/truncated names
     if poly_names and result != bairro_norm and result in poly_names:
         # Transformation already found a valid polygon match — stop here
