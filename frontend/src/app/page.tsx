@@ -115,6 +115,7 @@ export default function Home() {
   const [compareMode, setCompareMode] = useState(false);
   const [comparisonLocations, setComparisonLocations] = useState<any[]>([]);
   const [comparisonStats, setComparisonStats] = useState<any[]>([]);
+  const [comparisonLoading, setComparisonLoading] = useState(false);
   const [comparePos, setComparePos] = useState<{x: number, y: number} | null>(null);
   const [compareSize, setCompareSize] = useState({ w: 483 });
   const [compareDragging, setCompareDragging] = useState(false);
