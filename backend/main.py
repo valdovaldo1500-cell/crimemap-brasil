@@ -1968,6 +1968,9 @@ def heatmap_states(request: Request,
                     all_types.update(types)
                 if all_types:
                     effective_tipo = list(all_types)
+    elif selected_states and tipo and len(selected_states) > 1:
+        from services.crime_categories import expand_tipos_across_states
+        effective_tipo = expand_tipos_across_states(tipo, selected_states)
 
     # Query 1: crimes table (detailed RS data)
     q1 = db.query(Crime.state, func.count().label("cnt")).filter(Crime.state.isnot(None))
