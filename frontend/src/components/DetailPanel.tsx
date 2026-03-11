@@ -207,7 +207,7 @@ export default function DetailPanel({ data, onClose, stackIndex = 0, onFocus, ra
             ) : data.crime_types && data.crime_types.length > 0 ? (
               <div>
                 <div className="text-[10px] text-[#94a3b8] uppercase tracking-wider mb-1">
-                  Tipos de crime
+                  Tipos de crime{rateMode === 'rate' && data.population ? ' /100K' : ''}
                 </div>
                 <div className="space-y-0.5 max-h-60 overflow-y-auto">
                   {data.crime_types.map((ct, i) => (
