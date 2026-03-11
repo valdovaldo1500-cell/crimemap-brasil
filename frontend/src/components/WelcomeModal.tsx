@@ -122,8 +122,6 @@ export default function WelcomeModal() {
 
   if (!visible) return null;
 
-  const displayedText = FULL_MESSAGE.slice(0, charIndex);
-
   return (
     <div
       role="dialog"
