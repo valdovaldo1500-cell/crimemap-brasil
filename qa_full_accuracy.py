@@ -329,14 +329,14 @@ def main():
     bairro_year = max((y for y in RS_YEARS if y in rs_bairro), default=None)
     if bairro_year:
         poa_bairros = rs_bairro.get(bairro_year, {}).get('PORTO ALEGRE', {})
-        top50 = sorted(poa_bairros.items(), key=lambda x: -x[1])[:20]
+        # poa_bairros: {normalized_key: [count, display_name]}
+        top50 = sorted(poa_bairros.items(), key=lambda x: -x[1][0])[:20]
         tested = 0
-        for bairro_name, src in top50:
+        for _bkey, (src, display_name) in top50:
             if src < 10:
                 continue
-            # Pass bairro name as-is from CSV (latin-1 decoded, original case)
-            api_val, ms = bairro_total_from_api('Porto Alegre', bairro_name, 'RS', bairro_year)
-            check(f"RS POA/{bairro_name} {bairro_year}", src, api_val, ms, "bairro", tol=0.02)
+            api_val, ms = bairro_total_from_api('Porto Alegre', display_name, 'RS', bairro_year)
+            check(f"RS POA/{display_name} {bairro_year}", src, api_val, ms, "bairro", tol=0.02)
             tested += 1
         print(f"  Tested {tested} bairros")
     else:
