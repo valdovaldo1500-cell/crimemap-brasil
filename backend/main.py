@@ -934,6 +934,7 @@ def heatmap_bairros(request: Request,
     for mun_name, coords in MAJOR_CITIES_RS.items():
         mun_centroids[mun_name] = coords
 
+    MIN_COUNT_FORCE_NAMED = 30  # bairros with this many occurrences always get their own point
     # Group bairros at municipality centroid (within 0.5km) OR with < 3 occurrences into "Bairro desconhecido"
     unknown_bucket: dict[str, dict] = {}  # keyed by mun_norm
     results = []
