@@ -618,7 +618,7 @@ export default function Home() {
       <header className="border-b border-[#1e293b] bg-[#111827]/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-[1800px] mx-auto px-4 py-2 md:py-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 md:gap-3 shrink-0">
-            <img src="/logo.svg" alt="Crime Brasil" className="h-8 sm:h-9" />
+            <a href="/" className="flex items-center"><img src="/logo.svg" alt="Crime Brasil" className="h-8 sm:h-9" /></a>
           </div>
           <div className="flex-1 max-w-md mx-2 md:mx-8 relative" ref={searchRef}>
             <input
