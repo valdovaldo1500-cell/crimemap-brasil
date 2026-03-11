@@ -325,14 +325,20 @@ def main():
                 print(f"  ✗ RJ {year}: API doesn't match either source (CISP diff={diff_cisp:,}, mun diff={diff_mun:,})  [FAIL]")
                 all_pass = False
 
-    # MG: Same as RJ — SUM(occurrences)+SUM(victims), victims=0
+    # MG: SEJUSP is violent crimes only. SINESP VDE adds more crime types.
+    # API total should be >= SEJUSP total (SINESP adds on top).
     for year in [2024, 2023]:
         resp = verify_api_state("MG", year)
         api_total = resp["total"]
         api_results[("MG", year)] = resp
         src = source_totals[("MG", year)]
-        r = ok(f"MG {year}: source vs API", src, api_total)
-        if not r:
+        print(f"  MG {year}: API={api_total:,}  SEJUSP_src={src:,}  diff=+{api_total-src:,}")
+        if api_total >= src:
+            sinesp_contrib = api_total - src
+            pct = sinesp_contrib / api_total * 100 if api_total else 0
+            print(f"  ✓ MG {year}: API ≥ SEJUSP source (SINESP adds {sinesp_contrib:,}, {pct:.1f}%)  [PASS]")
+        else:
+            print(f"  ✗ MG {year}: API < SEJUSP source — data loss!  [FAIL]")
             all_pass = False
 
     print()
