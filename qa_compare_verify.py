@@ -204,8 +204,13 @@ def verify_frontend_math(stats_a, stats_b):
 
     # Crime categories sum <= total
     for stats in [stats_a, stats_b]:
-        cat = stats.get("crime_categories", {})
-        cat_sum = sum(cat.values()) if cat else 0
+        cat = stats.get("crime_categories", [])
+        if isinstance(cat, list):
+            cat_sum = sum(c.get("count", 0) for c in cat)
+        elif isinstance(cat, dict):
+            cat_sum = sum(cat.values())
+        else:
+            cat_sum = 0
         s = stats["state"]
         if cat_sum > stats["total"]:
             print(f"  ✗ {s} categories sum ({cat_sum:,}) > total ({stats['total']:,})  [FAIL]")
