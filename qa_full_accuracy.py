@@ -374,7 +374,7 @@ def main():
     print("MG TESTS")
     print("=" * 40)
 
-    MG_CITIES_UPPER = ['BELO HORIZONTE', 'UBERLÂNDIA', 'CONTAGEM', 'JUIZ DE FORA', 'BETIM']
+    MG_CITIES_UPPER = ['BELO HORIZONTE', 'UBERLANDIA', 'CONTAGEM', 'JUIZ DE FORA', 'BETIM']
     MG_YEARS = [y for y in [2020, 2022, 2023] if y in mg_data]
 
     for year in MG_YEARS:
