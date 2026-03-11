@@ -457,6 +457,7 @@ export default function Home() {
     compareLocationsRef.current = [];
     setComparisonLocations([]);
     setComparisonStats([]);
+    setComparisonLoading(false);
   }, []);
 
   // Compare box drag/resize handlers
