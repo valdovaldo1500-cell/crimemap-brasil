@@ -447,8 +447,72 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+async def _build_autocomplete_index():
+    global _autocomplete_munis, _autocomplete_bairros, _autocomplete_cache_ready
+    import time as _time
+    t0 = _time.time()
+    db = SessionLocal()
+    try:
+        # Step 1: municipios from crimes table (RS)
+        rows = db.execute(text(
+            "SELECT municipio_fato, state, COUNT(*) as cnt, AVG(latitude) as lat, AVG(longitude) as lng "
+            "FROM crimes WHERE municipio_fato IS NOT NULL AND municipio_fato != '' "
+            "GROUP BY municipio_fato, state HAVING COUNT(*) >= 1"
+        )).fetchall()
+        munis = []
+        seen_norm = set()
+        for r in rows:
+            norm = normalize_name(r[0])
+            munis.append({
+                'name': r[0], 'name_normalized': norm,
+                'state': r[1], 'count': r[2],
+                'lat': r[3], 'lng': r[4]
+            })
+            seen_norm.add(norm)
+
+        # Step 2: municipios from crimes_staging (RJ, MG — deduplicate against crimes)
+        rows2 = db.execute(text(
+            "SELECT municipio, state, SUM(occurrences) as cnt, NULL as lat, NULL as lng "
+            "FROM crimes_staging WHERE state IN ('RJ','MG') AND municipio IS NOT NULL AND municipio != '' "
+            "GROUP BY municipio, state"
+        )).fetchall()
+        for r in rows2:
+            norm = normalize_name(r[0])
+            if norm not in seen_norm:
+                munis.append({
+                    'name': r[0], 'name_normalized': norm,
+                    'state': r[1], 'count': r[2] or 0,
+                    'lat': None, 'lng': None
+                })
+                seen_norm.add(norm)
+
+        _autocomplete_munis = munis
+
+        # Step 3: bairros from crimes table
+        rows3 = db.execute(text(
+            "SELECT bairro, municipio_fato, COUNT(*) as cnt, AVG(latitude) as lat, AVG(longitude) as lng "
+            "FROM crimes WHERE bairro IS NOT NULL AND bairro != '' AND latitude IS NOT NULL "
+            "GROUP BY bairro, municipio_fato HAVING COUNT(*) >= 5"
+        )).fetchall()
+        bairros = []
+        for r in rows3:
+            bairros.append({
+                'bairro': r[0], 'bairro_normalized': normalize_name(r[0]),
+                'municipio': r[1], 'municipio_normalized': normalize_name(r[1]),
+                'count': r[2], 'lat': r[3], 'lng': r[4]
+            })
+        _autocomplete_bairros = bairros
+
+        _autocomplete_cache_ready = True
+        logger.info(f"Autocomplete index built: {len(_autocomplete_munis)} municipios, {len(_autocomplete_bairros)} bairros ({_time.time()-t0:.1f}s)")
+    except Exception as e:
+        logger.error(f"Failed to build autocomplete index: {e}")
+    finally:
+        db.close()
+
 @app.on_event("startup")
-def startup():
+async def startup():
+    import asyncio
     init_db()
     # Ensure composite indices exist on existing databases (idempotent)
     from database import engine
@@ -461,6 +525,7 @@ def startup():
             "CREATE INDEX IF NOT EXISTS idx_state_cor ON crimes(state, cor_vitima)",
             "CREATE INDEX IF NOT EXISTS idx_state_ym_tipo ON crimes(state, year_month, tipo_enquadramento)",
             "CREATE INDEX IF NOT EXISTS idx_staging_state_type_counts ON crimes_staging(state, crime_type, occurrences, victims)",
+            "CREATE INDEX IF NOT EXISTS idx_staging_state_mun ON crimes_staging(state, municipio)",
         ]:
             conn.execute(text(stmt))
         conn.commit()
@@ -468,6 +533,7 @@ def startup():
         conn.commit()
     from services.scheduler import start_scheduler
     start_scheduler(interval_days=7)
+    asyncio.create_task(_build_autocomplete_index())
 
 @app.on_event("shutdown")
 def shutdown():
