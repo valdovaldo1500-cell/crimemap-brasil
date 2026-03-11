@@ -878,7 +878,10 @@ export default function Home() {
           </div>
           <div className={filterLoading ? 'opacity-50 pointer-events-none transition-opacity' : 'transition-opacity'}>
           <div>
-            <h3 className="text-xs uppercase tracking-wider text-[#94a3b8] mb-2">Tipo de Crime</h3>
+            <h3 className="text-xs uppercase tracking-wider text-[#94a3b8] mb-2 flex items-center gap-1.5">
+              Tipo de Crime
+              {filterLoading && <span className="w-3 h-3 border border-[#94a3b8] border-t-transparent rounded-full animate-spin flex-shrink-0" />}
+            </h3>
             <input value={crimeTypeSearch} onChange={e=>setCrimeTypeSearch(e.target.value)} placeholder="Buscar tipo..." className="w-full bg-[#1a2234] border border-[#1e293b] rounded-lg px-3 py-1.5 text-sm text-[#f1f5f9] placeholder-[#475569] focus:outline-none focus:border-[#3b82f6] mb-2" />
             {/* Fix #12: py-2 px-1 minimum on filter labels for WCAG 44px touch targets */}
             <div className="space-y-0.5 max-h-64 overflow-y-auto">
