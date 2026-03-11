@@ -899,13 +899,9 @@ def run_full_staging_load() -> dict:
                 logger.warning(f"SINESP VDE {year} failed: {e}")
                 results[f"sinesp_vde_{year}"] = f"SKIPPED: {e}"
 
-        # 4. RJ ISP Municipal
-        try:
-            path = download_file(RJ_ISP_MUNICIPAL_URL, "rj_isp_municipal.csv")
-            results["rj_isp_municipal"] = load_rj_municipal(db, path)
-        except Exception as e:
-            logger.error(f"RJ ISP municipal failed: {e}")
-            results["rj_isp_municipal"] = f"ERROR: {e}"
+        # 4. RJ ISP Municipal — SKIPPED: redundant with CISP (same totals, less granular)
+        # Municipal is an aggregation of CISP data; loading both causes double-counting.
+        results["rj_isp_municipal"] = "SKIPPED (redundant with CISP)"
 
         # 5. RJ ISP CISP
         try:
