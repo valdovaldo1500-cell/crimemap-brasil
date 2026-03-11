@@ -64,8 +64,6 @@ _BAIRRO_ABBREVIATIONS = {
     "DIHEL": "DIEHL",             # transposition typo (edit-distance-1)
     "JABOTICABAL": "JABUTICABAL", # Erechim: O/U spelling variant
     "OPERARIA": "OPERARIO",       # gender agreement: feminine form not used in polygons
-    "MEDIANEIRA": "NOSSA SENHORA MEDIANEIRA",  # short form → full official name (Santa Maria)
-    "DORES": "NOSSA SENHORA DAS DORES",        # short form → full official name (Santa Maria)
 }
 
 _BAIRRO_TYPE_PREFIXES = re.compile(
