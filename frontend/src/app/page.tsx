@@ -955,12 +955,35 @@ export default function Home() {
                           <div className="text-center font-semibold text-[#7c3aed] truncate" title={comparisonStats[0].displayName}>{comparisonStats[0].displayName}</div>
                           <div className="text-center font-semibold text-[#3b82f6] truncate" title={comparisonStats[1].displayName}>{comparisonStats[1].displayName}</div>
                         </div>
+                        {/* MG partial-state warning */}
+                        {comparisonLocations.some((l: any) => l.state === 'MG') && !comparisonLocations.every((l: any) => l.state === 'MG') && (
+                          <div className="flex items-start gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 mb-1">
+                            <span className="text-[10px] text-amber-400 leading-snug">Dados parciais — MG inclui apenas crimes violentos. RS/RJ filtrados para tipos compatíveis.</span>
+                          </div>
+                        )}
                         <div className="grid grid-cols-3 gap-1 text-xs border-t border-[#1e293b] pt-1">
-                          <div className="text-[#94a3b8]">Total</div>
-                          <div className="text-center font-mono">{comparisonStats[0].total?.toLocaleString() || 0}</div>
-                          <div className="text-center font-mono">{comparisonStats[1].total?.toLocaleString() || 0}</div>
+                          <div className="text-[#94a3b8]">{rateMode === 'rate' && comparisonStats[0].population && comparisonStats[1].population ? 'Total /100K' : 'Total'}</div>
+                          <div className="text-center font-mono">
+                            {rateMode === 'rate' && comparisonStats[0].population && comparisonStats[1].population
+                              ? ((comparisonStats[0].total / comparisonStats[0].population) * 100000).toFixed(1)
+                              : (comparisonStats[0].total?.toLocaleString() || 0)}
+                          </div>
+                          <div className="text-center font-mono">
+                            {rateMode === 'rate' && comparisonStats[0].population && comparisonStats[1].population
+                              ? ((comparisonStats[1].total / comparisonStats[1].population) * 100000).toFixed(1)
+                              : (comparisonStats[1].total?.toLocaleString() || 0)}
+                          </div>
                         </div>
-                        {comparisonStats[0].population && comparisonStats[1].population && (
+                        {/* Hab. row — show when at least one population exists */}
+                        {(comparisonStats[0].population || comparisonStats[1].population) && (
+                          <div className="grid grid-cols-3 gap-1 text-xs">
+                            <div className="text-[#94a3b8]">Hab.</div>
+                            <div className="text-center font-mono">{comparisonStats[0].population ? comparisonStats[0].population.toLocaleString('pt-BR') : '—'}</div>
+                            <div className="text-center font-mono">{comparisonStats[1].population ? comparisonStats[1].population.toLocaleString('pt-BR') : '—'}</div>
+                          </div>
+                        )}
+                        {/* /100K row — only in absolute mode */}
+                        {rateMode === 'absolute' && comparisonStats[0].population && comparisonStats[1].population && (
                           <div className="grid grid-cols-3 gap-1 text-xs">
                             <div className="text-[#94a3b8]">/100K</div>
                             <div className="text-center font-mono">{((comparisonStats[0].total / comparisonStats[0].population) * 100000).toFixed(1)}</div>
