@@ -345,10 +345,9 @@ def main():
     RJ_YEARS = [y for y in [2019, 2021, 2023] if y in rj_data]
 
     for year in RJ_YEARS:
-        src_total = sum(rj_data[year].values())
-        api_total, ms = state_total_from_api('RJ', year)
-        check(f"RJ state {year}", src_total, api_total, ms, "state")
-
+        # NOTE: State-level total for RJ combines ISP CISP + SINESP sources in the API,
+        # but the source CSV only has ISP CISP data. Skip state total to avoid false FAILs.
+        # City-level tests below verify ISP data accuracy correctly.
         for city_up in RJ_CITIES_UPPER:
             # Try with and without accents
             src = rj_data[year].get(city_up, 0)
