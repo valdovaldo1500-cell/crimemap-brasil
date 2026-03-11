@@ -385,6 +385,12 @@ export default function Home() {
     selected_states: selectedStates.length > 0 ? selectedStates : undefined,
   }), [selectedTypes, selectedGrupo, selectedYear, selectedPeriod, selectedSexo, selectedCor, idadeMin, idadeMax, selectedStates]);
 
+  const periodLabel = useMemo(() => {
+    if (selectedPeriod === '12m') return 'últimos 12 meses';
+    if (selectedPeriod === 'ano') return selectedYear;
+    return `${selectedPeriod === 'S1' ? 'Jan-Jun' : 'Jul-Dez'} ${selectedYear}`;
+  }, [selectedPeriod, selectedYear]);
+
   const onCompareSelect = useCallback(async (location: { municipio: string; bairro?: string; state?: string; displayName: string }) => {
     const currentLocations = compareLocationsRef.current;
     if (currentLocations.length >= 2) return;
