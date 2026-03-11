@@ -38,18 +38,27 @@ def ok_float(label, expected, actual, tol=0.15):
     print(f"  {sym} {label}: expected={expected:.1f}  actual={actual:.1f}  [{status}]")
     return match
 
-def api_get(path):
+import time as _time
+
+def api_get(path, retries=3):
     url = f"{API}{path}"
-    result = subprocess.run(
-        ["curl", "-s", "--max-time", "30", url],
-        capture_output=True, text=True
-    )
-    if result.returncode != 0:
-        raise RuntimeError(f"curl failed for {url}: {result.stderr}")
-    try:
-        return json.loads(result.stdout)
-    except json.JSONDecodeError:
-        raise RuntimeError(f"Bad JSON from {url}: {result.stdout[:300]}")
+    for attempt in range(retries):
+        result = subprocess.run(
+            ["curl", "-s", "--max-time", "30", url],
+            capture_output=True, text=True
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"curl failed for {url}: {result.stderr}")
+        try:
+            data = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            raise RuntimeError(f"Bad JSON from {url}: {result.stdout[:300]}")
+        if "detail" in data and "Rate limit" in str(data["detail"]):
+            print(f"    (rate limited, waiting 5s...)")
+            _time.sleep(5)
+            continue
+        return data
+    raise RuntimeError(f"Rate limited after {retries} retries: {url}")
 
 # ── Step 1: Source file totals ───────────────────────────────────────────
 
