@@ -1117,6 +1117,7 @@ export default function Home() {
             <DetailPanel
               key={panel.id}
               data={panel}
+              rateMode={rateMode}
               onClose={() => setDetailPanels(prev => prev.filter(p => p.id !== panel.id))}
               stackIndex={idx}
               onFocus={() => setDetailPanels(prev => {
