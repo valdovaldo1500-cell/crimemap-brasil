@@ -1071,7 +1071,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1000] pointer-events-none">
           <div className="bg-[#111827]/90 backdrop-blur-sm rounded-xl px-5 py-2.5 flex items-center gap-2 shadow-lg border border-[#1e293b]">
             <div className="w-4 h-4 border-2 border-[#3b82f6] border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm text-[#94a3b8]">Carregando...</span>
+            <span className="text-sm text-[#94a3b8]">{loadingMsgVisible ? loadingMsg : 'Carregando...'}</span>
           </div>
         </div>
       )}
