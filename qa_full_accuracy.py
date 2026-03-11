@@ -341,7 +341,7 @@ def main():
     print("RJ TESTS")
     print("=" * 40)
 
-    RJ_CITIES_UPPER = ['RIO DE JANEIRO', 'SAO GONCALO', 'DUQUE DE CAXIAS', 'NOVA IGUACU', 'NITEROI']
+    RJ_CITIES_UPPER = ['RIO DE JANEIRO', 'SÃO GONÇALO', 'DUQUE DE CAXIAS', 'NOVA IGUAÇU', 'NITERÓI']
     RJ_YEARS = [y for y in [2019, 2021, 2023] if y in rj_data]
 
     for year in RJ_YEARS:
