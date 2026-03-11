@@ -1520,6 +1520,9 @@ def state_stats(request: Request,
                     all_types.update(types)
                 if all_types:
                     effective_tipo = list(all_types)
+    elif selected_states and tipo and len(selected_states) > 1:
+        from services.crime_categories import expand_tipos_across_states
+        effective_tipo = expand_tipos_across_states(tipo, selected_states)
     # Try detailed Crime table first
     q = db.query(Crime).filter(Crime.state == state, Crime.latitude.isnot(None))
     if ultimos_meses:
