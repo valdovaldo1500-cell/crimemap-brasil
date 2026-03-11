@@ -640,8 +640,13 @@ export default function Home() {
               onFocus={() => { setSearchFocused(true); if (suggestions.length > 0) setShowSuggestions(true); }}
               onBlur={() => { setSearchFocused(false); setTimeout(() => setShowSuggestions(false), 200); }}
               placeholder="Buscar cidade ou bairro (ex: Porto Alegre, Centro)"
-              className="w-full bg-[#1a2234] border border-[#1e293b] rounded-xl px-4 py-2.5 text-sm text-[#f1f5f9] placeholder-[#475569] focus:outline-none focus:border-[#3b82f6]"
+              className={`w-full bg-[#1a2234] border border-[#1e293b] rounded-xl px-4 py-2.5 text-sm text-[#f1f5f9] placeholder-[#475569] focus:outline-none focus:border-[#3b82f6] ${searchLoading ? 'pr-9' : ''}`}
             />
+            {searchLoading && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <div className="w-3.5 h-3.5 border-2 border-[#3b82f6] border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
             {searchFocused && searchQ.trim().length < 3 && !showSuggestions && !searchLoading && (
               <div className="absolute top-full mt-1 w-full bg-[#1a2234] border border-[#1e293b] rounded-xl overflow-hidden shadow-2xl z-[60] px-4 py-3">
                 <span className="text-sm text-[#475569]">Digite pelo menos 3 letras para ver sugestões</span>
