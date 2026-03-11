@@ -29,7 +29,7 @@
 - **Issue**: DB has `VILA OPERARIA` and `OPERARIA` (feminine form) but Campo Bom polygon is `OPERARIO` (masculine). Strip `VILA ` → `OPERARIA` → not in polys (only `OPERARIO` exists).
 - **Evidence**: Campo Bom has 105 `Vila Operaria` + 41 `OPERARIA` + 4 `Operaria` records. Polygon is `OPERARIO`. No RS city has a polygon named `OPERARIA`. Cities with `OPERARIO` polygon: Barao, Barracao, Campo Bom, Catuipe, Lagoa Vermelha, Novo Hamburgo, Sao Jose do Ouro, Tres Passos.
 - **Fix needed**: Add `'OPERARIA': 'OPERARIO'` to `BAIRRO_ALIASES`. (Porto Alegre has `VILA OPERARIA` polygon, so VILA OPERARIA should NOT be aliased — handled by existing strip logic which would find exact match first.)
-- **Status**: OPEN
+- **Status**: FIXED (added OPERARIA→OPERARIO to _BAIRRO_ABBREVIATIONS)
 
 ### [BUG-005] PANEL-ZERO-TOTAL | ALL RJ CITIES | location-stats
 - **Issue**: `location-stats` endpoint returns `total=0` for ALL RJ and MG cities. The staging fallback query uses `CrimeStaging.municipio.in_(staging_names)` where `staging_names` contains uppercase names (e.g. `['RIO DE JANEIRO']`). But the DB stores mixed-case names (e.g. `'Rio de Janeiro'`). SQLite comparison is case-sensitive, so no records match.
