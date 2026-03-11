@@ -990,8 +990,16 @@ export default function Home() {
                 {comparisonLocations.length === 0 && (
                   <p className="text-xs text-[#94a3b8]">Clique em um local no mapa para selecionar o primeiro ponto de comparação.</p>
                 )}
-                {comparisonLocations.length === 1 && comparisonStats.length < 2 && (
+                {comparisonLocations.length === 1 && comparisonStats.length < 2 && !comparisonLoading && (
                   <p className="text-xs text-[#94a3b8] mt-1">Selecione outro local para comparar.</p>
+                )}
+                {comparisonLoading && (
+                  <div className="mt-2 space-y-1.5 animate-pulse">
+                    <div className="h-3 bg-[#1e293b] rounded w-3/4" />
+                    <div className="h-3 bg-[#1e293b] rounded w-1/2" />
+                    <div className="h-3 bg-[#1e293b] rounded w-2/3" />
+                    <div className="h-3 bg-[#1e293b] rounded w-5/6" />
+                  </div>
                 )}
                 {comparisonStats.length >= 1 && (
                   <div className="mt-2 space-y-2">
