@@ -1611,6 +1611,61 @@ def get_semesters(request: Request, db: Session = Depends(get_db)):
 def autocomplete(request: Request, q: str, db: Session = Depends(get_db)):
     if len(q) < 3:
         return []
+
+    # Fast path: serve from in-memory index built at startup
+    if _autocomplete_cache_ready:
+        q_norm = normalize_name(q.strip())
+        results = []
+
+        # State matching (same logic as DB path)
+        STATE_NAMES = {
+            "RS": "Rio Grande do Sul", "RJ": "Rio de Janeiro", "MG": "Minas Gerais",
+        }
+        for sigla, full_name in STATE_NAMES.items():
+            name_norm = normalize_name(full_name)
+            if q_norm in sigla or q_norm in name_norm:
+                centroid = STATE_CENTROIDS.get(sigla)
+                if centroid:
+                    results.append({
+                        "type": "state", "name": f"{full_name} ({sigla})",
+                        "latitude": centroid[0], "longitude": centroid[1],
+                        "count": 0, "sigla": sigla,
+                    })
+
+        # Municipio matching
+        matched_munis = [m for m in _autocomplete_munis if q_norm in m['name_normalized']]
+        matched_munis.sort(key=lambda x: -x['count'])
+        for m in matched_munis[:10]:
+            lat, lng = m['lat'], m['lng']
+            if not lat or not lng:
+                norm = m['name_normalized']
+                centroid = MUNICIPIO_CENTROIDS.get(norm)
+                if centroid:
+                    lat, lng = centroid
+                else:
+                    sc = STATE_CENTROIDS.get(m['state'])
+                    if sc:
+                        lat, lng = sc
+            if lat and lng:
+                display_name = f"{m['name']} ({m['state']})" if m['state'] and m['state'] != 'RS' else m['name']
+                results.append({
+                    "type": "municipio", "name": display_name,
+                    "latitude": float(lat), "longitude": float(lng), "count": int(m['count'])
+                })
+
+        # Bairro matching
+        matched_bairros = [b for b in _autocomplete_bairros
+                           if q_norm in b['bairro_normalized'] or q_norm in b['municipio_normalized']]
+        matched_bairros.sort(key=lambda x: -x['count'])
+        for b in matched_bairros[:10]:
+            if b['lat'] and b['lng']:
+                results.append({
+                    "type": "bairro", "name": b['bairro'] + ", " + b['municipio'],
+                    "latitude": float(b['lat']), "longitude": float(b['lng']), "count": int(b['count'])
+                })
+
+        return results
+
     term = f"%{q}%"
     results = []
     # Query 1: crimes table (RS detailed data)
