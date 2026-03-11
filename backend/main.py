@@ -112,7 +112,9 @@ def _phonetic_br(s: str) -> str:
 # Names that are clearly not real bairros (noise data)
 _INVALID_BAIRRO_NAMES = {'-', '--', '---', 'INTERIOR', 'RURAL', 'ZONA RURAL', 'N/A', 'NAO INFORMADO',
                           'NAO IDENTIFICADO', 'SEM BAIRRO', 'SEM INFORMACAO', 'OUTROS', 'OUTRO',
-                          'IGNORADO', 'NAO CONSTA', 'NAO INFORMADA'}
+                          'IGNORADO', 'NAO CONSTA', 'NAO INFORMADA',
+                          'PREJUDICADO',  # SSP data artifact meaning "record excluded/unavailable"
+                          }
 
 def _is_invalid_bairro(name: str) -> bool:
     """Return True for clearly non-bairro values that should go to Bairro desconhecido."""
