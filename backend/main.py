@@ -516,7 +516,6 @@ async def startup():
     init_db()
     # Ensure composite indices exist on existing databases (idempotent)
     from database import engine
-    from sqlalchemy import text
     with engine.connect() as conn:
         for stmt in [
             "CREATE INDEX IF NOT EXISTS idx_state_tipo ON crimes(state, tipo_enquadramento)",
