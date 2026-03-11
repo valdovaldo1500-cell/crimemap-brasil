@@ -188,9 +188,10 @@ def main():
     # ── Load population.json for reference ──
     with open(POPULATION_FILE) as f:
         pop_json = json.load(f)
+    state_pops = pop_json.get("states", {})
     print("Population.json values:")
     for st in ["RS", "RJ", "MG"]:
-        val = pop_json.get(st, "MISSING")
+        val = state_pops.get(st, "MISSING")
         print(f"  {st}: {val}")
     print()
 
