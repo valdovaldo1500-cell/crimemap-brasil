@@ -2,22 +2,22 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-const FULL_MESSAGE = `Seja bem-vindo! Quando minha sogra estava se mudando de bairro, procuramos uma ferramenta que mostrasse dados reais de criminalidade por região — e não encontramos nada. Então criei o Crime Brasil — o mapa de criminalidade mais completo do país!
+const FULL_MESSAGE = `Seja bem-vindo!
 
-Aqui você pode:
-• Explorar dados de criminalidade por estado, cidade e bairro
-• Comparar diferentes regiões lado a lado
-• Ver estatísticas totais ou por 100 mil habitantes
-• Filtrar por tipo de crime, sexo, cor e período
+Quando minha sogra estava se mudando de bairro, procuramos uma
+ferramenta que mostrasse dados reais de criminalidade por região — e não
+encontramos nada.
+Então criei o Crime Brasil — o mapa de criminalidade mais completo do país!
 
-Atualmente com dados detalhados de RS, RJ e MG, cobrindo 2003 a 2026.
+- Explore dados de criminalidade por estado, cidade e bairro
+- Compare diferentes regiões lado a lado
+- Veja estatísticas totais ou por 100 mil habitantes
+- Filtre por tipo de crime, sexo, cor e período
+- Dados detalhados do RS, RJ e MG, cobrindo 2003 a 2026.
 
-Ajude a manter o site no ar — compartilhe com quem está procurando imóvel para comprar ou alugar, se mudando de bairro ou cidade, ou pesquisando regiões para morar. Quanto mais pessoas usarem, mais conseguiremos manter e melhorar a plataforma.
+Ajude a manter o site no ar — compartilhe!
 
-Estamos em versão beta — sua opinião importa.
-Use o botão "Reportar Problema" para sugestões ou bugs.
-
-— Israel`;
+— Israel Lehnen Silva`;
 
 const CHAR_DELAY = 30;
 const PARAGRAPH_PAUSE = 200;
