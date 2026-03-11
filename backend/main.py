@@ -153,7 +153,6 @@ def _normalize_bairro_for_matching(bairro_norm: str, poly_names: set[str] | None
     # COHAB added: "COHAB GUABIROBA" → "GUABIROBA" when the bare name is a polygon
     # Article stripping after prefix: "PARQUE DO OBELISCO" → strip "PARQUE " → "DO OBELISCO"
     #   → strip leading article → "OBELISCO" → check polys (handles PARQUE DO/DA/DAS/DOS X)
-    _LEADING_ARTICLE_RE = re.compile(r'^(DO|DA|DOS|DAS|DE)\s+', re.IGNORECASE)
     for _strip_prefix in ('VILA ', 'JARDIM ', 'PARQUE ', 'NUCLEO ', 'LOTEAMENTO ', 'RESIDENCIAL ', 'CONJUNTO ', 'CONDOMINIO ', 'COHAB '):
         if poly_names and result.startswith(_strip_prefix) and result not in poly_names:
             stripped = result[len(_strip_prefix):].strip()
