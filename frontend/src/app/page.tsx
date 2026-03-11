@@ -912,14 +912,33 @@ export default function Home() {
           </button>
           {/* Comparison mode panel */}
           {compareMode && (
-            <div className="absolute top-4 right-2 md:right-14 z-[1001] w-[calc(100vw-1rem)] sm:w-96 max-w-[420px]">
-              <div className="bg-[#111827]/95 backdrop-blur-xl border border-[#7c3aed]/40 rounded-xl p-3 shadow-2xl">
-                <div className="flex justify-between items-center mb-2">
+            <div
+              className={comparePos ? '' : 'absolute top-4 right-2 md:right-14 w-[calc(100vw-1rem)] sm:w-[441px]'}
+              style={comparePos
+                ? { position: 'absolute', left: comparePos.x, top: comparePos.y, width: compareSize.w, zIndex: 1001 }
+                : { zIndex: 1001 }}
+            >
+              <div className="relative bg-[#111827]/95 backdrop-blur-xl border border-[#7c3aed]/40 rounded-xl p-3 shadow-2xl">
+                <div
+                  className="flex justify-between items-center mb-1 cursor-grab active:cursor-grabbing select-none"
+                  onMouseDown={(e) => {
+                    const rect = e.currentTarget.closest('.absolute, [style]')?.getBoundingClientRect();
+                    const parentRect = (e.currentTarget.closest('.absolute, [style]') as HTMLElement)?.offsetParent?.getBoundingClientRect();
+                    const currentX = comparePos ? comparePos.x : (rect && parentRect ? rect.left - parentRect.left : 0);
+                    const currentY = comparePos ? comparePos.y : (rect && parentRect ? rect.top - parentRect.top : 4);
+                    compareDragStart.current = { x: e.clientX, y: e.clientY, px: currentX, py: currentY };
+                    if (!comparePos && rect && parentRect) {
+                      setComparePos({ x: rect.left - parentRect.left, y: rect.top - parentRect.top });
+                    }
+                    setCompareDragging(true);
+                  }}
+                >
                   <h3 className="text-xs uppercase tracking-wider text-[#7c3aed] font-semibold">Comparar locais</h3>
                   {comparisonLocations.length > 0 && (
                     <button onClick={clearComparison} className="text-[10px] text-[#94a3b8] hover:text-[#f1f5f9]">Limpar</button>
                   )}
                 </div>
+                <p className="text-[10px] text-[#64748b] mb-2 leading-snug">Compare criminalidade entre dois locais — mesma janela de tempo e filtros ativos.</p>
                 {comparisonLocations.length === 0 && (
                   <p className="text-xs text-[#94a3b8]">Clique em um local no mapa para selecionar o primeiro ponto de comparação.</p>
                 )}
