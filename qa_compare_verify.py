@@ -45,8 +45,11 @@ def api_get(path):
         capture_output=True, text=True
     )
     if result.returncode != 0:
-        raise RuntimeError(f"curl failed: {result.stderr}")
-    return json.loads(result.stdout)
+        raise RuntimeError(f"curl failed for {url}: {result.stderr}")
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError:
+        raise RuntimeError(f"Bad JSON from {url}: {result.stdout[:300]}")
 
 # ── Step 1: Source file totals ───────────────────────────────────────────
 
