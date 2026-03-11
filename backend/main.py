@@ -601,6 +601,9 @@ def heatmap_municipios(request: Request,
                     all_types.update(types)
                 if all_types:
                     effective_tipo = list(all_types)
+    elif selected_states and tipo and len(selected_states) > 1:
+        from services.crime_categories import expand_tipos_across_states
+        effective_tipo = expand_tipos_across_states(tipo, selected_states)
 
     q = db.query(
         Crime.municipio_fato,
