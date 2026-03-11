@@ -11,7 +11,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from sqlalchemy.orm import Session
-from sqlalchemy import func, distinct, desc, literal_column
+from sqlalchemy import func, distinct, desc, literal_column, text
 from database import init_db, get_db, Crime, GeocodeCache, BugReport, CrimeStaging, SessionLocal
 from schemas import CrimeOut, HeatmapPoint, BairroComponent, CrimeTypeCount, MunicipioCount, StatsResponse
 from services.geocoder import GeocoderService, batch_geocode_new_bairros
