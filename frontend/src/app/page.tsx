@@ -543,7 +543,7 @@ export default function Home() {
         console.error('Failed to refresh panel:', err);
       }
     });
-  }, [filters]);
+  }, [filters, periodLabel]);
 
   const activeFilterCount = selectedTypes.length + selectedGrupo.length + selectedSexo.length + selectedCor.length + (idadeMin ? 1 : 0) + (idadeMax ? 1 : 0);
 
