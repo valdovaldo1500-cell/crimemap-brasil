@@ -1286,9 +1286,13 @@ def filter_options(request: Request,
     else:
         tipo_opts = []
 
-    # Merge tipo from CrimeStaging for non-RS states
+    # Merge tipo from CrimeStaging for non-RS states (and RS when crimes table had no results)
     if selected_states:
         non_rs_states = [s for s in selected_states if s not in ('RS', 'SP')]
+        # Also include RS/SP in staging query when crimes table returned no results
+        crimes_total = sum(t['count'] for t in tipo_opts)
+        if crimes_total == 0:
+            non_rs_states = list(selected_states)  # query staging for all selected states
         if non_rs_states:
             existing_values = {t['value'] for t in tipo_opts}
             staging_q = db.query(
