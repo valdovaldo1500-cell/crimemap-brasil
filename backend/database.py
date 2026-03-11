@@ -113,6 +113,7 @@ class CrimeStaging(Base):
         Index('idx_staging_municipio', 'municipio'),
         Index('idx_staging_crime_type', 'crime_type'),
         Index('idx_staging_state_type_counts', 'state', 'crime_type', 'occurrences', 'victims'),
+        Index('idx_staging_state_mun', 'state', 'municipio'),
     )
 
 def init_db():
