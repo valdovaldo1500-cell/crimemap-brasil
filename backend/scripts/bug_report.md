@@ -47,7 +47,7 @@
 - **Issue**: DB has `DORES` (120 records) as short form. Santa Maria has two polygons ending in `DORES`: `NOSSA SENHORA DAS DORES` and `LOTEAMENTO PAROQUIA DAS DORES`. Suffix match finds 2 → fails.
 - **Evidence**: Santa Maria DB: 120 `DORES` + 75 `Dores` records. Polygons: `NOSSA SENHORA DAS DORES`, `LOTEAMENTO PAROQUIA DAS DORES`.
 - **Fix needed**: Add `'DORES': 'NOSSA SENHORA DAS DORES'` to `BAIRRO_ALIASES`. The `Nossa Senhora das Dores` is the main neighborhood; `Loteamento Paroquia das Dores` is a sub-loteamento. The short form `DORES` unambiguously refers to the main neighborhood.
-- **Status**: OPEN
+- **Status**: FIXED (poly-conditional alias: DORES→NOSSA SENHORA DAS DORES when no exact DORES polygon)
 
 ### [BUG-008] INVALID-BAIRRO | SANTA MARIA | PREJUDICADO
 - **Issue**: `PREJUDICADO` (meaning "damaged/prejudiced") appears 307 times as a bairro name in Santa Maria. This is clearly a data quality artifact (SSP data entry error meaning "unavailable/excluded") and should be treated as invalid/unknown.
