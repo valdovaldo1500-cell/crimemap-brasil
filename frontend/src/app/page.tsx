@@ -448,6 +448,8 @@ export default function Home() {
       setComparisonStats(prev => prev.length >= 2 ? prev : [...prev, { ...stats, displayName: location.displayName }]);
     } catch {
       setComparisonStats(prev => prev.length >= 2 ? prev : [...prev, { displayName: location.displayName, total: 0, crime_types: [] }]);
+    } finally {
+      setComparisonLoading(false);
     }
   }, [filters]);
 
