@@ -170,7 +170,7 @@ def load_rj_data():
     if not p.exists():
         print(f"  ERROR: {p} not found")
         return rj
-    with open(p, encoding='utf-8', errors='replace') as f:
+    with open(p, encoding='latin-1', errors='replace') as f:
         reader = csv.reader(f, delimiter=';')
         header = next(reader)
         col_map = {h.strip(): i for i, h in enumerate(header)}
