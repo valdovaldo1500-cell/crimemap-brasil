@@ -1304,7 +1304,7 @@ def filter_options(request: Request,
                 (func.coalesce(func.sum(CrimeStaging.occurrences), 0) +
                  func.coalesce(func.sum(CrimeStaging.victims), 0)).label("cnt")
             ).filter(
-                CrimeStaging.state.in_(non_rs_states),
+                CrimeStaging.state.in_(staging_states),
                 CrimeStaging.crime_type.isnot(None),
                 CrimeStaging.crime_type != ""
             )
