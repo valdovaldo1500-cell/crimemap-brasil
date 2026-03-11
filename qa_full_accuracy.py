@@ -122,7 +122,7 @@ def load_rs_data():
                 for csv_name in csvs:
                     with zf.open(csv_name) as f:
                         reader = csv.reader(
-                            io.TextIOWrapper(f, encoding='utf-8', errors='replace'),
+                            io.TextIOWrapper(f, encoding='latin-1', errors='replace'),
                             delimiter=';'
                         )
                         header = next(reader)
