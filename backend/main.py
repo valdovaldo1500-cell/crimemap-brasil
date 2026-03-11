@@ -84,6 +84,9 @@ _BAIRRO_PREFIX_EXPANSIONS = [
 # Articles/prepositions to strip when doing article-normalized fuzzy matching
 _PT_ARTICLES = re.compile(r'\b(DO|DA|DOS|DAS|DE|D)\b\s*', re.IGNORECASE)
 
+# Leading article after prefix strip: "PARQUE DO OBELISCO" → strip "PARQUE " → "DO OBELISCO" → strip "DO " → "OBELISCO"
+_LEADING_ARTICLE_RE = re.compile(r'^(DO|DA|DOS|DAS|DE)\s+', re.IGNORECASE)
+
 # Short first-word prefixes that are Portuguese particles (not abbreviations)
 # Used to exclude false matches in the short-first-word suffix rule
 _SHORT_PT_PARTICLES = frozenset({
