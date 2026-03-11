@@ -414,7 +414,12 @@ export default function Home() {
               grupo: filters.grupo, sexo: filters.sexo, cor: filters.cor,
               idade_min: filters.idade_min, idade_max: filters.idade_max,
             });
-            setComparisonStats([{ ...firstStats, displayName: comparisonLocations[0].displayName }]);
+            // Single atomic update with both states — avoids race between replace + append
+            setComparisonStats([
+              { ...firstStats, displayName: comparisonLocations[0].displayName },
+              { ...stats, displayName: location.displayName },
+            ]);
+            return;
           } catch {}
         }
       } else {
