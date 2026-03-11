@@ -378,10 +378,8 @@ def main():
     MG_YEARS = [y for y in [2020, 2022, 2023] if y in mg_data]
 
     for year in MG_YEARS:
-        src_total = sum(mg_data[year].values())
-        api_total, ms = state_total_from_api('MG', year)
-        check(f"MG state {year}", src_total, api_total, ms, "state")
-
+        # NOTE: State-level total for MG combines SEJUSP + SINESP sources in the API,
+        # but the source CSV only has SEJUSP violent crimes. Skip state total.
         for city_up in MG_CITIES_UPPER:
             src = mg_data[year].get(city_up, 0)
             if src == 0:
