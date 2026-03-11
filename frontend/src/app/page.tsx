@@ -423,6 +423,26 @@ export default function Home() {
     setComparisonStats([]);
   }, []);
 
+  // Compare box drag/resize handlers
+  useEffect(() => {
+    if (!compareDragging && !compareResizing) return;
+    const onMove = (e: MouseEvent) => {
+      if (compareDragging && compareDragStart.current) {
+        setComparePos({
+          x: compareDragStart.current.px + (e.clientX - compareDragStart.current.x),
+          y: compareDragStart.current.py + (e.clientY - compareDragStart.current.y),
+        });
+      } else if (compareResizing && compareResizeStart.current) {
+        const newW = Math.max(300, compareResizeStart.current.w + (e.clientX - compareResizeStart.current.x));
+        setCompareSize({ w: newW });
+      }
+    };
+    const onEnd = () => { setCompareDragging(false); setCompareResizing(false); };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onEnd);
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onEnd); };
+  }, [compareDragging, compareResizing]);
+
   const onDetailOpen = useCallback((data: any) => {
     const panelId = data.displayName || String(Date.now());
     setDetailPanels(prev => {
