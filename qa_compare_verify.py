@@ -77,27 +77,51 @@ def count_rs_csv_rows(year: int) -> int:
                     return count
     return -1
 
-def sum_rj_isp(year: int) -> int:
-    """Sum all crime columns from RJ ISP CSV for a given year."""
-    path = STAGING / "rj_isp_municipal.csv"
+def sum_rj_isp(year: int, csv_name="rj_isp_municipal.csv") -> int:
+    """Sum crime columns from RJ ISP CSV, matching only staged columns."""
+    # Columns actually ingested into staging (excludes composites)
+    RJ_CRIME_COLUMNS = [
+        "hom_doloso", "lesao_corp_morte", "latrocinio", "hom_por_interv_policial",
+        "tentat_hom", "lesao_corp_dolosa", "estupro", "hom_culposo",
+        "lesao_corp_culposa", "feminicidio", "tentativa_feminicidio",
+        "roubo_transeunte", "roubo_corp_am_am",
+        "roubo_em_coletivo", "roubo_veiculo", "roubo_carga", "roubo_celular",
+        "roubo_conducao_saque", "roubo_bicicleta", "roubo_comercio",
+        "roubo_residencia", "roubo_rua", "roubo_banco", "roubo_cx_eletronico",
+        "roubo_apos_saque", "outros_roubos",
+        "furto_veiculos", "furto_transeunte", "furto_coletivo",
+        "furto_celular", "furto_bicicleta", "outros_furtos",
+        "sequestro", "extorsao",
+        "sequestro_relampago", "estelionato", "apreensao_drogas",
+        "posse_drogas", "trafico_drogas", "recuperacao_veiculos",
+        "ameaca", "pessoas_desaparecidas", "encontro_cadaver",
+        "encontro_ossada", "pol_militares_mortos_serv",
+        "pol_civis_mortos_serv",
+    ]
+    path = STAGING / csv_name
     total = 0
-    # Crime columns start at index 6, end before last column (fase)
     with open(path, "r", encoding="latin-1") as f:
         reader = csv.reader(f, delimiter=";")
-        header = next(reader)
-        # Crime columns: index 6 to -1 (exclude fase)
-        crime_start = 6
-        crime_end = len(header) - 1  # exclude 'fase'
+        raw_header = next(reader)
+        header = [h.strip().lower().strip('"') for h in raw_header]
+        # Build index of columns to sum
+        col_indices = []
+        for col_name in RJ_CRIME_COLUMNS:
+            if col_name in header:
+                col_indices.append(header.index(col_name))
+        year_idx = header.index("ano") if "ano" in header else None
+        if year_idx is None:
+            return -1
         for row in reader:
             try:
-                ano = int(row[2])
+                ano = int(row[year_idx].strip().strip('"'))
             except (ValueError, IndexError):
                 continue
             if ano != year:
                 continue
-            for i in range(crime_start, crime_end):
+            for i in col_indices:
                 try:
-                    val = row[i].strip()
+                    val = row[i].strip().strip('"')
                     if val:
                         total += int(val)
                 except (ValueError, IndexError):
