@@ -492,6 +492,7 @@ export default function Home() {
           total: data.total || existing.total || 0,
           population: data.population !== undefined ? data.population : existing.population,
           loading: data.loading ?? false,
+          periodLabel,
         };
         return updated;
       }
@@ -501,6 +502,7 @@ export default function Home() {
         id: panelId,
         total: data.total || 0,
         loading: data.loading ?? false,
+        periodLabel,
       };
       const newPanels = [...prev, newPanel];
       return newPanels.length > 5 ? newPanels.slice(-5) : newPanels;
