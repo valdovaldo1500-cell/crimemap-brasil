@@ -576,9 +576,14 @@ export default function Home() {
               placeholder="Buscar cidade ou bairro (ex: Porto Alegre, Centro)"
               className="w-full bg-[#1a2234] border border-[#1e293b] rounded-xl px-4 py-2.5 text-sm text-[#f1f5f9] placeholder-[#475569] focus:outline-none focus:border-[#3b82f6]"
             />
-            {searchFocused && searchQ.trim().length < 3 && !showSuggestions && (
+            {searchFocused && searchQ.trim().length < 3 && !showSuggestions && !searchLoading && (
               <div className="absolute top-full mt-1 w-full bg-[#1a2234] border border-[#1e293b] rounded-xl overflow-hidden shadow-2xl z-[60] px-4 py-3">
-                <span className="text-sm text-[#475569]">Comece a escrever para sugestões...</span>
+                <span className="text-sm text-[#475569]">Digite pelo menos 3 letras para ver sugestões</span>
+              </div>
+            )}
+            {searchFocused && searchLoading && searchQ.trim().length >= 3 && (
+              <div className="absolute top-full mt-1 w-full bg-[#1a2234] border border-[#1e293b] rounded-xl overflow-hidden shadow-2xl z-[60] px-4 py-3">
+                <span className="text-sm text-[#475569]">Buscando...</span>
               </div>
             )}
             {showSuggestions && (
@@ -589,6 +594,7 @@ export default function Home() {
                     {stateResults.map((r, i) => (
                       <button key={'s'+i} onMouseDown={() => onSelect(r)} className="w-full px-4 py-2 text-left text-sm hover:bg-[#111827] flex justify-between items-center">
                         <span>{r.name}</span>
+                        <span className="text-[#475569]">&rarr;</span>
                       </button>
                     ))}
                   </>
@@ -599,7 +605,10 @@ export default function Home() {
                     {municResults.map((r, i) => (
                       <button key={'m'+i} onMouseDown={() => onSelect(r)} className="w-full px-4 py-2 text-left text-sm hover:bg-[#111827] flex justify-between items-center">
                         <span>{r.name}</span>
-                        <span className="text-[10px] text-[#94a3b8] font-mono">{formatCount(r.count)}</span>
+                        <span className="flex items-center gap-2">
+                          <span className="text-[10px] text-[#94a3b8] font-mono">{formatCount(r.count)}</span>
+                          <span className="text-[#475569]">&rarr;</span>
+                        </span>
                       </button>
                     ))}
                   </>
@@ -610,7 +619,10 @@ export default function Home() {
                     {bairroResults.map((r, i) => (
                       <button key={'b'+i} onMouseDown={() => onSelect(r)} className="w-full px-4 py-2 text-left text-sm hover:bg-[#111827] flex justify-between items-center">
                         <span>{r.name}</span>
-                        <span className="text-[10px] text-[#94a3b8] font-mono">{formatCount(r.count)}</span>
+                        <span className="flex items-center gap-2">
+                          <span className="text-[10px] text-[#94a3b8] font-mono">{formatCount(r.count)}</span>
+                          <span className="text-[#475569]">&rarr;</span>
+                        </span>
                       </button>
                     ))}
                   </>
