@@ -53,7 +53,7 @@
 - **Issue**: `PREJUDICADO` (meaning "damaged/prejudiced") appears 307 times as a bairro name in Santa Maria. This is clearly a data quality artifact (SSP data entry error meaning "unavailable/excluded") and should be treated as invalid/unknown.
 - **Evidence**: DB: 175 `prejudicado` + 130 `PREJUDICADO` + 2 `Prejudicado` records in Santa Maria. No GeoJSON polygon exists for this name anywhere.
 - **Fix needed**: Add `'PREJUDICADO'` to `_INVALID_BAIRRO_NAMES` set.
-- **Status**: OPEN
+- **Status**: FIXED (added to _INVALID_BAIRRO_NAMES)
 
 ### [BUG-009] MISSING-GEOJSON | RIO GRANDE | most bairros
 - **Issue**: Rio Grande has 9,841 weight in desconhecido with 80+ distinct bairro components. The GeoJSON only has 26 unusual polygon names (mostly VILA JUNCAO, NOVA QUINTA, ABEL CRAVO, etc.) — none of the common downtown bairros (CENTRO, CIDADE NOVA, CASTELO BRANCO, COHAB, LAGOA, NAVEGANTES, etc.) have polygons.
