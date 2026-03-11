@@ -142,7 +142,7 @@ def load_rs_data():
                                 continue
                             yd[mun] = yd.get(mun, 0) + 1
                             if bairro_col and len(row) > bairro_col:
-                                bairro = row[bairro_col].strip().upper()
+                                bairro = row[bairro_col].strip()  # preserve original case/accents
                                 if bairro:
                                     bd = yb.setdefault(mun, {})
                                     bd[bairro] = bd.get(bairro, 0) + 1
