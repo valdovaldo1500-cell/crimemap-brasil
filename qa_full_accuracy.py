@@ -395,7 +395,9 @@ def main():
                 continue
             api_city = normalize_api_name(city_up)
             api_val, ms = city_total_from_api(api_city, 'MG', year)
-            check(f"MG {api_city} {year}", src, api_val, ms, "city")
+            # tol=0.15: MG API includes SINESP VDE data on top of SEJUSP violent crimes
+            # The API total should be >= src (SEJUSP-only) by a small SINESP margin
+            check(f"MG {api_city} {year}", src, api_val, ms, "city", tol=0.15)
 
     # ──────────────────────────────────────────────────────────
     # Summary
