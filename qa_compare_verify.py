@@ -53,12 +53,12 @@ def api_get(path, retries=3):
             data = json.loads(result.stdout)
         except json.JSONDecodeError:
             raise RuntimeError(f"Bad JSON from {url}: {result.stdout[:300]}")
-        if "detail" in data and "Rate limit" in str(data["detail"]):
-            print(f"    (rate limited, waiting 5s...)")
+        if "detail" in data:
+            print(f"    (API error: {data['detail']}, waiting 5s...)")
             _time.sleep(5)
             continue
         return data
-    raise RuntimeError(f"Rate limited after {retries} retries: {url}")
+    raise RuntimeError(f"API error after {retries} retries: {url}")
 
 # ── Step 1: Source file totals ───────────────────────────────────────────
 
