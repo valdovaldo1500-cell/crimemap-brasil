@@ -403,6 +403,7 @@ export default function Home() {
     const newLocations = [...currentLocations, location];
     compareLocationsRef.current = newLocations;
     setComparisonLocations(newLocations);
+    setComparisonLoading(true);
     try {
       let stats;
       if (!location.municipio && location.state) {
