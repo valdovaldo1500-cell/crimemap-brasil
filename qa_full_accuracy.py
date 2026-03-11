@@ -82,7 +82,7 @@ def check(label, src, api, ms, perf_key="city", tol=0.0):
         PASSES += 1
     else:
         FAILS += 1
-    time.sleep(0.5)
+    time.sleep(1.5)
 
 
 # ──────────────────────────────────────────────────────────────
