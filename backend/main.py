@@ -57,9 +57,15 @@ _BAIRRO_ABBREVIATIONS = {
     "NS DAS GRACAS": "NOSSA SENHORA DAS GRACAS",
     "M DEUS": "MENINO DEUS",      # Porto Alegre: "M Deus" → polygon "Menino Deus"
     "LURDES": "LOURDES",          # common name variant (Lurdes/Lourdes)
-    "BONFIM": "BOM FIM",          # common contracted spelling (Bonfim/Bom Fim)
+    # NOTE: "BONFIM" → "BOM FIM" intentionally removed from global abbreviations.
+    # Multiple cities have a polygon named "BONFIM" (Santa Maria, Bossoroca, Porto Alegre)
+    # while others only have "BOM FIM". The city-specific BAIRRO_ALIASES dict handles
+    # per-city disambiguation, and the poly-conditional fallback below handles the rest.
     "DIHEL": "DIEHL",             # transposition typo (edit-distance-1)
     "JABOTICABAL": "JABUTICABAL", # Erechim: O/U spelling variant
+    "OPERARIA": "OPERARIO",       # gender agreement: feminine form not used in polygons
+    "MEDIANEIRA": "NOSSA SENHORA MEDIANEIRA",  # short form → full official name (Santa Maria)
+    "DORES": "NOSSA SENHORA DAS DORES",        # short form → full official name (Santa Maria)
 }
 
 _BAIRRO_TYPE_PREFIXES = re.compile(
