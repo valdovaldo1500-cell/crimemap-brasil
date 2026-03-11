@@ -970,8 +970,13 @@ export default function Home() {
                         <div className="grid grid-cols-3 gap-1 text-xs">
                           <div className="text-[#94a3b8]">Diferença</div>
                           {(() => {
-                            const a = comparisonStats[0].total || 0;
-                            const b = comparisonStats[1].total || 0;
+                            const useRate = rateMode === 'rate'
+                              && comparisonStats[0].population && comparisonStats[1].population;
+                            const toVal = (s: any) => useRate
+                              ? (s.total / s.population) * 100000
+                              : (s.total || 0);
+                            const a = toVal(comparisonStats[0]);
+                            const b = toVal(comparisonStats[1]);
                             if (a === 0 && b === 0) return <><div className="text-center font-mono">—</div><div className="text-center font-mono">—</div></>;
                             const diffA = b > 0 ? ((a - b) / b) * 100 : (a > 0 ? 100 : 0);
                             const diffB = a > 0 ? ((b - a) / a) * 100 : (b > 0 ? 100 : 0);
