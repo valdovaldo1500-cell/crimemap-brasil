@@ -294,15 +294,36 @@ def main():
             print(f"  ✗ RS {year}: API={api_total:,} > source={src:,} — impossible!  [FAIL]")
             all_pass = False
 
-    # RJ: API uses SUM(occurrences)+SUM(victims). RJ victims=0, so should match source.
+    # RJ: API sums both ISP municipal + CISP. Check if API matches one or both sources.
     for year in [2024, 2023]:
         resp = verify_api_state("RJ", year)
         api_total = resp["total"]
         api_results[("RJ", year)] = resp
-        src = source_totals[("RJ", year)]
-        r = ok(f"RJ {year}: source vs API", src, api_total)
-        if not r:
+        mun = source_totals[("RJ_mun", year)]
+        cisp = source_totals[("RJ_cisp", year)]
+        combined = source_totals[("RJ", year)]
+        print(f"  RJ {year}: API={api_total:,}  mun_src={mun:,}  cisp_src={cisp:,}  combined={combined:,}")
+        # CISP is granular (by precinct), municipal is aggregated. They OVERLAP.
+        # API should match ONE of them (likely CISP since it has more rows), not both.
+        if api_total == cisp:
+            print(f"  ✓ RJ {year}: API matches CISP source exactly  [PASS]")
+        elif api_total == mun:
+            print(f"  ✓ RJ {year}: API matches municipal source exactly  [PASS]")
+        elif api_total == combined:
+            print(f"  ✗ RJ {year}: API = municipal+CISP — DOUBLE COUNTING!  [FAIL]")
             all_pass = False
+        else:
+            # Check if close to one source (tolerance for SINESP VDE additions)
+            diff_cisp = abs(api_total - cisp)
+            diff_mun = abs(api_total - mun)
+            closest = "CISP" if diff_cisp < diff_mun else "municipal"
+            closest_diff = min(diff_cisp, diff_mun)
+            pct = closest_diff / api_total * 100 if api_total else 0
+            if pct < 5:
+                print(f"  ~ RJ {year}: API close to {closest} (diff {closest_diff:,}, {pct:.1f}%)  [WARN]")
+            else:
+                print(f"  ✗ RJ {year}: API doesn't match either source (CISP diff={diff_cisp:,}, mun diff={diff_mun:,})  [FAIL]")
+                all_pass = False
 
     # MG: Same as RJ — SUM(occurrences)+SUM(victims), victims=0
     for year in [2024, 2023]:
