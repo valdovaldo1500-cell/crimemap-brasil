@@ -121,6 +121,7 @@ export default function Home() {
   const [compareResizing, setCompareResizing] = useState(false);
   const compareDragStart = useRef<{x: number, y: number, px: number, py: number} | null>(null);
   const compareResizeStart = useRef<{x: number, y: number, w: number} | null>(null);
+  const compareLocationsRef = useRef<any[]>([]);
 
   // System-wide static info
   const [systemInfo, setSystemInfo] = useState<any>(null);
