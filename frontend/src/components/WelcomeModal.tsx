@@ -199,7 +199,7 @@ export default function WelcomeModal() {
               wordBreak: 'break-word',
             }}
           >
-            {displayedText}
+            {renderSegments(charIndex)}
             <span
               style={{
                 display: 'inline-block',
