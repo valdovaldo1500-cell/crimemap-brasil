@@ -922,7 +922,7 @@ export default function Home() {
           <CrimeMap center={center} zoom={zoom} filters={filters} viewMode={viewMode} rateMode={rateMode} aggregationOverride={aggregationOverride} selectedStates={selectedStates} onToggleState={toggleState} activeFilter={activeFilter} maxGranularity={maxGranularity} availableStates={availableStates} compareMode={compareMode} comparisonLocations={comparisonLocations} onCompareSelect={onCompareSelect} onDetailOpen={onDetailOpen} />
           {/* Floating compare toggle on map — visible on all screen sizes */}
           <button
-            onClick={() => { const entering = !compareMode; setCompareMode(entering); if (!entering) setComparePos(null); if (entering) setSelectedStates([]); setComparisonLocations([]); setComparisonStats([]); }}
+            onClick={() => { const entering = !compareMode; setCompareMode(entering); if (!entering) { setComparePos(null); setComparisonLocations([]); setComparisonStats([]); } if (entering) setSelectedStates([]); }}
             aria-label={compareMode ? 'Desativar comparação' : 'Ativar comparação'}
             className={`absolute top-[60px] md:top-[116px] left-4 z-[1000] flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-medium shadow-lg transition-colors ${compareMode ? 'bg-[#7c3aed] text-white border border-[#7c3aed]' : 'bg-[#111827]/90 backdrop-blur-xl border border-[#7c3aed]/60 text-[#c4b5fd] hover:bg-[#7c3aed]/20 hover:text-[#e9d5ff]'}`}
           >
