@@ -1325,9 +1325,10 @@ def location_stats(request: Request,
         crime_types = [{"tipo_enquadramento": t[0], "count": t[1]} for t in breakdown]
     else:
         # Fallback: query CrimeStaging for non-RS municipalities
-        # Try both original and accent-stripped name
-        staging_names = list({municipio, normalize_name(municipio)})
-        staging_filters = [CrimeStaging.municipio.in_(staging_names), CrimeStaging.crime_type.isnot(None)]
+        # Use func.upper() for case-insensitive match: staging stores mixed-case names
+        # (e.g. "Rio de Janeiro") but the incoming municipio param is often uppercase
+        staging_upper_names = list({municipio.upper(), normalize_name(municipio).upper()})
+        staging_filters = [func.upper(CrimeStaging.municipio).in_(staging_upper_names), CrimeStaging.crime_type.isnot(None)]
         if state: staging_filters.append(CrimeStaging.state == state)
         if ultimos_meses:
             _, thresh_year, thresh_month = _ultimos_meses_range(ultimos_meses)
