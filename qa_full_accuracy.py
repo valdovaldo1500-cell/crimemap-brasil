@@ -12,6 +12,7 @@ import os
 import re
 import sys
 import time
+import unicodedata
 import zipfile
 from pathlib import Path
 
