@@ -151,10 +151,17 @@ def load_rs_data():
                                 continue
                             yd[mun] = yd.get(mun, 0) + 1
                             if bairro_col and len(row) > bairro_col:
-                                bairro = row[bairro_col].strip()  # preserve original case/accents
+                                bairro = row[bairro_col].strip()
                                 if bairro:
                                     bd = yb.setdefault(mun, {})
-                                    bd[bairro] = bd.get(bairro, 0) + 1
+                                    # Normalize key: strip accents + uppercase to merge duplicates
+                                    bkey = unicodedata.normalize('NFD', bairro.upper()).encode('ascii', 'ignore').decode()
+                                    if bkey not in bd:
+                                        bd[bkey] = [0, bairro]  # [count, best_display_name]
+                                    bd[bkey][0] += 1
+                                    # Prefer display name with accents
+                                    if sum(1 for c in bairro if ord(c) > 127) > sum(1 for c in bd[bkey][1] if ord(c) > 127):
+                                        bd[bkey][1] = bairro
         except Exception as e:
             print(f"  ERROR loading {zpath.name}: {e}")
 
