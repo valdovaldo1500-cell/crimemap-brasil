@@ -313,7 +313,7 @@ def main():
     bairro_year = max((y for y in RS_YEARS if y in rs_bairro), default=None)
     if bairro_year:
         poa_bairros = rs_bairro.get(bairro_year, {}).get('PORTO ALEGRE', {})
-        top50 = sorted(poa_bairros.items(), key=lambda x: -x[1])[:50]
+        top50 = sorted(poa_bairros.items(), key=lambda x: -x[1])[:20]
         tested = 0
         for bairro_upper, src in top50:
             if src < 10:
