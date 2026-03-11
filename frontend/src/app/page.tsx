@@ -989,17 +989,9 @@ export default function Home() {
                           </div>
                         )}
                         <div className="grid grid-cols-3 gap-1 text-xs border-t border-[#1e293b] pt-1">
-                          <div className="text-[#94a3b8]">{rateMode === 'rate' && comparisonStats[0].population && comparisonStats[1].population ? 'Total /100K' : 'Total'}</div>
-                          <div className="text-center font-mono">
-                            {rateMode === 'rate' && comparisonStats[0].population && comparisonStats[1].population
-                              ? ((comparisonStats[0].total / comparisonStats[0].population) * 100000).toFixed(1)
-                              : (comparisonStats[0].total?.toLocaleString() || 0)}
-                          </div>
-                          <div className="text-center font-mono">
-                            {rateMode === 'rate' && comparisonStats[0].population && comparisonStats[1].population
-                              ? ((comparisonStats[1].total / comparisonStats[1].population) * 100000).toFixed(1)
-                              : (comparisonStats[1].total?.toLocaleString() || 0)}
-                          </div>
+                          <div className="text-[#94a3b8]">Total</div>
+                          <div className="text-center font-mono">{comparisonStats[0].total?.toLocaleString() || 0}</div>
+                          <div className="text-center font-mono">{comparisonStats[1].total?.toLocaleString() || 0}</div>
                         </div>
                         {/* Hab. row — show when at least one population exists */}
                         {(comparisonStats[0].population || comparisonStats[1].population) && (
@@ -1009,8 +1001,8 @@ export default function Home() {
                             <div className="text-center font-mono">{comparisonStats[1].population ? comparisonStats[1].population.toLocaleString('pt-BR') : '—'}</div>
                           </div>
                         )}
-                        {/* /100K row — only in absolute mode */}
-                        {rateMode === 'absolute' && comparisonStats[0].population && comparisonStats[1].population && (
+                        {/* /100K row — always show when population available */}
+                        {comparisonStats[0].population && comparisonStats[1].population && (
                           <div className="grid grid-cols-3 gap-1 text-xs">
                             <div className="text-[#94a3b8]">/100K</div>
                             <div className="text-center font-mono">{((comparisonStats[0].total / comparisonStats[0].population) * 100000).toFixed(1)}</div>
