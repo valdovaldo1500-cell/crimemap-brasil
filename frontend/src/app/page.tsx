@@ -1296,76 +1296,78 @@ export default function Home() {
 
             <section className="mb-5">
               <h3 className="text-sm font-bold text-[#3b82f6] uppercase tracking-wider mb-2">Navegando o Mapa</h3>
-              <p className="text-sm text-[#94a3b8] mb-2">O mapa possui tres niveis de zoom que mudam automaticamente o que e exibido:</p>
+              <p className="text-sm text-[#94a3b8] mb-2">O mapa possui três níveis de zoom que mudam automaticamente o que é exibido:</p>
               <ul className="space-y-1 ml-4 text-sm text-[#94a3b8]">
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]"><strong>Estados</strong> — visao geral do Brasil (zoom afastado)</li>
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]"><strong>Municipios</strong> — detalhamento por cidade (zoom medio)</li>
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]"><strong>Bairros</strong> — detalhamento por bairro, disponivel apenas para RS (zoom proximo)</li>
+                <li className="before:content-['•'] before:mr-2 before:text-[#475569]"><strong>Estados</strong> — visão geral do Brasil (zoom afastado)</li>
+                <li className="before:content-['•'] before:mr-2 before:text-[#475569]"><strong>Municípios</strong> — detalhamento por cidade (zoom médio)</li>
+                <li className="before:content-['•'] before:mr-2 before:text-[#475569]"><strong>Bairros</strong> — detalhamento por bairro para RS, RJ e MG (zoom aproximado)</li>
               </ul>
-              <p className="text-sm text-[#94a3b8] mt-2">Clique em qualquer regiao ou ponto para ver um detalhamento por tipo de crime. Use a barra de busca para encontrar uma cidade ou bairro especifico.</p>
+              <p className="text-sm text-[#94a3b8] mt-2">Clique em qualquer região ou ponto para abrir um painel de detalhes flutuante com o total de ocorrências e a distribuição por tipo de crime. Use a barra de busca para encontrar uma cidade ou bairro específico.</p>
             </section>
 
             <section className="mb-5">
               <h3 className="text-sm font-bold text-[#3b82f6] uppercase tracking-wider mb-2">Cores e Escala</h3>
               <div className="flex flex-wrap gap-3 mb-2">
                 <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-[#16a34a]" /><span className="text-sm text-[#94a3b8]">Baixo</span></div>
-                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-[#eab308]" /><span className="text-sm text-[#94a3b8]">Medio</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-[#eab308]" /><span className="text-sm text-[#94a3b8]">Médio</span></div>
                 <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-[#f97316]" /><span className="text-sm text-[#94a3b8]">Alto</span></div>
-                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-[#ef4444]" /><span className="text-sm text-[#94a3b8]">Critico</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-full bg-[#ef4444]" /><span className="text-sm text-[#94a3b8]">Crítico</span></div>
               </div>
-              <p className="text-sm text-[#94a3b8]">No modo <strong>/100K hab.</strong>, as cores usam faixas fixas de taxa. No modo <strong>Total</strong>, as cores sao relativas (comparando regioes visiveis entre si).</p>
+              <p className="text-sm text-[#94a3b8]">No modo <strong>/100K hab.</strong>, as cores usam faixas fixas de taxa. No modo <strong>Total</strong>, as cores são relativas (comparando regiões visíveis entre si).</p>
             </section>
 
             <section className="mb-5">
-              <h3 className="text-sm font-bold text-[#3b82f6] uppercase tracking-wider mb-2">Modos de Visualizacao</h3>
+              <h3 className="text-sm font-bold text-[#3b82f6] uppercase tracking-wider mb-2">Modos de Visualização</h3>
               <ul className="space-y-1 ml-4 text-sm text-[#94a3b8]">
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]"><strong>Pontos vs Regioes:</strong> pontos mostram circulos individuais; regioes colorem areas inteiras no mapa</li>
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]"><strong>/100K hab. vs Total:</strong> taxa per capita (comparacao justa entre regioes de tamanhos diferentes) vs contagem absoluta</li>
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]"><strong>Auto/Municipios/Bairros:</strong> force um nivel especifico de agregacao em vez do automatico por zoom</li>
+                <li className="before:content-['•'] before:mr-2 before:text-[#475569]"><strong>Pontos vs Regiões:</strong> pontos mostram círculos individuais; regiões colorem áreas inteiras no mapa</li>
+                <li className="before:content-['•'] before:mr-2 before:text-[#475569]"><strong>/100K hab. vs Total:</strong> taxa per capita (comparação justa entre regiões de tamanhos diferentes) vs contagem absoluta</li>
+                <li className="before:content-['•'] before:mr-2 before:text-[#475569]"><strong>Auto/Municípios/Bairros:</strong> force um nível específico de agregação em vez do automático por zoom</li>
+              </ul>
+            </section>
+
+            <section className="mb-5">
+              <h3 className="text-sm font-bold text-[#3b82f6] uppercase tracking-wider mb-2">Modo Comparação</h3>
+              <p className="text-sm text-[#94a3b8] mb-2">Ative o <strong>Modo Comparação</strong> no painel de filtros e clique em dois locais (estados, cidades ou bairros) para ver os dados lado a lado:</p>
+              <ul className="space-y-1 ml-4 text-sm text-[#94a3b8]">
+                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Exibe total de ocorrências, população e taxa /100K hab. de cada local</li>
+                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">No modo <strong>/100K</strong>, o "Total /100K" substitui o total absoluto para facilitar a comparação</li>
+                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Ao comparar MG com outro estado, um aviso indica que os dados de MG são parciais e que o filtro de compatibilidade foi aplicado</li>
+                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">O painel pode ser arrastado e redimensionado</li>
               </ul>
             </section>
 
             <section className="mb-5">
               <h3 className="text-sm font-bold text-[#3b82f6] uppercase tracking-wider mb-2">Fontes de Dados</h3>
-              <p className="text-sm text-[#94a3b8] mb-2">Os dados vem de multiplas fontes com diferentes niveis de qualidade:</p>
+              <p className="text-sm text-[#94a3b8] mb-2">Os dados vêm de múltiplas fontes com diferentes níveis de qualidade:</p>
               <div className="space-y-2 ml-4">
-                <div className="flex items-start gap-2"><div className="w-2 h-2 rounded-full bg-green-500 mt-1.5 flex-shrink-0" /><span className="text-sm text-[#94a3b8]"><strong>Completo</strong> (RS, RJ) — registros individuais detalhados com dados demograficos da vitima</span></div>
-                <div className="flex items-start gap-2"><div className="w-2 h-2 rounded-full bg-amber-500 mt-1.5 flex-shrink-0" /><span className="text-sm text-[#94a3b8]"><strong>Parcial</strong> (MG) — apenas crimes violentos; crimes patrimoniais e drogas nao disponiveis</span></div>
-                <div className="flex items-start gap-2"><div className="w-2 h-2 rounded-full bg-gray-500 mt-1.5 flex-shrink-0" /><span className="text-sm text-[#94a3b8]"><strong>Basico</strong> (demais estados) — dados agregados do SINESP/Ministerio da Justica, 15 tipos de crime</span></div>
+                <div className="flex items-start gap-2"><div className="w-2 h-2 rounded-full bg-green-500 mt-1.5 flex-shrink-0" /><span className="text-sm text-[#94a3b8]"><strong>Completo</strong> (RS, RJ) — registros individuais com dados demográficos da vítima, bairro e geolocalização</span></div>
+                <div className="flex items-start gap-2"><div className="w-2 h-2 rounded-full bg-amber-500 mt-1.5 flex-shrink-0" /><span className="text-sm text-[#94a3b8]"><strong>Parcial</strong> (MG) — apenas crimes violentos; crimes patrimoniais e drogas não disponíveis</span></div>
+                <div className="flex items-start gap-2"><div className="w-2 h-2 rounded-full bg-gray-500 mt-1.5 flex-shrink-0" /><span className="text-sm text-[#94a3b8]"><strong>Básico</strong> (demais estados) — dados agregados do SINESP/Ministério da Justiça, 15 tipos de crime</span></div>
               </div>
-              <p className="text-sm text-[#94a3b8] mt-2">Os dados sao atualizados automaticamente toda semana. Clique em "Fontes" no canto inferior direito do mapa para ver detalhes de cada fonte.</p>
-            </section>
-
-            <section className="mb-5">
-              <h3 className="text-sm font-bold text-[#3b82f6] uppercase tracking-wider mb-2">Comparando Estados</h3>
-              <p className="text-sm text-[#94a3b8] mb-2">Use os checkboxes de estados no painel de Filtros para selecionar estados especificos. Dicas:</p>
-              <ul className="space-y-1 ml-4 text-sm text-[#94a3b8]">
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Use o modo <strong>/100K hab.</strong> para comparacoes justas entre estados de tamanhos diferentes</li>
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Ao selecionar MG junto com outros estados, um filtro automatico e aplicado para mostrar apenas crimes violentos (para comparacao justa)</li>
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Clique diretamente nos estados no mapa para seleciona-los rapidamente</li>
-              </ul>
+              <p className="text-sm text-[#94a3b8] mt-2">Os dados são atualizados automaticamente toda semana. Clique em "Fontes" para ver detalhes de cada fonte.</p>
             </section>
 
             <section className="mb-5">
               <h3 className="text-sm font-bold text-[#3b82f6] uppercase tracking-wider mb-2">Filtros</h3>
-              <p className="text-sm text-[#94a3b8] mb-2">Os filtros sao <strong>cascata</strong>: ao selecionar um tipo de crime, as opcoes disponiveis nos outros filtros se atualizam automaticamente.</p>
+              <p className="text-sm text-[#94a3b8] mb-2">Os filtros são <strong>em cascata</strong>: ao selecionar um tipo de crime, as opções disponíveis nos outros filtros se atualizam automaticamente.</p>
               <ul className="space-y-1 ml-4 text-sm text-[#94a3b8]">
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Filtros de sexo, cor e idade da vitima so tem dados detalhados para RS</li>
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Selecionar estados pode restringir os tipos de crime disponiveis</li>
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Dados do SINESP sao anuais — filtro por semestre fica desabilitado quando apenas estados SINESP estao selecionados</li>
+                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Filtros de sexo, cor e idade da vítima só têm dados detalhados para RS e RJ</li>
+                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Selecionar MG junto com outros estados ativa filtro automático de compatibilidade</li>
+                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Dados do SINESP são anuais — filtro por semestre fica desabilitado para estados com apenas dados SINESP</li>
+                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Clique diretamente nos estados no mapa para selecioná-los rapidamente</li>
               </ul>
             </section>
 
             <section>
-              <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider mb-2">Limitacoes</h3>
+              <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider mb-2">Limitações</h3>
               <ul className="space-y-1 ml-4 text-sm text-[#94a3b8]">
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Dados por bairro disponiveis apenas para RS</li>
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">MG reporta apenas crimes violentos — nao ha dados de crimes patrimoniais ou drogas</li>
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Dados do SINESP sao anuais — nao e possivel filtrar por semestre</li>
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">A frequencia de atualizacao varia: RS/SP verificados semanalmente; outras fontes tambem atualizadas semanalmente, mas os orgaos de origem publicam em cadencias diferentes</li>
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Alguns municipios podem ter geocodificacao imprecisa</li>
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Dados populacionais sao estimativas — taxas per capita sao aproximadas</li>
-                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Criterios de registro de crimes variam entre estados — comparacoes diretas devem ser feitas com cautela</li>
+                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Dados por bairro disponíveis apenas para RS, RJ e MG</li>
+                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">MG reporta apenas crimes violentos — não há dados de crimes patrimoniais ou drogas</li>
+                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Dados do SINESP são anuais — não é possível filtrar por semestre para demais estados</li>
+                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">A frequência de atualização varia: RS/SP verificados semanalmente; os órgãos de origem publicam em cadências diferentes</li>
+                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Alguns municípios podem ter geolocalização imprecisa</li>
+                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Dados populacionais são estimativas do IBGE — taxas per capita são aproximadas</li>
+                <li className="before:content-['•'] before:mr-2 before:text-[#475569]">Critérios de registro de crimes variam entre estados — comparações diretas devem ser feitas com cautela</li>
               </ul>
             </section>
           </div>
