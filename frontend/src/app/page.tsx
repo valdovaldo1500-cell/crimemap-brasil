@@ -487,12 +487,14 @@ export default function Home() {
   }, [compareDragging, compareResizing]);
 
   const onDetailOpen = useCallback((data: any) => {
-    const panelId = data.displayName || String(Date.now());
+    const panelId = data.actionId || data.displayName || String(Date.now());
     setDetailPanels(prev => {
-      // Check if panel with same displayName exists (for two-phase merge)
-      const existingIdx = prev.findIndex(p => p.displayName === data.displayName && p.periodLabel === periodLabel);
+      // Two-phase merge: only merge if same actionId (same click action)
+      const existingIdx = data.actionId
+        ? prev.findIndex(p => p.actionId === data.actionId)
+        : -1;
       if (existingIdx >= 0) {
-        // Update existing panel
+        // Update existing panel (phase 2 of same click)
         const updated = [...prev];
         const existing = updated[existingIdx];
         updated[existingIdx] = {
