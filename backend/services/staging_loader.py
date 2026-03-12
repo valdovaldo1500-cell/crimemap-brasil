@@ -873,32 +873,12 @@ def run_full_staging_load() -> dict:
         db.commit()
         logger.info(f"Cleared {deleted} existing staging rows")
 
-        # 1. SINESP Municipal (older data, dados.mj.gov.br)
-        try:
-            path = download_file(SINESP_MUNICIPAL_URL, "sinesp_municipal.xlsx")
-            results["sinesp_municipal"] = load_sinesp_municipal(db, path)
-        except Exception as e:
-            logger.error(f"SINESP municipal failed: {e}")
-            results["sinesp_municipal"] = f"ERROR: {e}"
-
-        # 2. SINESP UF (older data, dados.mj.gov.br)
-        try:
-            path = download_file(SINESP_UF_URL, "sinesp_uf.xlsx")
-            uf_counts = load_sinesp_uf(db, path)
-            results.update(uf_counts)
-        except Exception as e:
-            logger.error(f"SINESP UF failed: {e}")
-            results["sinesp_uf"] = f"ERROR: {e}"
-
-        # 3. SINESP VDE (newer data, gov.br — all 27 UFs, 2015-2026)
-        for year, url in SINESP_VDE_URLS.items():
-            try:
-                path = download_file(url, f"sinesp_vde_{year}.xlsx")
-                count = load_sinesp_vde(db, path, year)
-                results[f"sinesp_vde_{year}"] = count
-            except Exception as e:
-                logger.warning(f"SINESP VDE {year} failed: {e}")
-                results[f"sinesp_vde_{year}"] = f"SKIPPED: {e}"
+        # 1-3. SINESP data (27 states, basic quality) — intentionally skipped.
+        # Only RS, RJ, MG are surfaced to users. SINESP data is unused and
+        # degrades query performance. Use ISP/RJ and SEJUSP/MG instead.
+        results["sinesp_municipal"] = "SKIPPED (not surfaced)"
+        results["sinesp_uf"] = "SKIPPED (not surfaced)"
+        results["sinesp_vde"] = "SKIPPED (not surfaced)"
 
         # 4. RJ ISP Municipal — SKIPPED: redundant with CISP (same totals, less granular)
         # Municipal is an aggregation of CISP data; loading both causes double-counting.
