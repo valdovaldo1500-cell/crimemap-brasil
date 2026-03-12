@@ -2263,6 +2263,16 @@ def data_sources(db: Session = Depends(get_db)):
     return result
 
 
+@app.post("/api/admin/purge-sinesp")
+def purge_sinesp(db: Session = Depends(get_db)):
+    """Delete all SINESP staging data. Safe to call after deploy to remove obsolete rows."""
+    deleted = db.query(CrimeStaging).filter(
+        CrimeStaging.source.like("sinesp%")
+    ).delete(synchronize_session=False)
+    db.commit()
+    return {"deleted": deleted, "message": f"Purged {deleted} SINESP rows from crimes_staging"}
+
+
 class BugReportPayload(BaseModel):
     description: str
     email: Optional[str] = None
