@@ -2246,9 +2246,16 @@ def data_sources(db: Session = Depends(get_db)):
         if src["source_prefix"] is None:
             # RS data from crimes table
             entry["record_count"] = db.query(func.count(Crime.id)).filter(Crime.state == "RS").scalar() or 0
-            # Last updated from most recent crime record date
+            # Last updated from most recent crime record date (data_fato stored as DD/MM/YYYY)
             max_date = db.query(func.max(Crime.data_fato)).filter(Crime.state == "RS").scalar()
-            entry["last_updated"] = max_date if max_date else None
+            if max_date:
+                try:
+                    from datetime import datetime as _dt3
+                    entry["last_updated"] = _dt3.strptime(max_date, "%d/%m/%Y").isoformat() + "Z"
+                except ValueError:
+                    entry["last_updated"] = max_date
+            else:
+                entry["last_updated"] = None
         else:
             entry["record_count"] = db.query(func.count(CrimeStaging.id)).filter(
                 CrimeStaging.source.like(f"{src['source_prefix']}%")
