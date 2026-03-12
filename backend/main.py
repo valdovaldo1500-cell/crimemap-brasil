@@ -1367,7 +1367,39 @@ def filter_options(request: Request,
             cor_opts = []
             grupo_opts = []  # Grupo (CRIMES/CONTRAVENCOES) is RS-specific
 
-    total = sum(t['count'] for t in tipo_opts)
+    # Compute total from DB directly so it correctly covers all 3 states.
+    # tipo_opts sum is wrong: it skips staging for non-RS states when crimes_total>0,
+    # and also skips RJ/MG types that share a name with RS types (merge dedup).
+    # Instead: RS total from crimes table + staging sum for non-RS states.
+    staging_total_states = (
+        [s for s in selected_states if s not in ('RS', 'SP')] if selected_states
+        else ["RJ", "MG"]  # default view always shows all 3 states
+    )
+    rs_total = apply_common(base_query()).count() if has_crimes_states else 0
+    staging_sum = 0
+    if staging_total_states:
+        st_q = db.query(func.sum(CrimeStaging.occurrences)).filter(
+            CrimeStaging.state.in_(staging_total_states)
+        )
+        if tipo:
+            st_q = st_q.filter(CrimeStaging.crime_type.in_(tipo))
+        if ultimos_meses:
+            _, thresh_year, thresh_month = _ultimos_meses_range(ultimos_meses)
+            st_q = st_q.filter(
+                (CrimeStaging.year > thresh_year) |
+                ((CrimeStaging.year == thresh_year) & (CrimeStaging.month >= thresh_month))
+            )
+        elif semestre:
+            year_str, sem_str = semestre.split('-')
+            month_range = list(range(1, 7) if sem_str == "S1" else range(7, 13))
+            st_q = st_q.filter(
+                CrimeStaging.year == int(year_str),
+                CrimeStaging.month.in_(month_range)
+            )
+        elif ano:
+            st_q = st_q.filter(CrimeStaging.year == int(ano))
+        staging_sum = st_q.scalar() or 0
+    total = rs_total + staging_sum
     result = {"grupo": grupo_opts, "tipo": tipo_opts, "sexo": sexo_opts, "cor": cor_opts, "total": total}
     _cache_set(cache_key, result)
     return result
