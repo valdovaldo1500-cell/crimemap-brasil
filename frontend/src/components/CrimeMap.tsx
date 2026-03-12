@@ -1052,7 +1052,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
     if (!loading) { setLoadingMsg(''); setLoadingMsgVisible(false); return; }
     const level = currentZoom < 7 ? 'states' : currentZoom < 11 ? 'municipios' : 'bairros';
     const msgs: Record<string, string[]> = {
-      states: ['Consultando registros estaduais...', 'Cruzando dados de 27 estados...', 'Normalizando ocorrências por população...', 'Calculando índices /100K hab...', 'Aplicando filtros temporais...', 'Agregando fontes SSP, ISP, SEJUSP...', 'Mapeando polígonos estaduais...'],
+      states: ['Consultando registros estaduais...', 'Cruzando dados de RS, RJ e MG...', 'Normalizando ocorrências por população...', 'Calculando índices /100K hab...', 'Aplicando filtros temporais...', 'Agregando fontes SSP, ISP, SEJUSP...', 'Mapeando polígonos estaduais...'],
       municipios: ['Geocodificando municípios...', 'Cruzando crimes com fronteiras municipais...', 'Calculando pesos do mapa de calor...', 'Normalizando nomes de municípios...', 'Consultando 1.437 municípios...', 'Mesclando dados RS + staging...', 'Ordenando por densidade criminal...'],
       bairros: ['Identificando bairros por polígono...', 'Cruzando coordenadas GPS com fronteiras...', 'Consolidando variantes de nomes...', 'Calculando ocorrências por bairro...', 'Processando dados de lat/lng...', 'Aplicando correspondência difusa de nomes...', 'Filtrando bairros com 5+ registros...'],
     };
