@@ -993,7 +993,8 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
         const pp = pendingPopupRef.current;
         if (onDetailOpenRef.current) {
           // Use DetailPanel — show loading state then fetch
-          onDetailOpenRef.current({ displayName: pp.displayName, municipio: pp.municipio, bairro: pp.bairro, total: 0, isUnknown: false, loading: true });
+          const pendingActionId = `${Date.now()}-${Math.random()}`;
+          onDetailOpenRef.current({ actionId: pendingActionId, displayName: pp.displayName, municipio: pp.municipio, bairro: pp.bairro, total: 0, isUnknown: false, loading: true });
           (async () => {
             try {
               const f = filtersRef.current;
@@ -1004,7 +1005,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
                 idade_min: f.idade_min, idade_max: f.idade_max,
                 ultimos_meses: f.ultimos_meses,
               });
-              onDetailOpenRef.current!({ displayName: pp.displayName, municipio: pp.municipio, bairro: pp.bairro,
+              onDetailOpenRef.current!({ actionId: pendingActionId, displayName: pp.displayName, municipio: pp.municipio, bairro: pp.bairro,
                 total: stats.total ?? 0, population: stats.population,
                 isUnknown: false, loading: false,
                 ...(stats.crime_types ? { crime_types: stats.crime_types.map((ct: any) => ({ tipo: ct.tipo_enquadramento || ct.tipo, count: ct.count })) } : {}),
