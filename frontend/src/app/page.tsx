@@ -488,11 +488,13 @@ export default function Home() {
 
   const onDetailOpen = useCallback((data: any) => {
     const panelId = data.actionId || data.displayName || String(Date.now());
+    console.log('[onDetailOpen] called', { actionId: data.actionId, displayName: data.displayName, loading: data.loading, panelId });
     setDetailPanels(prev => {
       // Two-phase merge: only merge if same actionId (same click action)
       const existingIdx = data.actionId
         ? prev.findIndex(p => p.actionId === data.actionId)
         : -1;
+      console.log('[onDetailOpen] prev.length=' + prev.length + ' existingIdx=' + existingIdx + ' prev.ids=' + prev.map(p => p.id).join(','));
       if (existingIdx >= 0) {
         // Update existing panel (phase 2 of same click)
         const updated = [...prev];
@@ -507,6 +509,7 @@ export default function Home() {
           loading: data.loading ?? false,
           periodLabel,
         };
+        console.log('[onDetailOpen] updated panel, result.length=' + updated.length);
         return updated;
       }
       // Add new panel (max 5)
@@ -518,7 +521,9 @@ export default function Home() {
         periodLabel,
       };
       const newPanels = [...prev, newPanel];
-      return newPanels.length > 5 ? newPanels.slice(-5) : newPanels;
+      const result = newPanels.length > 5 ? newPanels.slice(-5) : newPanels;
+      console.log('[onDetailOpen] added new panel, result.length=' + result.length + ' ids=' + result.map(p => p.id).join(','));
+      return result;
     });
   }, [periodLabel]);
 
