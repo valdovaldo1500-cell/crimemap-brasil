@@ -552,7 +552,7 @@ def apply_filters(q, tipo=None, grupo=None, municipio=None, bairro=None, data_in
     elif semestre:
         q = q.filter(Crime.year_month.in_(semester_months(semestre)))
     elif ano:
-        q = q.filter(Crime.year_month.like(f"{ano}-%"))
+        q = q.filter(Crime.year_month.between(f"{ano}-01", f"{ano}-12"))
     if idade_min is not None: q = q.filter(Crime.idade_vitima >= idade_min)
     if idade_max is not None: q = q.filter(Crime.idade_vitima <= idade_max)
     if sexo: q = q.filter(Crime.sexo_vitima.in_(sexo))
@@ -619,7 +619,7 @@ def heatmap_municipios(request: Request,
         threshold_date, _, _ = _ultimos_meses_range(ultimos_meses)
         q = q.filter(Crime.data_fato >= threshold_date)
     elif semestre: q = q.filter(Crime.year_month.in_(semester_months(semestre)))
-    elif ano: q = q.filter(Crime.year_month.like(f"{ano}-%"))
+    elif ano: q = q.filter(Crime.year_month.between(f"{ano}-01", f"{ano}-12"))
     if idade_min is not None: q = q.filter(Crime.idade_vitima >= idade_min)
     if idade_max is not None: q = q.filter(Crime.idade_vitima <= idade_max)
     if sexo: q = q.filter(Crime.sexo_vitima.in_(sexo))
@@ -752,7 +752,7 @@ def heatmap_bairros(request: Request,
         threshold_date, _, _ = _ultimos_meses_range(ultimos_meses)
         q = q.filter(Crime.data_fato >= threshold_date)
     elif semestre: q = q.filter(Crime.year_month.in_(semester_months(semestre)))
-    elif ano: q = q.filter(Crime.year_month.like(f"{ano}-%"))
+    elif ano: q = q.filter(Crime.year_month.between(f"{ano}-01", f"{ano}-12"))
     if idade_min is not None: q = q.filter(Crime.idade_vitima >= idade_min)
     if idade_max is not None: q = q.filter(Crime.idade_vitima <= idade_max)
     if sexo: q = q.filter(Crime.sexo_vitima.in_(sexo))
@@ -1249,7 +1249,7 @@ def filter_options(request: Request,
         elif semestre:
             q = q.filter(Crime.year_month.in_(semester_months(semestre)))
         elif ano:
-            q = q.filter(Crime.year_month.like(f"{ano}-%"))
+            q = q.filter(Crime.year_month.between(f"{ano}-01", f"{ano}-12"))
         if skip != 'sexo' and sexo:
             q = q.filter(Crime.sexo_vitima.in_(sexo))
         if skip != 'cor' and cor:
@@ -1400,7 +1400,7 @@ def location_stats(request: Request,
     elif semestre:
         q = q.filter(Crime.year_month.in_(semester_months(semestre)))
     elif ano:
-        q = q.filter(Crime.year_month.like(f"{ano}-%"))
+        q = q.filter(Crime.year_month.between(f"{ano}-01", f"{ano}-12"))
     if tipo:
         q = q.filter(Crime.tipo_enquadramento.in_(tipo))
     if grupo:
@@ -1539,7 +1539,7 @@ def state_stats(request: Request,
     elif semestre:
         q = q.filter(Crime.year_month.in_(semester_months(semestre)))
     elif ano:
-        q = q.filter(Crime.year_month.like(f"{ano}-%"))
+        q = q.filter(Crime.year_month.between(f"{ano}-01", f"{ano}-12"))
     if effective_tipo:
         q = q.filter(Crime.tipo_enquadramento.in_(effective_tipo))
     if grupo:
@@ -1987,7 +1987,7 @@ def heatmap_states(request: Request,
         threshold_date, _, _ = _ultimos_meses_range(ultimos_meses)
         q1 = q1.filter(Crime.data_fato >= threshold_date)
     elif semestre: q1 = q1.filter(Crime.year_month.in_(semester_months(semestre)))
-    elif ano: q1 = q1.filter(Crime.year_month.like(f"{ano}-%"))
+    elif ano: q1 = q1.filter(Crime.year_month.between(f"{ano}-01", f"{ano}-12"))
     if idade_min is not None: q1 = q1.filter(Crime.idade_vitima >= idade_min)
     if idade_max is not None: q1 = q1.filter(Crime.idade_vitima <= idade_max)
     if sexo: q1 = q1.filter(Crime.sexo_vitima.in_(sexo))
@@ -2040,7 +2040,7 @@ def heatmap_states(request: Request,
                 threshold_date, _, _ = _ultimos_meses_range(ultimos_meses)
                 bq = bq.filter(Crime.data_fato >= threshold_date)
             elif semestre: bq = bq.filter(Crime.year_month.in_(semester_months(semestre)))
-            elif ano: bq = bq.filter(Crime.year_month.like(f"{ano}-%"))
+            elif ano: bq = bq.filter(Crime.year_month.between(f"{ano}-01", f"{ano}-12"))
             if idade_min is not None: bq = bq.filter(Crime.idade_vitima >= idade_min)
             if idade_max is not None: bq = bq.filter(Crime.idade_vitima <= idade_max)
             if sexo: bq = bq.filter(Crime.sexo_vitima.in_(sexo))
@@ -2101,7 +2101,7 @@ def data_availability(request: Request,
         elif semestre:
             cq = cq.filter(Crime.year_month.in_(semester_months(semestre)))
         elif ano:
-            cq = cq.filter(Crime.year_month.like(f"{ano}-%"))
+            cq = cq.filter(Crime.year_month.between(f"{ano}-01", f"{ano}-12"))
         crimes_count = cq.scalar() or 0
 
         # Check staging table
