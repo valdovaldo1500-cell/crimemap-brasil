@@ -252,6 +252,8 @@ export default function Home() {
       }
     } else {
       setZoom(item.type === 'bairro' ? 14 : 12);
+      // Clear state selection when navigating to a city/bairro to avoid stale state filter
+      setSelectedStates([]);
     }
     setSearchQ(item.name);
     setShowSuggestions(false);
