@@ -413,8 +413,9 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
       if (onToggleState) onToggleState(sigla);
       // Open DetailPanel with state stats
       if (onDetailOpenRef.current) {
+        const actionId = String(Date.now());
         const displayName2 = `${stateName} (${sigla})`;
-        onDetailOpenRef.current({ displayName: displayName2, municipio: '', state: sigla, total: weight, population, isUnknown: false, loading: true });
+        onDetailOpenRef.current({ actionId, displayName: displayName2, municipio: '', state: sigla, total: weight, population, isUnknown: false, loading: true });
         try {
           const f = filtersRef.current;
           const stats = await fetchStateStats({
@@ -424,7 +425,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
             ultimos_meses: f.ultimos_meses,
             selected_states: selectedStates,
           });
-          onDetailOpenRef.current({ displayName: displayName2, municipio: '', state: sigla,
+          onDetailOpenRef.current({ actionId, displayName: displayName2, municipio: '', state: sigla,
             total: stats.total ?? weight, population: stats.population ?? population, isUnknown: false, loading: false,
             ...(stats.crime_types ? { crime_types: stats.crime_types.map((ct: any) => ({ tipo: ct.tipo_enquadramento || ct.tipo, count: ct.count })) } : {}),
           } as any);
