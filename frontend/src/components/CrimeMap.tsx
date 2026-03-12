@@ -319,8 +319,9 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
       }
       // Use DetailPanel when available
       if (onDetailOpenRef.current) {
+        const actionId = `${Date.now()}-${Math.random()}`;
         const isUnknown = bairro === 'Bairro desconhecido';
-        onDetailOpenRef.current({ displayName, municipio, bairro, state, total: count, population, components, isUnknown, loading: !isUnknown });
+        onDetailOpenRef.current({ actionId, displayName, municipio, bairro, state, total: count, population, components, isUnknown, loading: !isUnknown });
         if (isUnknown) return; // no stats fetch for unknown bairros
         try {
           const f = filtersRef.current;
@@ -331,7 +332,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
             idade_min: f.idade_min, idade_max: f.idade_max,
             ultimos_meses: f.ultimos_meses,
           });
-          onDetailOpenRef.current({ displayName, municipio, bairro, state, total: count, population: stats.population ?? population, components,
+          onDetailOpenRef.current({ actionId, displayName, municipio, bairro, state, total: count, population: stats.population ?? population, components,
             isUnknown: false, loading: false,
             // pass crime_types via the callback — page.tsx will merge
             ...(stats.crime_types ? { crime_types: stats.crime_types.map((ct: any) => ({ tipo: ct.tipo_enquadramento || ct.tipo, count: ct.count })) } : {}),
