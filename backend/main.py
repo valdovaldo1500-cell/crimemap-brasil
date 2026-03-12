@@ -2246,8 +2246,9 @@ def data_sources(db: Session = Depends(get_db)):
         if src["source_prefix"] is None:
             # RS data from crimes table
             entry["record_count"] = db.query(func.count(Crime.id)).filter(Crime.state == "RS").scalar() or 0
-            # Last updated from most recent data_fato
-            entry["last_updated"] = None
+            # Last updated from most recent crime record date
+            max_date = db.query(func.max(Crime.data_fato)).filter(Crime.state == "RS").scalar()
+            entry["last_updated"] = max_date if max_date else None
         else:
             entry["record_count"] = db.query(func.count(CrimeStaging.id)).filter(
                 CrimeStaging.source.like(f"{src['source_prefix']}%")
