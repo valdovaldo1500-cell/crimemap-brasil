@@ -595,6 +595,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
                   (layer as any).setStyle({ fillOpacity: hasSelection && !isSelected ? 0.20 : 0.45, color: usePurple ? '#6d28d9' : '#3b82f6', weight: 1.5 });
                 });
                 layer.on('click', async () => {
+                  console.log('[unselected state click] sigla=' + sigla);
                   if (compareModeRef.current && onCompareSelectRef.current) {
                     onCompareSelectRef.current({ municipio: '', state: sigla, displayName: `${name} (${sigla})` });
                     return;
@@ -603,6 +604,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
                   if (onDetailOpenRef.current) {
                     const actionId = `${Date.now()}-${Math.random()}`;
                     const dn = `${name} (${sigla})`;
+                    console.log('[unselected state] calling onDetailOpen phase1 actionId=' + actionId);
                     onDetailOpenRef.current({ actionId, displayName: dn, municipio: '', state: sigla, total: 0, isUnknown: false, loading: true });
                     try {
                       const f = filtersRef.current;
