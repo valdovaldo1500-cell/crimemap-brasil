@@ -8,8 +8,8 @@ def test_auto_ingest_no_new_urls():
          patch('services.data_ingestion.ingest_and_geocode') as mock_ingest:
         auto_ingest_job()
 
-    # Called once per state (RS, SP)
-    assert mock_urls.call_count == 2
+    # Called once for RS only (SP removed from pipeline)
+    assert mock_urls.call_count == 1
     mock_ingest.assert_not_called()
 
 
