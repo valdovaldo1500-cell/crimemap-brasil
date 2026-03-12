@@ -16,6 +16,7 @@ const DATA_SOURCES = [
 
 function prettifyCrimeType(s: string): string {
   return s.toLowerCase()
+    .replace(/_/g, ' ')
     .replace(/\bacao\b/g, 'ação').replace(/acoes\b/g, 'ações')
     .replace(/ameaca/g, 'ameaça').replace(/anca\b/g, 'ança')
     .replace(/encia\b/g, 'ência').replace(/ancia\b/g, 'ância')
