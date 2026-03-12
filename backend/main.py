@@ -523,6 +523,7 @@ async def startup():
             "CREATE INDEX IF NOT EXISTS idx_state_sexo ON crimes(state, sexo_vitima)",
             "CREATE INDEX IF NOT EXISTS idx_state_cor ON crimes(state, cor_vitima)",
             "CREATE INDEX IF NOT EXISTS idx_state_ym_tipo ON crimes(state, year_month, tipo_enquadramento)",
+            "CREATE INDEX IF NOT EXISTS idx_mun_ym ON crimes(municipio_fato, year_month)",
             "CREATE INDEX IF NOT EXISTS idx_staging_state_type_counts ON crimes_staging(state, crime_type, occurrences, victims)",
             "CREATE INDEX IF NOT EXISTS idx_staging_state_mun ON crimes_staging(state, municipio)",
         ]:
