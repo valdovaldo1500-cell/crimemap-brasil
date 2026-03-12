@@ -1351,6 +1351,7 @@ def filter_options(request: Request,
         cor_opts = []
 
     states = selected_states or []
+    compatible = {}
     if len(states) >= 2 and any(s not in ('RS', 'SP') for s in states):
         from services.crime_categories import get_compatible_types
         compatible = get_compatible_types(states)
@@ -1375,7 +1376,14 @@ def filter_options(request: Request,
         [s for s in selected_states if s not in ('RS', 'SP')] if selected_states
         else ["RJ", "MG"]  # default view always shows all 3 states
     )
-    rs_total = apply_common(base_query()).count() if has_crimes_states else 0
+    # When a partial state (MG) is selected with RS, restrict RS total to compatible types
+    # so both sides of the sum count the same crime categories (e.g. exclude drogas from RS).
+    has_partial_state = 'MG' in states
+    rs_compat_types = compatible.get('RS') if has_partial_state and not tipo else None
+    rs_total_q = apply_common(base_query())
+    if rs_compat_types:
+        rs_total_q = rs_total_q.filter(Crime.tipo_enquadramento.in_(rs_compat_types))
+    rs_total = rs_total_q.count() if has_crimes_states else 0
     staging_sum = 0
     if staging_total_states:
         st_q = db.query(func.sum(CrimeStaging.occurrences)).filter(
