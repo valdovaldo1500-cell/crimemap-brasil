@@ -7,24 +7,23 @@ _scheduler: BackgroundScheduler | None = None
 
 
 def auto_ingest_job():
-    """Periodic job: check SSP for new files, ingest, geocode."""
+    """Periodic job: check SSP/RS for new files, ingest, geocode."""
     from services.update_checker import get_new_urls
     from services.data_ingestion import ingest_and_geocode
-    for state in ["RS", "SP"]:
-        new_urls = get_new_urls(state=state)
-        if not new_urls:
-            logger.info(f"No new data files found for {state}")
-            continue
-        for url in new_urls:
-            try:
-                count = ingest_and_geocode(url, state=state)
-                logger.info(f"Ingested {count} records from {url} (state={state})")
-            except Exception as e:
-                logger.error(f"Failed to ingest {url}: {e}")
+    new_urls = get_new_urls(state="RS")
+    if not new_urls:
+        logger.info("No new data files found for RS")
+        return
+    for url in new_urls:
+        try:
+            count = ingest_and_geocode(url, state="RS")
+            logger.info(f"Ingested {count} records from {url} (state=RS)")
+        except Exception as e:
+            logger.error(f"Failed to ingest {url}: {e}")
 
 
 def staging_refresh_job():
-    """Periodic job: refresh all staging data (SINESP, RJ ISP, MG)."""
+    """Periodic job: refresh all staging data (RJ ISP CISP, MG violent crimes)."""
     from services.staging_loader import refresh_staging_data
     try:
         results = refresh_staging_data()

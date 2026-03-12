@@ -5,7 +5,6 @@ from database import DataSource, SessionLocal
 logger = logging.getLogger(__name__)
 
 SSP_RS_URL = "https://www.ssp.rs.gov.br/dados-abertos"
-SP_SSP_URL = "https://www.ssp.sp.gov.br/estatistica/dados-abertos"  # placeholder
 
 def check_for_new_data_rs():
     try:
@@ -23,17 +22,10 @@ def check_for_new_data_rs():
         logger.error(f"Error checking RS updates: {e}")
         return []
 
-def check_for_new_data_sp():
-    """SP SSP data check — not yet implemented."""
-    logger.info("SP data check not yet implemented")
-    return []
-
 def get_new_urls(state="RS"):
     db = SessionLocal()
     if state == "RS":
         all_links = check_for_new_data_rs()
-    elif state == "SP":
-        all_links = check_for_new_data_sp()
     else:
         all_links = []
     ingested = {ds.url for ds in db.query(DataSource).all()}
