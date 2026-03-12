@@ -177,3 +177,29 @@ Source: IBGE API for municipality/state boundaries.
 - heatmap_bairros endpoint → check detail panel consistency (location-stats must match)
 - filter-options endpoint → verify cascading filters still work for RS, RJ, MG
 - fetch_bairro_boundaries.py → re-run for RS, check feature count, check POA unknown%
+- staging_loader dedup logic → run `python3 qa_full_accuracy.py` (see QA Accuracy below)
+- year_month query filters → run `python3 qa_full_accuracy.py` + check perf warns
+
+## QA Accuracy
+
+`qa_full_accuracy.py` (project root) — compares API output against original source files:
+- RS: counts from ZIPs in `backend/data/*.zip` (latin-1 encoded)
+- RJ: sums from `backend/data/staging/rj_isp_cisp.csv`
+- MG: sums from `backend/data/staging/mg_violent_*.csv`
+
+```bash
+python3 qa_full_accuracy.py
+# Expected: 68 PASS | 0 FAIL | ≤1 PERF WARN
+```
+
+### Known data design decisions:
+- **MG double-count fix**: SINESP VDE rows for MG are deleted after load (same as RJ). SEJUSP mg_violent is the preferred source. MG is "partial" state — violent crimes only.
+- **RJ dedup**: SINESP VDE rows for RJ deleted after load. ISP CISP is the preferred source.
+- **Overlap, not additive**: For RS cities, staging data is NOT added to crimes table — the crimes table is used directly (richer, bairro-level).
+
+## Performance Notes
+
+Key indexes on `crimes` table for year-filtered queries:
+- `idx_state_ym_tipo(state, year_month, tipo_enquadramento)` — covering index for state stats GROUP BY
+- `idx_mun_ym(municipio_fato, year_month)` — narrows city/bairro queries by year before UDF
+- Year filter: always use `BETWEEN '{ano}-01' AND '{ano}-12'` (not `LIKE '{ano}-%'`) — SQLite uses covering index for BETWEEN but not LIKE
