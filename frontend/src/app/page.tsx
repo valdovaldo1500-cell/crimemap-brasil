@@ -337,6 +337,9 @@ export default function Home() {
     }
   }, [maxGranularity, selectedPeriod]);
 
+  // Clear search when switching to state-level aggregation
+  useEffect(() => { if (aggregationOverride === 'estados') setSearchQ(''); }, [aggregationOverride]);
+
   // Check data availability when year/period or selected states change
   const STATE_FULL_NAMES: Record<string, string> = { RS: 'Rio Grande do Sul', RJ: 'Rio de Janeiro', MG: 'Minas Gerais' };
   useEffect(() => {
