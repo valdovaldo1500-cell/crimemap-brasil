@@ -1,6 +1,22 @@
 'use client';
 import { useState, useRef, useCallback, useEffect } from 'react';
 
+function prettifyCrimeType(s: string): string {
+  return s.toLowerCase()
+    .replace(/_/g, ' ')
+    .replace(/\bacao\b/g, 'ação').replace(/acoes\b/g, 'ações')
+    .replace(/ameaca/g, 'ameaça').replace(/anca\b/g, 'ança')
+    .replace(/encia\b/g, 'ência').replace(/ancia\b/g, 'ância')
+    .replace(/icao\b/g, 'ição').replace(/ucao\b/g, 'ução')
+    .replace(/ecao\b/g, 'eção')
+    .replace(/omica/g, 'ômica').replace(/omico/g, 'ômico')
+    .replace(/orcao/g, 'orção')
+    .replace(/\bcrianca/g, 'criança')
+    .replace(/prostituicao/g, 'prostituição')
+    .replace(/corrupcao/g, 'corrupção')
+    .replace(/(^|\s)\S/g, c => c.toUpperCase());
+}
+
 interface DetailPanelProps {
   data: {
     id?: string;
