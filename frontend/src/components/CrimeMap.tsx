@@ -414,7 +414,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
       if (onToggleState) onToggleState(sigla);
       // Open DetailPanel with state stats
       if (onDetailOpenRef.current) {
-        const actionId = String(Date.now());
+        const actionId = `${Date.now()}-${Math.random()}`;
         const displayName2 = `${stateName} (${sigla})`;
         onDetailOpenRef.current({ actionId, displayName: displayName2, municipio: '', state: sigla, total: weight, population, isUnknown: false, loading: true });
         try {
@@ -599,7 +599,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
                   }
                   if (onToggleState) onToggleState(sigla);
                   if (onDetailOpenRef.current) {
-                    const actionId = String(Date.now());
+                    const actionId = `${Date.now()}-${Math.random()}`;
                     const dn = `${name} (${sigla})`;
                     onDetailOpenRef.current({ actionId, displayName: dn, municipio: '', state: sigla, total: 0, isUnknown: false, loading: true });
                     try {
