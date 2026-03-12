@@ -407,6 +407,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
     }
     l.bindTooltip(tip, { sticky: true });
     l.on('click', async () => {
+      console.log('[bindStateInteractions click] sigla=' + sigla);
       if (compareModeRef.current && onCompareSelectRef.current) {
         onCompareSelectRef.current({ municipio: '', state: sigla, displayName: `${stateName} (${sigla})` });
         return;
@@ -416,6 +417,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
       if (onDetailOpenRef.current) {
         const actionId = `${Date.now()}-${Math.random()}`;
         const displayName2 = `${stateName} (${sigla})`;
+        console.log('[bindStateInteractions] calling onDetailOpen phase1 actionId=' + actionId);
         onDetailOpenRef.current({ actionId, displayName: displayName2, municipio: '', state: sigla, total: weight, population, isUnknown: false, loading: true });
         try {
           const f = filtersRef.current;
