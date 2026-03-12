@@ -11,7 +11,6 @@ const DATA_SOURCES = [
   { state: 'RS', name: 'SSP/RS', quality: 'full' as const },
   { state: 'RJ', name: 'ISP/RJ', quality: 'full' as const },
   { state: 'MG', name: 'SEJUSP/MG', quality: 'partial' as const, caveat: 'Apenas crimes violentos' },
-  { state: 'SINESP', name: 'Ministério da Justiça e Segurança Pública', quality: 'basic' as const },
 ];
 
 function prettifyCrimeType(s: string): string {
