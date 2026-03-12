@@ -229,7 +229,7 @@ export default function DetailPanel({ data, onClose, stackIndex = 0, onFocus, ra
                 <div className="space-y-0.5 max-h-60 overflow-y-auto">
                   {data.crime_types.map((ct, i) => (
                     <div key={i} className="flex items-center text-xs gap-1">
-                      <span className="text-[#cbd5e1] truncate flex-1">{ct.tipo}</span>
+                      <span className="text-[#cbd5e1] truncate flex-1">{prettifyCrimeType(ct.tipo)}</span>
                       <span className="font-mono text-[#64748b] whitespace-nowrap">{data.total > 0 ? ((ct.count / data.total) * 100).toFixed(1) : '0.0'}%</span>
                       <span className="font-mono text-[#94a3b8] whitespace-nowrap w-14 text-right">{rateMode === 'rate' && data.population ? (ct.count / data.population * 100000).toFixed(1) : ct.count.toLocaleString()}</span>
                     </div>
