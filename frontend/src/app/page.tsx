@@ -490,7 +490,7 @@ export default function Home() {
     const panelId = data.displayName || String(Date.now());
     setDetailPanels(prev => {
       // Check if panel with same displayName exists (for two-phase merge)
-      const existingIdx = prev.findIndex(p => p.displayName === data.displayName);
+      const existingIdx = prev.findIndex(p => p.displayName === data.displayName && p.periodLabel === periodLabel);
       if (existingIdx >= 0) {
         // Update existing panel
         const updated = [...prev];
