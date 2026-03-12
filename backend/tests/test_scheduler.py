@@ -20,8 +20,8 @@ def test_auto_ingest_with_new_urls():
          patch('services.data_ingestion.ingest_and_geocode', return_value=100) as mock_ingest:
         auto_ingest_job()
 
-    # 2 URLs × 2 states (RS, SP) = 4 calls
-    assert mock_ingest.call_count == 4
+    # 2 URLs × 1 state (RS only, SP removed from pipeline) = 2 calls
+    assert mock_ingest.call_count == 2
 
 
 def test_scheduler_starts_stops():
