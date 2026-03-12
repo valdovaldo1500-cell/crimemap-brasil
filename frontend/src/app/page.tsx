@@ -177,14 +177,14 @@ export default function Home() {
   const [initialLoading, setInitialLoading] = useState(true);
   useEffect(() => {
     Promise.all([
-      fetchStats().then(setStats),
       fetchSemesters().then((s: string[]) => { setSemesters(s); if (s.length > 0) { setSelectedYear(s[0].split('-')[0]); setSelectedPeriod('12m'); } }),
-      fetchFilterOptions({}).then((opts: any) => {
+      fetchFilterOptions({ ultimos_meses: 12 }).then((opts: any) => {
         const VALID_GRUPOS = ['CRIMES', 'CONTRAVENCOES'];
         setCrimeTypes((opts.tipo || []).map((t: any) => ({ tipo_enquadramento: t.value, count: t.count })));
         setGrupoValues((opts.grupo || []).filter((g: any) => VALID_GRUPOS.includes(g.value)));
         setSexoValues(opts.sexo || []);
         setCorValues(opts.cor || []);
+        if (opts.total !== undefined) setStats({ total_crimes: opts.total });
       }),
       fetchAvailableStates().then(setAvailableStates).catch(() => {}),
       fetchSystemInfo().then(setSystemInfo).catch(() => {}),
