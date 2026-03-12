@@ -2211,16 +2211,6 @@ def data_sources(db: Session = Depends(get_db)):
             "source_prefix": "mg_violent",
             "files": ["mg_violent_0.csv"],
         },
-        {
-            "id": "sinesp_vde",
-            "name": "Ministério da Justiça e Segurança Pública",
-            "state": "Todos",
-            "quality": "basic",
-            "url": None,
-            "description": "Sistema Nacional de Estatísticas de Segurança Pública (15 tipos de crime)",
-            "source_prefix": "sinesp",
-            "files": ["sinesp_municipal.xlsx", "sinesp_uf.xlsx"],
-        },
     ]
 
     def _file_mtime(filename):
