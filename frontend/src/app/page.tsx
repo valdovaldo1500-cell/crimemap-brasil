@@ -286,6 +286,7 @@ export default function Home() {
   const PARTIAL_STATES = ['MG'];
 
   const toggleState = useCallback((sigla: string) => {
+    setSearchQ('');
     const isPartial = PARTIAL_STATES.includes(sigla);
     const isAdding = !selectedStates.includes(sigla);
     if (isAdding && isPartial && selectedStates.length > 0) {
