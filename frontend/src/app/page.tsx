@@ -558,6 +558,41 @@ export default function Home() {
     });
   }, [periodLabel]);
 
+  const openStateDetail = useCallback(async (sigla: string, name: string) => {
+    if (['MG'].includes(sigla)) {
+      setDetailPanels(prev => prev.filter((p: any) => !p.state || p.state === sigla));
+    }
+    const actionId = `${Date.now()}-${Math.random()}`;
+    const displayName = `${name} (${sigla})`;
+    onDetailOpen({ actionId, displayName, municipio: '', state: sigla, total: 0, isUnknown: false, loading: true });
+    try {
+      const stats = await fetchStateStats({
+        state: sigla, semestre: filters.semestre, ano: filters.ano, tipo: filters.tipo,
+        grupo: filters.grupo, sexo: filters.sexo, cor: filters.cor,
+        idade_min: filters.idade_min, idade_max: filters.idade_max,
+        ultimos_meses: filters.ultimos_meses,
+        selected_states: selectedStates,
+      });
+      onDetailOpen({ actionId, displayName, municipio: '', state: sigla,
+        total: stats.total ?? 0, population: stats.population, isUnknown: false, loading: false,
+        ...(stats.crime_types ? { crime_types: stats.crime_types.map((ct: any) => ({ tipo: ct.tipo_enquadramento || ct.tipo, count: ct.count })) } : {}),
+      } as any);
+    } catch (err) {
+      console.error('Failed to load state stats:', err);
+    }
+  }, [filters, selectedStates, onDetailOpen]);
+
+  const handleStateMenu = useCallback((sigla: string, name: string, x: number, y: number) => {
+    setStateMenu({ sigla, name, x, y });
+  }, []);
+
+  useEffect(() => {
+    if (!stateMenu) return;
+    const handler = () => setStateMenu(null);
+    window.addEventListener('mousedown', handler);
+    return () => window.removeEventListener('mousedown', handler);
+  }, [stateMenu]);
+
   // Re-fetch open DetailPanels when filters change
   const detailPanelsRef = useRef(detailPanels);
   detailPanelsRef.current = detailPanels;
