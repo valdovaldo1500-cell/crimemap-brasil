@@ -4,6 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { fetchHeatmapMunicipios, fetchHeatmapBairros, fetchHeatmapStates, fetchLocationStats, fetchStateStats } from '@/lib/api';
 import { normalizeGeoName } from '@/lib/normalize';
+import { trackEvent } from '@/lib/analytics';
 interface Props {
   center:[number,number]; zoom:number; filters:any;
   viewMode?:'dots'|'choropleth'; rateMode?:'rate'|'absolute';
