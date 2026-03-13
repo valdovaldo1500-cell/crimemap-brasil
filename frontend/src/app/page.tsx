@@ -277,7 +277,13 @@ export default function Home() {
   const onSelectYear = useCallback((yr: string) => {
     setSelectedYear(yr);
     setSelectedPeriod(prev => prev === '12m' ? 'ano' : prev);
+    trackEvent('time_period_changed', { mode: 'ano', year: yr });
   }, []);
+
+  const selectPeriod = (period: '12m' | 'ano' | 'S1' | 'S2') => {
+    setSelectedPeriod(period);
+    trackEvent('time_period_changed', { mode: period, year: selectedYear });
+  };
 
   const toggleType = (t: string) => { const adding = !selectedTypes.includes(t); setSelectedTypes(p => adding ? [...p, t] : p.filter(x => x !== t)); trackEvent(adding ? 'filter_applied' : 'filter_cleared', { filter_type: 'crime_type', value: t }); };
   const toggleSexo = (v: string) => { const adding = !selectedSexo.includes(v); setSelectedSexo(p => adding ? [...p, v] : p.filter(x => x !== v)); trackEvent(adding ? 'filter_applied' : 'filter_cleared', { filter_type: 'sexo', value: v }); };
