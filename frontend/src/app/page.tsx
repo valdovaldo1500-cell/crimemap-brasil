@@ -704,6 +704,7 @@ export default function Home() {
         hcaptcha_token: hcaptchaToken,
       });
       setBugSuccess(true);
+      trackEvent('bug_report_submitted');
     } catch (err: any) {
       setBugError(err.message || 'Erro ao enviar');
       setHcaptchaToken('');
