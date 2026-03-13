@@ -425,6 +425,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
     l.bindTooltip(tip, { sticky: true });
     l.on('click', (e: any) => {
       console.log('[bindStateInteractions click] sigla=' + sigla);
+      trackEvent('state_click', { state_name: stateName, crime_count: count, view_mode: viewModeRef.current ?? 'choropleth' });
       if (compareModeRef.current && onCompareSelectRef.current) {
         onCompareSelectRef.current({ municipio: '', state: sigla, displayName: `${stateName} (${sigla})` });
         return;
