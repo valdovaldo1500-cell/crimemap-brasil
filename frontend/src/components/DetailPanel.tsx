@@ -49,6 +49,9 @@ interface DetailPanelProps {
     isUnknown?: boolean;
     loading?: boolean;
     periodLabel?: string;
+    state?: string;
+    municipio?: string;
+    bairro?: string;
   } | null;
   onClose: () => void;
   stackIndex?: number;
