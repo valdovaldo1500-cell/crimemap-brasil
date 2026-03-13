@@ -576,34 +576,14 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
                   const usePurple = compareModeRef.current && (comparisonLocationsRef.current?.length ?? 0) < 2;
                   (layer as any).setStyle({ fillOpacity: hasSelection && !isSelected ? 0.20 : 0.45, color: usePurple ? '#6d28d9' : '#3b82f6', weight: 1.5 });
                 });
-                layer.on('click', async () => {
+                layer.on('click', (e: any) => {
                   console.log('[unselected state click] sigla=' + sigla);
                   if (compareModeRef.current && onCompareSelectRef.current) {
                     onCompareSelectRef.current({ municipio: '', state: sigla, displayName: `${name} (${sigla})` });
                     return;
                   }
-                  if (onToggleState) onToggleState(sigla);
-                  if (onDetailOpenRef.current) {
-                    const actionId = `${Date.now()}-${Math.random()}`;
-                    const dn = `${name} (${sigla})`;
-                    console.log('[unselected state] calling onDetailOpen phase1 actionId=' + actionId);
-                    onDetailOpenRef.current({ actionId, displayName: dn, municipio: '', state: sigla, total: 0, isUnknown: false, loading: true });
-                    try {
-                      const f = filtersRef.current;
-                      const stats = await fetchStateStats({
-                        state: sigla, semestre: f.semestre, ano: f.ano, tipo: f.tipo,
-                        grupo: f.grupo, sexo: f.sexo, cor: f.cor,
-                        idade_min: f.idade_min, idade_max: f.idade_max,
-                        ultimos_meses: f.ultimos_meses,
-                        selected_states: selectedStates,
-                      });
-                      onDetailOpenRef.current({ actionId, displayName: dn, municipio: '', state: sigla,
-                        total: stats.total ?? 0, population: stats.population, isUnknown: false, loading: false,
-                        ...(stats.crime_types ? { crime_types: stats.crime_types.map((ct: any) => ({ tipo: ct.tipo_enquadramento || ct.tipo, count: ct.count })) } : {}),
-                      } as any);
-                    } catch (err) {
-                      console.error('Failed to load state stats:', err);
-                    }
+                  if (onStateMenuRef.current) {
+                    onStateMenuRef.current(sigla, name, e.originalEvent.clientX, e.originalEvent.clientY);
                   }
                 });
               }
