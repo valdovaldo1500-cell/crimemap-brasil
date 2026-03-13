@@ -1269,6 +1269,28 @@ export default function Home() {
               </>
             )}
           </div>
+          {stateMenu && (
+            <div
+              onMouseDown={e => e.stopPropagation()}
+              style={{ position: 'fixed', left: stateMenu.x + 8, top: stateMenu.y + 8, zIndex: 2000 }}
+              className="bg-[#111827]/95 backdrop-blur-xl border border-[#334155] rounded-xl shadow-2xl p-1 flex flex-col min-w-[200px]"
+            >
+              <button
+                onClick={() => { toggleState(stateMenu.sigla); setStateMenu(null); }}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-[#e2e8f0] hover:bg-[#1e293b] text-left w-full"
+              >
+                <span className="w-4 text-center text-xs font-bold">{selectedStates.includes(stateMenu.sigla) ? '×' : '+'}</span>
+                {selectedStates.includes(stateMenu.sigla) ? 'Desmarcar estado' : 'Selecionar estado'}
+              </button>
+              <button
+                onClick={() => { openStateDetail(stateMenu.sigla, stateMenu.name); setStateMenu(null); }}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-[#e2e8f0] hover:bg-[#1e293b] text-left w-full"
+              >
+                <span className="w-4 text-center text-xs">↗</span>
+                Ver estatísticas detalhadas
+              </button>
+            </div>
+          )}
           {detailPanels.map((panel, idx) => (
             <DetailPanel
               key={panel.id}
