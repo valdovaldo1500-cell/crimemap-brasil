@@ -289,7 +289,7 @@ export default function Home() {
     setSearchQ('');
     const isPartial = PARTIAL_STATES.includes(sigla);
     const isAdding = !selectedStates.includes(sigla);
-    if (isAdding && isPartial && selectedStates.length > 0) {
+    if (isAdding && isPartial) {
       setPendingMgToggle(sigla);
       setShowMgWarning(true);
       return;
