@@ -20,17 +20,6 @@ export default function OgImage() {
           position: 'relative',
         }}
       >
-        {/* Subtle grid lines */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage:
-              'linear-gradient(rgba(59,130,246,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.05) 1px, transparent 1px)',
-            backgroundSize: '60px 60px',
-          }}
-        />
-
         {/* Bar chart logo group */}
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px', marginBottom: '32px' }}>
           <div style={{ width: '20px', height: '80px', borderRadius: '4px', background: '#3b82f6' }} />
