@@ -310,6 +310,7 @@ export default function Home() {
     }
     setShowMgWarning(false);
     setPendingMgToggle(null);
+    setDetailPanels([]);
   }, [pendingMgToggle]);
 
   const cancelMgWarning = useCallback(() => {
