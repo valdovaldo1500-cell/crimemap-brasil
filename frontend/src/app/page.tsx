@@ -537,6 +537,8 @@ export default function Home() {
     const panels = detailPanelsRef.current;
     if (!panels.length) return;
     panels.forEach(async (panel) => {
+      // Skip panels that were opened for a different time period — they are "snapshots"
+      if (panel.periodLabel && panel.periodLabel !== periodLabel) return;
       try {
         if (panel.state && !panel.municipio) {
           const stats = await fetchStateStats({
