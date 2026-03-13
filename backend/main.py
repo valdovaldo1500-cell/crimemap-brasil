@@ -1490,7 +1490,7 @@ def location_stats(request: Request,
             staging_filters.append(CrimeStaging.month.in_(list(month_range)))
         elif ano:
             staging_filters.append(CrimeStaging.year == int(ano))
-        if tipo: staging_filters.append(CrimeStaging.crime_type.in_(tipo))
+        if effective_tipo: staging_filters.append(CrimeStaging.crime_type.in_(effective_tipo))
         if sexo: staging_filters.append(CrimeStaging.sexo_vitima.in_(sexo))
         # Total from ALL types (not limited to top 10)
         total = int(db.query(
