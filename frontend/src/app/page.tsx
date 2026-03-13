@@ -97,6 +97,7 @@ export default function Home() {
   const [crimeTypeSearch, setCrimeTypeSearch] = useState('');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [detailPanels, setDetailPanels] = useState<any[]>([]);
+  const [stateMenu, setStateMenu] = useState<{ sigla: string; name: string; x: number; y: number } | null>(null);
 
   // State selection
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
