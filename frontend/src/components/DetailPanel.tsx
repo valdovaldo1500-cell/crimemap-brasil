@@ -65,6 +65,7 @@ export default function DetailPanel({ data, onClose, stackIndex = 0, onFocus, ra
   const [size, setSize] = useState({ w: 320, h: 0 }); // h=0 means auto
   const [dragging, setDragging] = useState(false);
   const [resizing, setResizing] = useState(false);
+  const [copied, setCopied] = useState(false);
   const dragStart = useRef({ x: 0, y: 0, px: 0, py: 0 });
   const resizeStart = useRef({ x: 0, y: 0, w: 0, h: 0 });
   const initialized = useRef(false);
