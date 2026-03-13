@@ -646,6 +646,7 @@ export default function Home() {
   const bairroResults = suggestions.filter(s => s.type === 'bairro');
 
   const openBugReport = () => {
+    trackEvent('bug_report_opened');
     setShowBugReport(true);
     setBugSuccess(false);
     setBugError('');
