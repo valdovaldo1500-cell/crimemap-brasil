@@ -1513,6 +1513,15 @@ def location_stats(request: Request,
     if pop is None:
         pop = get_municipio_population(municipio, lookup_state)
     crime_categories = categorize_crime_types(crime_types)
+    try:
+        db.add(ClickLog(
+            location_type='bairro' if bairro else 'municipio',
+            location_name=bairro if bairro else municipio,
+            state=state or 'RS',
+        ))
+        db.commit()
+    except Exception:
+        db.rollback()
     return {"municipio": municipio, "bairro": bairro, "total": total,
         "population": pop if pop else None,
         "crime_types": crime_types, "crime_categories": crime_categories}
