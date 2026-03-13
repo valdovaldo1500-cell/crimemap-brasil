@@ -1004,7 +1004,7 @@ export default function Home() {
             <div
               className={comparePos ? '' : 'absolute top-4 right-2 md:right-14 w-[calc(100vw-1rem)] sm:w-[441px]'}
               style={comparePos
-                ? { position: 'absolute', left: comparePos.x, top: comparePos.y, width: compareSize.w, zIndex: 1001 }
+                ? { position: 'absolute', left: comparePos.x, top: comparePos.y, width: compareSize.w, maxWidth: 'calc(100vw - 1rem)', zIndex: 1001 }
                 : { zIndex: 1001 }}
             >
               <div className="relative bg-[#111827]/95 backdrop-blur-xl border border-[#7c3aed]/40 rounded-xl p-3 shadow-2xl">
