@@ -1223,7 +1223,7 @@ export default function Home() {
               </>
             ) : (
               <>
-                {stats && <div><p className="text-base sm:text-lg md:text-2xl font-bold font-mono text-red-400">{stats.total_crimes?.toLocaleString()}</p><p className="text-[8px] md:text-[10px] text-[#94a3b8] uppercase tracking-wider">Ocorrências</p></div>}
+                {stats && <div>{filterLoading ? <div className="h-8 w-20 bg-[#1e293b] rounded animate-pulse mb-1" /> : <p className="text-base sm:text-lg md:text-2xl font-bold font-mono text-red-400">{stats.total_crimes?.toLocaleString()}</p>}<p className="text-[8px] md:text-[10px] text-[#94a3b8] uppercase tracking-wider">Ocorrências</p></div>}
                 <div><p className="text-base sm:text-lg md:text-2xl font-bold font-mono text-amber-400">{systemInfo?.total_municipios ?? '—'}</p><p className="text-[8px] md:text-[10px] text-[#94a3b8] uppercase tracking-wider">Municípios</p><p className="text-[7px] md:text-[8px] text-[#64748b]">no sistema</p></div>
                 <div><p className="text-base sm:text-lg md:text-2xl font-bold font-mono text-blue-400">{systemInfo ? `${systemInfo.period_start_year}–${systemInfo.period_end_year}` : '—'}</p><p className="text-[8px] md:text-[10px] text-[#94a3b8] uppercase tracking-wider">Dados disponíveis</p></div>
               </>
