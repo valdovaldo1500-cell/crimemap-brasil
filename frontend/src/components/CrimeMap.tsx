@@ -409,35 +409,14 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
         `<table style="margin-top:4px;border-top:1px solid #334155;padding-top:3px">${breakdownRows}</table>`;
     }
     l.bindTooltip(tip, { sticky: true });
-    l.on('click', async () => {
+    l.on('click', (e: any) => {
       console.log('[bindStateInteractions click] sigla=' + sigla);
       if (compareModeRef.current && onCompareSelectRef.current) {
         onCompareSelectRef.current({ municipio: '', state: sigla, displayName: `${stateName} (${sigla})` });
         return;
       }
-      if (onToggleState) onToggleState(sigla);
-      // Open DetailPanel with state stats
-      if (onDetailOpenRef.current) {
-        const actionId = `${Date.now()}-${Math.random()}`;
-        const displayName2 = `${stateName} (${sigla})`;
-        console.log('[bindStateInteractions] calling onDetailOpen phase1 actionId=' + actionId);
-        onDetailOpenRef.current({ actionId, displayName: displayName2, municipio: '', state: sigla, total: weight, population, isUnknown: false, loading: true });
-        try {
-          const f = filtersRef.current;
-          const stats = await fetchStateStats({
-            state: sigla, semestre: f.semestre, ano: f.ano, tipo: f.tipo,
-            grupo: f.grupo, sexo: f.sexo, cor: f.cor,
-            idade_min: f.idade_min, idade_max: f.idade_max,
-            ultimos_meses: f.ultimos_meses,
-            selected_states: selectedStates,
-          });
-          onDetailOpenRef.current({ actionId, displayName: displayName2, municipio: '', state: sigla,
-            total: stats.total ?? weight, population: stats.population ?? population, isUnknown: false, loading: false,
-            ...(stats.crime_types ? { crime_types: stats.crime_types.map((ct: any) => ({ tipo: ct.tipo_enquadramento || ct.tipo, count: ct.count })) } : {}),
-          } as any);
-        } catch (err) {
-          console.error('Failed to load state stats:', err);
-        }
+      if (onStateMenuRef.current) {
+        onStateMenuRef.current(sigla, stateName, e.originalEvent.clientX, e.originalEvent.clientY);
       }
     });
   };
