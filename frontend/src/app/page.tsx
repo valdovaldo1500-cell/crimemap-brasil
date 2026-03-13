@@ -245,6 +245,7 @@ export default function Home() {
   };
 
   const onSelect = (item: any) => {
+    trackEvent('search_select', { type: item.type, name: item.name, state: item.sigla || item.state || '' });
     setCenter([item.latitude, item.longitude]);
     if (item.type === 'state') {
       setZoom(7);
