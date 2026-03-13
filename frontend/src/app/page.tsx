@@ -304,6 +304,7 @@ export default function Home() {
     setSelectedStates(prev =>
       prev.includes(sigla) ? prev.filter(s => s !== sigla) : [...prev, sigla]
     );
+    trackEvent('state_selected', { state_name: sigla, action: isAdding ? 'selected' : 'deselected', states_count: isAdding ? selectedStates.length + 1 : selectedStates.length - 1 });
   }, [selectedStates]);
 
   const confirmMgWarning = useCallback(() => {
