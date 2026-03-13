@@ -323,6 +323,12 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
       trackPopup(l);
     }
     l.on('click', async () => {
+      // Track click
+      if (bairro) {
+        trackEvent('bairro_click', { bairro_name: bairro, municipality: municipio, state: state ?? '', crime_count: count });
+      } else {
+        trackEvent('municipality_click', { municipality_name: municipio, state: state ?? '', crime_count: count });
+      }
       // In compare mode, intercept click to select location for comparison
       if (compareModeRef.current && onCompareSelectRef.current) {
         onCompareSelectRef.current({ municipio, bairro, state, displayName });
