@@ -889,10 +889,10 @@ export default function Home() {
                   </select>
                 )}
                 <div className="flex flex-wrap gap-1">
-                  <button onClick={() => setSelectedPeriod('12m')} className={`px-2.5 py-1 text-xs rounded-lg ${selectedPeriod === '12m' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8]'}`}>12 meses</button>
-                  <button onClick={() => setSelectedPeriod('ano')} className={`px-2.5 py-1 text-xs rounded-lg ${selectedPeriod === 'ano' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8]'}`}>Ano</button>
-                  {availablePeriods.includes('S1') && <button onClick={() => setSelectedPeriod('S1')} className={`px-2.5 py-1 text-xs rounded-lg ${selectedPeriod === 'S1' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8]'}`}>Jan-Jun</button>}
-                  {availablePeriods.includes('S2') && <button onClick={() => setSelectedPeriod('S2')} className={`px-2.5 py-1 text-xs rounded-lg ${selectedPeriod === 'S2' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8]'}`}>Jul-Dez</button>}
+                  <button onClick={() => selectPeriod('12m')} className={`px-2.5 py-1 text-xs rounded-lg ${selectedPeriod === '12m' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8]'}`}>12 meses</button>
+                  <button onClick={() => selectPeriod('ano')} className={`px-2.5 py-1 text-xs rounded-lg ${selectedPeriod === 'ano' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8]'}`}>Ano</button>
+                  {availablePeriods.includes('S1') && <button onClick={() => selectPeriod('S1')} className={`px-2.5 py-1 text-xs rounded-lg ${selectedPeriod === 'S1' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8]'}`}>Jan-Jun</button>}
+                  {availablePeriods.includes('S2') && <button onClick={() => selectPeriod('S2')} className={`px-2.5 py-1 text-xs rounded-lg ${selectedPeriod === 'S2' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8]'}`}>Jul-Dez</button>}
                 </div>
               </div>
             )}
