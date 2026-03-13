@@ -898,12 +898,12 @@ export default function Home() {
             )}
             <div className="flex flex-wrap gap-2">
               <div className="flex rounded-xl border border-[#1e293b] overflow-hidden">
-                <button onClick={()=>setViewMode('choropleth')} className={`px-3 py-2 text-sm ${viewMode==='choropleth'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8]'}`}>Regiões</button>
-                <button onClick={()=>setViewMode('dots')} className={`px-3 py-2 text-sm ${viewMode==='dots'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8]'}`}>Pontos</button>
+                <button onClick={()=>{setViewMode('choropleth');trackEvent('view_mode_toggle',{mode:'choropleth'});}} className={`px-3 py-2 text-sm ${viewMode==='choropleth'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8]'}`}>Regiões</button>
+                <button onClick={()=>{setViewMode('dots');trackEvent('view_mode_toggle',{mode:'dots'});}} className={`px-3 py-2 text-sm ${viewMode==='dots'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8]'}`}>Pontos</button>
               </div>
               <div className="flex rounded-xl border border-[#1e293b] overflow-hidden">
-                <button onClick={()=>setRateMode('rate')} className={`px-3 py-2 text-sm ${rateMode==='rate'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8]'}`}>/100K</button>
-                <button onClick={()=>setRateMode('absolute')} className={`px-3 py-2 text-sm ${rateMode==='absolute'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8]'}`}>Total</button>
+                <button onClick={()=>{setRateMode('rate');trackEvent('rate_toggle',{mode:'rate'});}} className={`px-3 py-2 text-sm ${rateMode==='rate'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8]'}`}>/100K</button>
+                <button onClick={()=>{setRateMode('absolute');trackEvent('rate_toggle',{mode:'absolute'});}} className={`px-3 py-2 text-sm ${rateMode==='absolute'?'bg-[#3b82f6] text-white':'bg-[#1a2234] text-[#94a3b8]'}`}>Total</button>
               </div>
               <div className="flex rounded-xl border border-[#1e293b] overflow-hidden">
                 {(['auto','estados','municipios','bairros'] as const).map(v=>(
