@@ -1,5 +1,26 @@
 'use client';
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { slugify } from '@/lib/slugify';
+
+const STATE_SLUGS: Record<string, string> = {
+  RS: 'rio-grande-do-sul',
+  RJ: 'rio-de-janeiro',
+  MG: 'minas-gerais',
+};
+
+function getShareUrl(state?: string, municipio?: string, bairro?: string): string {
+  const base = 'https://crimebrasil.com.br';
+  if (!state || (!municipio && !state)) return base;
+  if (municipio && !bairro) {
+    const stateSlug = STATE_SLUGS[state];
+    if (stateSlug) return `${base}/cidade/${state.toLowerCase()}/${slugify(municipio)}`;
+  }
+  if (state && !municipio) {
+    const stateSlug = STATE_SLUGS[state];
+    if (stateSlug) return `${base}/estado/${stateSlug}`;
+  }
+  return base;
+}
 
 function prettifyCrimeType(s: string): string {
   return s.toLowerCase()
