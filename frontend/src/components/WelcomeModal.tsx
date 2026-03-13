@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { trackEvent } from '@/lib/analytics';
 
 type Segment = { text: string; bold?: true; italic?: true };
 
