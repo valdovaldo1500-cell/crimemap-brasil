@@ -116,7 +116,8 @@ export default function WelcomeModal() {
     }
   }, [typingDone]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const dismiss = useCallback(() => {
+  const dismiss = useCallback((reason: 'completed' | 'dismissed' = 'completed') => {
+    trackEvent(reason === 'completed' ? 'welcome_modal_completed' : 'welcome_modal_dismissed');
     localStorage.setItem('crimebrasil_welcomed', 'true');
     setVisible(false);
   }, []);
