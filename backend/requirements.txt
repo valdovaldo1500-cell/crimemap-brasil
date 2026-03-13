@@ -19,3 +19,5 @@ certifi>=2024.2.2
 slowapi==0.1.9
 resend>=2.0.0
 hypothesis>=6.0
+google-analytics-data>=0.18.0
+google-analytics-admin>=0.22.0
