@@ -310,8 +310,10 @@ export default function Home() {
     }
     setShowMgWarning(false);
     setPendingMgToggle(null);
-    setDetailPanels([]);
-  }, [pendingMgToggle]);
+    if (selectedStates.length > 0) {
+      setDetailPanels([]);
+    }
+  }, [pendingMgToggle, selectedStates]);
 
   const cancelMgWarning = useCallback(() => {
     setShowMgWarning(false);
