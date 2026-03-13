@@ -279,10 +279,10 @@ export default function Home() {
     setSelectedPeriod(prev => prev === '12m' ? 'ano' : prev);
   }, []);
 
-  const toggleType = (t:string) => setSelectedTypes(p=>p.includes(t)?p.filter(x=>x!==t):[...p,t]);
-  const toggleSexo = (v:string) => setSelectedSexo(p=>p.includes(v)?p.filter(x=>x!==v):[...p,v]);
-  const toggleCor = (v:string) => setSelectedCor(p=>p.includes(v)?p.filter(x=>x!==v):[...p,v]);
-  const toggleGrupo = (v:string) => setSelectedGrupo(p=>p.includes(v)?p.filter(x=>x!==v):[...p,v]);
+  const toggleType = (t: string) => { const adding = !selectedTypes.includes(t); setSelectedTypes(p => adding ? [...p, t] : p.filter(x => x !== t)); trackEvent(adding ? 'filter_applied' : 'filter_cleared', { filter_type: 'crime_type', value: t }); };
+  const toggleSexo = (v: string) => { const adding = !selectedSexo.includes(v); setSelectedSexo(p => adding ? [...p, v] : p.filter(x => x !== v)); trackEvent(adding ? 'filter_applied' : 'filter_cleared', { filter_type: 'sexo', value: v }); };
+  const toggleCor = (v: string) => { const adding = !selectedCor.includes(v); setSelectedCor(p => adding ? [...p, v] : p.filter(x => x !== v)); trackEvent(adding ? 'filter_applied' : 'filter_cleared', { filter_type: 'cor', value: v }); };
+  const toggleGrupo = (v: string) => { const adding = !selectedGrupo.includes(v); setSelectedGrupo(p => adding ? [...p, v] : p.filter(x => x !== v)); trackEvent(adding ? 'filter_applied' : 'filter_cleared', { filter_type: 'grupo', value: v }); };
 
   // Partial states that trigger auto-filter warning
   const PARTIAL_STATES = ['MG'];
