@@ -67,6 +67,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: 'https://crimebrasil.com.br',
   },
+  verification: {
+    google: 'z5VtZcom_iQJA04nKL1KlJ5bSgKtNc4srT1e_8DE25U',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
