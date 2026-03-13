@@ -1654,6 +1654,11 @@ def state_stats(request: Request,
     pop = get_state_population(state)
     # Fix #9: return None instead of 0 so frontend never divides by zero
     crime_categories = categorize_crime_types(crime_types)
+    try:
+        db.add(ClickLog(location_type='state', location_name=state, state=state))
+        db.commit()
+    except Exception:
+        db.rollback()
     return {"state": state, "total": total, "population": pop if pop else None, "crime_types": crime_types, "crime_categories": crime_categories}
 
 @app.get("/api/years")
