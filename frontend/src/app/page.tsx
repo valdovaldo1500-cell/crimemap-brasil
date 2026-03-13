@@ -5,6 +5,7 @@ import { fetchCrimeTypes, fetchSemesters, fetchAutocomplete, fetchSexoValues, fe
 import { calcRate, formatRate } from '@/lib/rates';
 import DetailPanel from '@/components/DetailPanel';
 import WelcomeModal from '@/components/WelcomeModal';
+import { trackEvent } from '@/lib/analytics';
 const CrimeMap = dynamic(() => import('@/components/CrimeMap'), { ssr: false });
 
 const DATA_SOURCES = [
