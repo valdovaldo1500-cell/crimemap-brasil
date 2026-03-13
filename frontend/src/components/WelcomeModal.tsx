@@ -100,7 +100,7 @@ export default function WelcomeModal() {
   // Trap focus between Pular and Explorar
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
-      dismiss();
+      dismiss('dismissed');
       return;
     }
     if (e.key === 'Tab' && typingDone) {
