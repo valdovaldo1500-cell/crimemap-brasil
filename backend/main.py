@@ -2439,6 +2439,57 @@ def top_locations(days: int = 30, limit: int = 20, db: Session = Depends(get_db)
     return [{"location_type": r.location_type, "location_name": r.location_name, "state": r.state, "clicks": r.clicks} for r in rows]
 
 
+@app.get("/api/seo/municipalities")
+def seo_municipalities(db: Session = Depends(get_db)):
+    """Returns top municipalities across RS, RJ, MG for SEO static page generation."""
+    def _slugify(s: str) -> str:
+        s = unicodedata.normalize('NFKD', s.lower())
+        s = ''.join(c for c in s if not unicodedata.combining(c))
+        s = re.sub(r'[^a-z0-9]+', '-', s)
+        return s.strip('-')
+
+    results = []
+
+    # RS: use crimes table (most accurate, bairro-level data)
+    rs_rows = db.query(
+        Crime.municipio_fato.label("municipio"),
+        func.count(Crime.id).label("total")
+    ).filter(
+        Crime.state == "RS",
+        Crime.municipio_fato.isnot(None),
+        Crime.municipio_fato != ""
+    ).group_by(Crime.municipio_fato).order_by(desc("total")).limit(40).all()
+    for row in rs_rows:
+        results.append({"state": "RS", "municipio": row.municipio, "total": int(row.total)})
+
+    # RJ, MG: use crimes_staging, exclude SINESP-aggregated sources
+    for state in ["RJ", "MG"]:
+        st_rows = db.query(
+            CrimeStaging.municipio,
+            (func.coalesce(func.sum(CrimeStaging.occurrences), 0) +
+             func.coalesce(func.sum(CrimeStaging.victims), 0)).label("total")
+        ).filter(
+            CrimeStaging.state == state,
+            CrimeStaging.municipio.isnot(None),
+            CrimeStaging.municipio != "",
+            ~CrimeStaging.source.ilike("SINESP%")
+        ).group_by(CrimeStaging.municipio).order_by(desc("total")).limit(40).all()
+        for row in st_rows:
+            results.append({"state": state, "municipio": row.municipio, "total": int(row.total)})
+
+    results.sort(key=lambda x: x["total"], reverse=True)
+    return [
+        {
+            "state": r["state"],
+            "state_lower": r["state"].lower(),
+            "municipio": r["municipio"],
+            "total": r["total"],
+            "slug": _slugify(r["municipio"]),
+        }
+        for r in results[:100]
+    ]
+
+
 @app.get("/api/admin/geocoding-status")
 def geocoding_status(db: Session = Depends(get_db)):
     """Return geocoding coverage statistics."""
