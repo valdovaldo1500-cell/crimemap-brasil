@@ -64,7 +64,7 @@ export default function Home() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
-  const [center, setCenter] = useState<[number,number]>([-14,-52]);
+  const [center, setCenter] = useState<[number,number]>([-23,-48]);
   const [zoom, setZoom] = useState(5);
   const [showFilters, setShowFilters] = useState(false);
   const [filterLoading, setFilterLoading] = useState(false);
