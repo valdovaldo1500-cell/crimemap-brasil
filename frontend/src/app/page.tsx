@@ -306,13 +306,14 @@ export default function Home() {
   }, [selectedStates]);
 
   const confirmMgWarning = useCallback(() => {
-    if (pendingMgToggle) {
-      setSelectedStates(prev => [...prev, pendingMgToggle]);
+    const sigla = pendingMgToggle;
+    if (sigla) {
+      setSelectedStates(prev => [...prev, sigla]);
     }
     setShowMgWarning(false);
     setPendingMgToggle(null);
     if (selectedStates.length > 0) {
-      setDetailPanels([]);
+      setDetailPanels(prev => prev.filter((p: any) => !p.state || p.state === sigla));
     }
   }, [pendingMgToggle, selectedStates]);
 
