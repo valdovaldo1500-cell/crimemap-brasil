@@ -411,6 +411,8 @@ export default function Home() {
     setComparisonLocations(newLocations);
     setComparisonLoading(true);
     try {
+      // Collect all states involved in this comparison for compatible-types filtering
+      const allComparisonStates = newLocations.map(l => l.state).filter(Boolean) as string[];
       let stats;
       if (!location.municipio && location.state) {
         // State-level comparison
@@ -421,6 +423,7 @@ export default function Home() {
           semestre: filters.semestre, ano: filters.ano, tipo: filters.tipo,
           grupo: filters.grupo, sexo: filters.sexo, cor: filters.cor,
           idade_min: filters.idade_min, idade_max: filters.idade_max,
+          ultimos_meses: filters.ultimos_meses,
         });
         // Re-fetch first state with compatible types filter when 2nd state added
         if (currentLocations.length === 1 && currentLocations[0].state && !currentLocations[0].municipio) {
@@ -431,6 +434,7 @@ export default function Home() {
               semestre: filters.semestre, ano: filters.ano, tipo: filters.tipo,
               grupo: filters.grupo, sexo: filters.sexo, cor: filters.cor,
               idade_min: filters.idade_min, idade_max: filters.idade_max,
+              ultimos_meses: filters.ultimos_meses,
             });
             // Single atomic update with both states — avoids race between replace + append
             setComparisonStats([
@@ -445,11 +449,33 @@ export default function Home() {
           municipio: location.municipio,
           bairro: location.bairro,
           state: location.state,
+          selected_states: allComparisonStates,
           semestre: filters.semestre, ano: filters.ano, tipo: filters.tipo,
           grupo: filters.grupo, sexo: filters.sexo, cor: filters.cor,
           idade_min: filters.idade_min, idade_max: filters.idade_max,
           ultimos_meses: filters.ultimos_meses,
         });
+        // Re-fetch first location with compatible types when 2nd location involves MG
+        if (currentLocations.length === 1 && currentLocations[0].municipio &&
+            allComparisonStates.includes('MG') && allComparisonStates.length > 1) {
+          try {
+            const firstStats = await fetchLocationStats({
+              municipio: currentLocations[0].municipio,
+              bairro: currentLocations[0].bairro,
+              state: currentLocations[0].state,
+              selected_states: allComparisonStates,
+              semestre: filters.semestre, ano: filters.ano, tipo: filters.tipo,
+              grupo: filters.grupo, sexo: filters.sexo, cor: filters.cor,
+              idade_min: filters.idade_min, idade_max: filters.idade_max,
+              ultimos_meses: filters.ultimos_meses,
+            });
+            setComparisonStats([
+              { ...firstStats, displayName: currentLocations[0].displayName },
+              { ...stats, displayName: location.displayName },
+            ]);
+            return;
+          } catch {}
+        }
       }
       setComparisonStats(prev => prev.length >= 2 ? prev : [...prev, { ...stats, displayName: location.displayName }]);
     } catch {
