@@ -1026,7 +1026,7 @@ export default function Home() {
           </div>
         </aside>)}
         <main className="flex-1 relative z-0">
-          <CrimeMap center={center} zoom={zoom} filters={filters} viewMode={viewMode} rateMode={rateMode} aggregationOverride={aggregationOverride} selectedStates={selectedStates} onToggleState={toggleState} activeFilter={activeFilter} maxGranularity={maxGranularity} availableStates={availableStates} compareMode={compareMode} comparisonLocations={comparisonLocations} onCompareSelect={onCompareSelect} onDetailOpen={onDetailOpen} />
+          <CrimeMap center={center} zoom={zoom} filters={filters} viewMode={viewMode} rateMode={rateMode} aggregationOverride={aggregationOverride} selectedStates={selectedStates} onToggleState={toggleState} activeFilter={activeFilter} maxGranularity={maxGranularity} availableStates={availableStates} compareMode={compareMode} comparisonLocations={comparisonLocations} onCompareSelect={onCompareSelect} onDetailOpen={onDetailOpen} onStateMenu={handleStateMenu} />
           {/* Floating compare toggle on map — visible on all screen sizes */}
           <button
             onClick={() => { const entering = !compareMode; setCompareMode(entering); if (!entering) { compareLocationsRef.current = []; setComparePos(null); setComparisonLocations([]); setComparisonStats([]); } if (entering) setSelectedStates([]); }}
