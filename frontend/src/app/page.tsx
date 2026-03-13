@@ -963,7 +963,7 @@ export default function Home() {
           <button
             onClick={() => { const entering = !compareMode; setCompareMode(entering); if (!entering) { compareLocationsRef.current = []; setComparePos(null); setComparisonLocations([]); setComparisonStats([]); } if (entering) setSelectedStates([]); }}
             aria-label={compareMode ? 'Desativar comparação' : 'Ativar comparação'}
-            className={`absolute top-[60px] md:top-[116px] left-4 z-[1000] flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-medium shadow-lg transition-colors ${compareMode ? 'bg-[#7c3aed] text-white border border-[#7c3aed]' : 'bg-[#111827]/90 backdrop-blur-xl border border-[#7c3aed]/60 text-[#c4b5fd] hover:bg-[#7c3aed]/20 hover:text-[#e9d5ff]'}`}
+            className={`absolute top-[80px] md:top-[116px] left-4 z-[1000] flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-medium shadow-lg transition-colors ${compareMode ? 'bg-[#7c3aed] text-white border border-[#7c3aed]' : 'bg-[#111827]/90 backdrop-blur-xl border border-[#7c3aed]/60 text-[#c4b5fd] hover:bg-[#7c3aed]/20 hover:text-[#e9d5ff]'}`}
           >
             <span className="relative w-8 h-4 rounded-full bg-[#1e293b] flex-shrink-0">
               <span className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${compareMode ? 'left-[18px] bg-white' : 'left-0.5 bg-[#94a3b8]'}`} />
