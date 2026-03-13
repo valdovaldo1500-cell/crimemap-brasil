@@ -812,7 +812,7 @@ export default function Home() {
                     </button>
                   )}
                   {availablePeriods.includes('S2') && (
-                    <button onClick={() => maxGranularity === 'monthly' && setSelectedPeriod('S2')}
+                    <button onClick={() => maxGranularity === 'monthly' && selectPeriod('S2')}
                       title={maxGranularity === 'yearly' ? 'Filtro por semestre indisponível — dados do SINESP são anuais' : ''}
                       className={`px-2 py-2 text-xs ${selectedPeriod === 'S2' ? 'bg-[#3b82f6] text-white' : 'bg-[#1a2234] text-[#94a3b8] hover:bg-[#1e293b]'} ${maxGranularity === 'yearly' ? 'opacity-40 cursor-not-allowed' : ''}`}>
                       S2
