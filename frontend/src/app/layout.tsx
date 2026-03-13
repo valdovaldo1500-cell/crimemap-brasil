@@ -15,6 +15,14 @@ export const metadata: Metadata = {
     siteName: 'CrimeBrasil',
     locale: 'pt_BR',
     type: 'website',
+    images: [
+      {
+        url: '/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'CrimeBrasil — Mapa interativo de ocorrências criminais no Brasil',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
