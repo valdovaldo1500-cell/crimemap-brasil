@@ -226,7 +226,7 @@ export default function WelcomeModal() {
           >
             <button
               ref={exploreBtnRef}
-              onClick={dismiss}
+              onClick={() => dismiss('completed')}
               style={{
                 fontFamily: "'Fira Code', 'Courier New', monospace",
                 fontSize: 14,
