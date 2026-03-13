@@ -4,28 +4,68 @@ import './globals.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://crimebrasil.com.br'),
-  title: 'Crime Brasil — Mapa de Ocorrências Criminais',
-  description: 'Mapa interativo de ocorrências criminais no Brasil',
+  title: {
+    default: 'Crime Brasil — Mapa Interativo de Criminalidade do Brasil',
+    template: '%s | Crime Brasil',
+  },
+  description:
+    'Mapa interativo de criminalidade do Brasil com dados por estado, cidade e bairro. Compare regiões, filtre por tipo de crime, veja estatísticas por 100 mil habitantes. Dados detalhados de RS, RJ e MG de 2003 a 2026.',
+  keywords: [
+    'criminalidade brasil',
+    'mapa crime brasil',
+    'estatísticas criminalidade',
+    'segurança pública brasil',
+    'dados criminalidade rio grande do sul',
+    'criminalidade rio de janeiro',
+    'criminalidade minas gerais',
+    'mapa violência brasil',
+    'taxa criminalidade bairro',
+    'índice criminalidade cidade',
+    'crime por bairro',
+    'segurança bairro',
+    'criminalidade por região',
+    'comparar criminalidade cidades',
+    'crimes por 100 mil habitantes',
+  ],
+  authors: [{ name: 'Israel' }],
+  creator: 'Israel',
+  publisher: 'Crime Brasil',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   openGraph: {
-    title: 'Crime Brasil — Mapa de Ocorrências Criminais',
-    description: 'Mapa interativo de ocorrências criminais no Brasil',
-    url: 'https://crimebrasil.com.br',
-    siteName: 'CrimeBrasil',
-    locale: 'pt_BR',
     type: 'website',
+    locale: 'pt_BR',
+    url: 'https://crimebrasil.com.br',
+    siteName: 'Crime Brasil',
+    title: 'Crime Brasil — Mapa Interativo de Criminalidade do Brasil',
+    description:
+      'Explore dados de criminalidade por estado, cidade e bairro. Compare regiões, filtre por tipo de crime e veja estatísticas por 100 mil habitantes.',
     images: [
       {
-        url: '/opengraph-image',
+        url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'CrimeBrasil — Mapa interativo de ocorrências criminais no Brasil',
+        alt: 'Crime Brasil - Mapa de Criminalidade',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Crime Brasil — Mapa de Ocorrências Criminais',
-    description: 'Mapa interativo de ocorrências criminais no Brasil',
+    title: 'Crime Brasil — Mapa Interativo de Criminalidade',
+    description: 'Explore dados de criminalidade por estado, cidade e bairro.',
+    images: ['/og-image.png'],
+  },
+  alternates: {
+    canonical: 'https://crimebrasil.com.br',
   },
 };
 
@@ -35,8 +75,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Fira+Code:wght@400;600&display=swap"
+          rel="stylesheet"
+        />
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <link rel="preconnect" href="https://basemaps.cartocdn.com" />
       </head>
       <body>
         {children}
