@@ -1,5 +1,7 @@
 import { MetadataRoute } from 'next';
 
+export const dynamic = 'force-dynamic';
+
 const API_BASE = 'https://crimebrasil.com.br';
 
 type SeoMunicipality = {
