@@ -116,6 +116,15 @@ class CrimeStaging(Base):
         Index('idx_staging_state_mun', 'state', 'municipio'),
     )
 
+class ClickLog(Base):
+    __tablename__ = "click_log"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    location_type = Column(String, index=True)   # 'municipio', 'bairro', 'state'
+    location_name = Column(String, index=True)
+    state = Column(String, index=True)
+    timestamp = Column(DateTime, server_default=func.now(), index=True)
+
+
 def init_db():
     Base.metadata.create_all(bind=engine)
     # Add state column if missing (SQLAlchemy create_all won't ALTER existing tables)
