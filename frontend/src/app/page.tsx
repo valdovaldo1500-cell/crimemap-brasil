@@ -559,9 +559,6 @@ export default function Home() {
   }, [periodLabel]);
 
   const openStateDetail = useCallback(async (sigla: string, name: string) => {
-    if (['MG'].includes(sigla)) {
-      setDetailPanels(prev => prev.filter((p: any) => !p.state || p.state === sigla));
-    }
     const actionId = `${Date.now()}-${Math.random()}`;
     const displayName = `${name} (${sigla})`;
     onDetailOpen({ actionId, displayName, municipio: '', state: sigla, total: 0, isUnknown: false, loading: true });
