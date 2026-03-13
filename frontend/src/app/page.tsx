@@ -495,6 +495,8 @@ export default function Home() {
     setComparisonLocations([]);
     setComparisonStats([]);
     setComparisonLoading(false);
+    setCompareMode(false);
+    setComparePos(null);
   }, []);
 
   // Compare box drag/resize handlers
