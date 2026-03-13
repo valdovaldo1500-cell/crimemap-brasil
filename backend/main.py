@@ -2423,6 +2423,22 @@ def analytics_summary(days: int = 30):
     except Exception as e:
         return {"error": str(e)}
 
+@app.get("/api/analytics/top-locations")
+def top_locations(days: int = 30, limit: int = 20, db: Session = Depends(get_db)):
+    """Top clicked locations by click count over the last N days."""
+    from datetime import datetime, timedelta
+    since = datetime.utcnow() - timedelta(days=days)
+    rows = db.query(
+        ClickLog.location_type,
+        ClickLog.location_name,
+        ClickLog.state,
+        func.count(ClickLog.id).label("clicks"),
+    ).filter(ClickLog.timestamp >= since).group_by(
+        ClickLog.location_type, ClickLog.location_name, ClickLog.state
+    ).order_by(desc(literal_column("clicks"))).limit(limit).all()
+    return [{"location_type": r.location_type, "location_name": r.location_name, "state": r.state, "clicks": r.clicks} for r in rows]
+
+
 @app.get("/api/admin/geocoding-status")
 def geocoding_status(db: Session = Depends(get_db)):
     """Return geocoding coverage statistics."""
