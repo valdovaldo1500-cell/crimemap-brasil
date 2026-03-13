@@ -164,7 +164,7 @@ export default function WelcomeModal() {
           </span>
           <button
             ref={skipBtnRef}
-            onClick={finishTyping}
+            onClick={() => { if (!typingDone) trackEvent('welcome_modal_skipped'); finishTyping(); }}
             style={{
               fontFamily: "'Fira Code', 'Courier New', monospace",
               fontSize: 11,
