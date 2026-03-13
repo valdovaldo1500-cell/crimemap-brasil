@@ -1424,11 +1424,23 @@ def location_stats(request: Request,
     idade_min: Optional[int] = None, idade_max: Optional[int] = None,
     sexo: Optional[List[str]] = Query(None), cor: Optional[List[str]] = Query(None),
     state: Optional[str] = None,
+    selected_states: Optional[List[str]] = Query(None),
     db: Session = Depends(get_db)):
     if not municipio or not municipio.strip():
         raise HTTPException(status_code=400, detail="municipio parameter is required")
     validate_semestre(semestre)
     validate_age_filters(idade_min, idade_max)
+    effective_tipo = tipo
+    if selected_states and not tipo:
+        has_partial = any(s in PARTIAL_STATES for s in selected_states)
+        if has_partial and len(selected_states) > 1:
+            compatible = get_compatible_types(selected_states)
+            if compatible:
+                all_types = set()
+                for types in compatible.values():
+                    all_types.update(types)
+                if all_types:
+                    effective_tipo = list(all_types)
     # Try both original and accent-stripped name to match crimes table format
     municipio_names = list({municipio, normalize_name(municipio)})
     q = db.query(Crime).filter(Crime.municipio_fato.in_(municipio_names))
@@ -1442,8 +1454,8 @@ def location_stats(request: Request,
         q = q.filter(Crime.year_month.in_(semester_months(semestre)))
     elif ano:
         q = q.filter(Crime.year_month.between(f"{ano}-01", f"{ano}-12"))
-    if tipo:
-        q = q.filter(Crime.tipo_enquadramento.in_(tipo))
+    if effective_tipo:
+        q = q.filter(Crime.tipo_enquadramento.in_(effective_tipo))
     if grupo:
         q = q.filter(Crime.grupo_fato == grupo)
     if idade_min is not None: q = q.filter(Crime.idade_vitima >= idade_min)
