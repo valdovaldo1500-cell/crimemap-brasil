@@ -2394,6 +2394,21 @@ def list_bug_reports(db: Session = Depends(get_db)):
     return [{"id": r.id, "description": r.description, "email": r.email,
              "image_path": r.image_path, "created_at": str(r.created_at), "status": r.status} for r in reports]
 
+@app.get("/api/admin/analytics")
+def analytics_summary(days: int = 30):
+    """GA4 analytics summary: pageviews, users, top pages/countries, daily trend, realtime."""
+    try:
+        from services.analytics import get_pageviews, get_top_pages, get_top_countries, get_daily_users, get_realtime_users
+        return {
+            "summary": get_pageviews(days),
+            "realtime": get_realtime_users(),
+            "top_pages": get_top_pages(days),
+            "top_countries": get_top_countries(days),
+            "daily": get_daily_users(days),
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.get("/api/admin/geocoding-status")
 def geocoding_status(db: Session = Depends(get_db)):
     """Return geocoding coverage statistics."""
