@@ -139,6 +139,7 @@ export default function DetailPanel({ data, onClose, stackIndex = 0, onFocus, ra
         <span className="text-sm font-semibold text-[#f1f5f9] truncate mr-2">{data.displayName}{data.periodLabel && <span className="text-[9px] font-normal text-[#64748b] ml-1.5">({data.periodLabel})</span>}</span>
         <button
           onClick={onClose}
+          onMouseDown={e => e.stopPropagation()}
           className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[#374151] text-[#94a3b8] hover:text-white transition-colors"
           aria-label="Fechar painel"
         >
