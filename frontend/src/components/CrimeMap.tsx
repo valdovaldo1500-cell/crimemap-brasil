@@ -213,8 +213,15 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
       'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
       { maxZoom: 19 }
     ).addTo(map);
+    let prevZoomLevel: string | null = null;
     const onMove = () => {
-      setCurrentZoom(map.getZoom());
+      const z = map.getZoom();
+      setCurrentZoom(z);
+      const level = z < 7 ? 'estados' : z < 11 ? 'municipios' : 'bairros';
+      if (level !== prevZoomLevel) {
+        if (prevZoomLevel !== null) trackEvent('zoom_change', { zoom_level: z, view_level: level });
+        prevZoomLevel = level;
+      }
       if (popupOpenRef.current) return; // don't reload while popup is open
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => setMapVersion(v => v + 1), 300);
