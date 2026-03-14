@@ -303,6 +303,11 @@ export default function Home() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const sp = new URLSearchParams(window.location.search);
+    const viewParam = sp.get('view');
+    if (viewParam === 'dots' || viewParam === 'choropleth') setViewMode(viewParam);
+    const rateParam = sp.get('rate');
+    if (rateParam === 'rate' || rateParam === 'absolute') setRateMode(rateParam);
+
     if (!sp.get('panel') && !sp.get('compare')) { setUrlInitDone(true); return; }
 
     const per = sp.get('per') as 'ano' | 'S1' | 'S2' | '12m';
@@ -321,10 +326,6 @@ export default function Home() {
     if (idadeMaxParam) setIdadeMax(idadeMaxParam);
     const statesParam = sp.get('states');
     if (statesParam) setSelectedStates(statesParam.split(',').filter(Boolean));
-    const viewParam = sp.get('view');
-    if (viewParam === 'dots' || viewParam === 'choropleth') setViewMode(viewParam);
-    const rateParam = sp.get('rate');
-    if (rateParam === 'rate' || rateParam === 'absolute') setRateMode(rateParam);
 
     const panel = sp.get('panel');
     const state = sp.get('state');
