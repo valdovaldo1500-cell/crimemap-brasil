@@ -14,7 +14,7 @@ import pytest
 from shapely.geometry import shape, Point, mapping
 from shapely.ops import unary_union
 
-GEOJSON_PATH = os.path.join(os.path.dirname(__file__), "../../bairro-geo/rs-bairros.geojson")
+GEOJSON_PATH = os.path.join(os.path.dirname(__file__), "../bairro-geo/rs-bairros.geojson")
 MIN_AREA_KM2 = 0.05  # polygons smaller than this are flagged
 
 
