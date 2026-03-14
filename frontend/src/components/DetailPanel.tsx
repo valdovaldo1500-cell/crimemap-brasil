@@ -154,6 +154,7 @@ export default function DetailPanel({ data, onClose, stackIndex = 0, onFocus, ra
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
+    trackEvent('share_clicked', { share_method: 'copy_link', location_name: data.displayName });
   };
 
   return (
