@@ -727,6 +727,66 @@ export default function Home() {
     }
   }, [filters, selectedStates, onDetailOpen]);
 
+  const openLocationDetail = useCallback(async (state: string, municipio: string, bairro?: string) => {
+    const actionId = `${Date.now()}-${Math.random()}`;
+    const displayName = bairro
+      ? `${bairro} (${municipio}, ${state})`
+      : `${municipio} (${state})`;
+    onDetailOpen({ actionId, displayName, municipio, bairro, state, total: 0, isUnknown: false, loading: true });
+    try {
+      const stats = await fetchLocationStats({
+        municipio, bairro, state,
+        semestre: filters.semestre, ano: filters.ano, tipo: filters.tipo,
+        grupo: filters.grupo, sexo: filters.sexo, cor: filters.cor,
+        idade_min: filters.idade_min, idade_max: filters.idade_max,
+        ultimos_meses: filters.ultimos_meses,
+        selected_states: selectedStates.length > 0 ? selectedStates : [state],
+      });
+      onDetailOpen({
+        actionId, displayName, municipio, bairro, state,
+        total: stats.total ?? 0,
+        population: stats.population,
+        isUnknown: false,
+        loading: false,
+        ...(stats.crime_types ? { crime_types: stats.crime_types.map((ct: any) => ({ tipo: ct.tipo_enquadramento || ct.tipo, count: ct.count })) } : {}),
+      } as any);
+    } catch (err) {
+      console.error('Failed to load location stats:', err);
+    }
+  }, [filters, selectedStates, onDetailOpen]);
+
+  const openLocationDetailRef = useRef(openLocationDetail);
+  useEffect(() => { openLocationDetailRef.current = openLocationDetail; }, [openLocationDetail]);
+  const openStateDetailRef = useRef(openStateDetail);
+  useEffect(() => { openStateDetailRef.current = openStateDetail; }, [openStateDetail]);
+
+  useEffect(() => {
+    if (!urlInitDone || initialLoading) return;
+
+    const pending = pendingPanelRef.current;
+    if (pending) {
+      pendingPanelRef.current = null;
+      if (pending.panel === 'state') {
+        const name = STATE_FULL_NAMES_SHARE[pending.state] || pending.state;
+        openStateDetailRef.current(pending.state, name);
+      } else if (pending.municipio) {
+        openLocationDetailRef.current(pending.state, pending.municipio, pending.bairro);
+      }
+    }
+
+    const pendingCompare = pendingCompareRef.current;
+    if (pendingCompare.length > 0) {
+      pendingCompareRef.current = [];
+      pendingCompare.slice(0, 2).forEach(loc => {
+        const parts = loc.split(':');
+        const s = parts[0];
+        const m = parts[1] || '';
+        const b = parts[2] || undefined;
+        onCompareSelect({ state: s, municipio: m, bairro: b || undefined, displayName: m || s });
+      });
+    }
+  }, [urlInitDone, initialLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleStateMenu = useCallback((sigla: string, name: string, x: number, y: number) => {
     setStateMenu({ sigla, name, x, y });
   }, []);
