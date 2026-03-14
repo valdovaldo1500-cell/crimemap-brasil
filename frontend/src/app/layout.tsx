@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { GoogleAnalytics } from '@next/third-parties/google';
+import JsonLd from '@/components/JsonLd';
 import './globals.css';
 
 export const metadata: Metadata = {
