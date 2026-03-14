@@ -1526,6 +1526,7 @@ export default function Home() {
             <DetailPanel
               key={panel.id}
               data={panel}
+              shareUrl={panelShareUrls[panel.id]}
               rateMode={rateMode}
               onClose={() => setDetailPanels(prev => prev.filter(p => p.id !== panel.id))}
               stackIndex={idx}
