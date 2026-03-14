@@ -103,10 +103,11 @@ class TestHeatmapLocationStatsParity:
             "municipio": municipio, "state": "RS", "bairro": bairro,
             "ultimos_meses": ultimos_meses,
         }
+        # Build params as list of tuples to support repeated extra_bairros keys
+        param_list = list(params.items())
         if extra_bairros:
-            # Pass as comma-separated or repeated param — check API convention
-            params["extra_bairros"] = ",".join(extra_bairros)
-        resp = client.get("/api/location-stats", params=params)
+            param_list += [("extra_bairros", name) for name in extra_bairros]
+        resp = client.get("/api/location-stats", params=param_list)
         assert resp.status_code == 200
         return resp.json().get("total", 0)
 
