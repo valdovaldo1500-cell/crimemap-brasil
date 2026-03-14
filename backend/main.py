@@ -1522,10 +1522,15 @@ def location_stats(request: Request,
     # Population lookup with state-aware fallback
     lookup_state = state or "RS"
     pop = None
+    population_source = None
     if bairro:
         pop = get_bairro_population(municipio, bairro, lookup_state)
+        if pop is not None:
+            population_source = "bairro"
     if pop is None:
         pop = get_municipio_population(municipio, lookup_state)
+        if pop is not None:
+            population_source = "municipio"
     crime_categories = categorize_crime_types(crime_types)
     try:
         db.add(ClickLog(
@@ -1538,6 +1543,7 @@ def location_stats(request: Request,
         db.rollback()
     return {"municipio": municipio, "bairro": bairro, "total": total,
         "population": pop if pop else None,
+        "population_source": population_source,
         "crime_types": crime_types, "crime_categories": crime_categories}
 
 def _normalize_muni(name: str) -> str:
