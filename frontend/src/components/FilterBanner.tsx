@@ -21,9 +21,10 @@ function FilterBannerInner({ panelType, state, municipio, bairro }: FilterBanner
   const p = new URLSearchParams();
   p.set('panel', panelType);
   p.set('state', state);
+  p.set('states', state);
   if (municipio) p.set('municipio', municipio);
   if (bairro) p.set('bairro', bairro);
-  ['per', 'ano', 'tipos', 'sexo', 'cor', 'idade_min', 'idade_max', 'view'].forEach(k => {
+  ['per', 'ano', 'tipos', 'sexo', 'cor', 'idade_min', 'idade_max', 'view', 'rate'].forEach(k => {
     const v = searchParams.get(k);
     if (v) p.set(k, v);
   });
