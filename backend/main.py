@@ -1005,7 +1005,8 @@ def heatmap_bairros(request: Request,
             mun_pop = get_municipio_population(m['municipio'], "RS") if bairro_pop is None else None
             results.append(HeatmapPoint(latitude=lat, longitude=lng, weight=m['cnt'],
                 municipio=m['municipio'], bairro=m['bairro'],
-                population=bairro_pop or mun_pop, state='RS'))
+                population=bairro_pop or mun_pop, state='RS',
+                raw_bairro_names=list(raw_names_map.get(key, []))))
     # Add unknown buckets
     for mun_norm, ub in unknown_bucket.items():
         if ub['cnt'] >= 5:  # only show if substantial
