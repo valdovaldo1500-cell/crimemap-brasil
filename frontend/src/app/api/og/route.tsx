@@ -19,15 +19,15 @@ export async function GET() {
         }}
       >
         {/* Bar chart logo */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px', marginBottom: '28px' }}>
-          <div style={{ width: '18px', height: '70px', borderRadius: '4px', background: '#3b82f6' }} />
-          <div style={{ width: '18px', height: '100px', borderRadius: '4px', background: '#7c3aed' }} />
-          <div style={{ width: '18px', height: '52px', borderRadius: '4px', background: '#3b82f6' }} />
-          <div style={{ width: '18px', height: '114px', borderRadius: '4px', background: '#ef4444' }} />
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '22px', marginBottom: '48px' }}>
+          <div style={{ width: '44px', height: '160px', borderRadius: '8px', background: '#3b82f6' }} />
+          <div style={{ width: '44px', height: '240px', borderRadius: '8px', background: '#7c3aed' }} />
+          <div style={{ width: '44px', height: '120px', borderRadius: '8px', background: '#3b82f6' }} />
+          <div style={{ width: '44px', height: '280px', borderRadius: '8px', background: '#ef4444' }} />
         </div>
 
         {/* Brand */}
-        <div style={{ display: 'flex', fontSize: '72px', fontWeight: 700, letterSpacing: '-2px' }}>
+        <div style={{ display: 'flex', fontSize: '120px', fontWeight: 700, letterSpacing: '-4px' }}>
           <span style={{ color: '#f1f5f9' }}>Crime</span>
           <span style={{ color: '#3b82f6' }}>Brasil</span>
         </div>
