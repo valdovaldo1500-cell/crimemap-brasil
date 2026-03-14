@@ -855,6 +855,9 @@ def heatmap_bairros(request: Request,
             fuzzy_key_map[fuzzy] = key
             if art_key != fuzzy:
                 fuzzy_key_map[art_key] = key
+        raw_bairro = normalize_name(r.bairro)
+        if raw_bairro not in raw_names_map.get(key, []):
+            raw_names_map.setdefault(key, []).append(raw_bairro)
         if key in merged:
             merged[key]['cnt'] += r.cnt
         else:
