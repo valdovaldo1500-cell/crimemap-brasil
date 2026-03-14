@@ -14,7 +14,8 @@ function FilterBannerInner({ panelType, state, municipio, bairro }: FilterBanner
   const searchParams = useSearchParams();
   const hasFilters = searchParams.get('per') || searchParams.get('tipos') ||
     searchParams.get('sexo') || searchParams.get('cor') ||
-    searchParams.get('idade_min') || searchParams.get('idade_max');
+    searchParams.get('idade_min') || searchParams.get('idade_max') ||
+    searchParams.get('view');
   if (!hasFilters) return null;
 
   const p = new URLSearchParams();
@@ -22,7 +23,7 @@ function FilterBannerInner({ panelType, state, municipio, bairro }: FilterBanner
   p.set('state', state);
   if (municipio) p.set('municipio', municipio);
   if (bairro) p.set('bairro', bairro);
-  ['per', 'ano', 'tipos', 'sexo', 'cor', 'idade_min', 'idade_max'].forEach(k => {
+  ['per', 'ano', 'tipos', 'sexo', 'cor', 'idade_min', 'idade_max', 'view'].forEach(k => {
     const v = searchParams.get(k);
     if (v) p.set(k, v);
   });
