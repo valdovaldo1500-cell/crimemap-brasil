@@ -338,8 +338,8 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
       if (onDetailOpenRef.current) {
         const actionId = `${Date.now()}-${Math.random()}`;
         const isUnknown = bairro === 'Bairro desconhecido';
-        onDetailOpenRef.current({ actionId, displayName, municipio, bairro, state, total: count, population, components, isUnknown, loading: !isUnknown });
-        if (isUnknown) return; // no stats fetch for unknown bairros
+        onDetailOpenRef.current({ actionId, displayName, municipio, bairro, state, total: count, population, components, isUnknown, loading: true });
+        // Always attempt stats fetch, even for unknown bairros
         try {
           const f = filtersRef.current;
           const stats = await fetchLocationStats({
