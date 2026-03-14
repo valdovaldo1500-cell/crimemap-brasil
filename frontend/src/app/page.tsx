@@ -565,11 +565,10 @@ export default function Home() {
         filters,
         selectedPeriod,
         selectedYear,
-        selectedStates,
       );
     });
     return urls;
-  }, [detailPanels, filters, selectedPeriod, selectedYear, selectedStates]);
+  }, [detailPanels, filters, selectedPeriod, selectedYear]);
 
   const periodLabel = useMemo(() => {
     if (selectedPeriod === '12m') return 'últimos 12 meses';
