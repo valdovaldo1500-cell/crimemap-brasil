@@ -271,6 +271,47 @@ export default function Home() {
     ]).finally(() => setInitialLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const sp = new URLSearchParams(window.location.search);
+    if (!sp.get('panel') && !sp.get('compare')) { setUrlInitDone(true); return; }
+
+    const per = sp.get('per') as 'ano' | 'S1' | 'S2' | '12m';
+    if (per) setSelectedPeriod(per);
+    const ano = sp.get('ano');
+    if (ano) setSelectedYear(ano);
+    const tipos = sp.get('tipos');
+    if (tipos) setSelectedTypes(tipos.split(',').filter(Boolean));
+    const sexo = sp.get('sexo');
+    if (sexo) setSelectedSexo(sexo.split(',').filter(Boolean));
+    const cor = sp.get('cor');
+    if (cor) setSelectedCor(cor.split(',').filter(Boolean));
+    const idadeMinParam = sp.get('idade_min');
+    if (idadeMinParam) setIdadeMin(idadeMinParam);
+    const idadeMaxParam = sp.get('idade_max');
+    if (idadeMaxParam) setIdadeMax(idadeMaxParam);
+    const statesParam = sp.get('states');
+    if (statesParam) setSelectedStates(statesParam.split(',').filter(Boolean));
+
+    const panel = sp.get('panel');
+    const state = sp.get('state');
+    const municipio = sp.get('municipio');
+    const bairro = sp.get('bairro');
+    if (panel && state) {
+      pendingPanelRef.current = { panel, state, municipio: municipio || '', bairro: bairro || undefined };
+    }
+
+    const compareParam = sp.get('compare');
+    const locs = sp.getAll('loc');
+    if (compareParam === '1' && locs.length >= 1) {
+      pendingCompareRef.current = locs;
+      setCompareMode(true);
+    }
+
+    window.history.replaceState({}, '', '/');
+    setUrlInitDone(true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Dynamic cascading filters: re-fetch options when any filter changes
   const filterDebounceRef = useRef<ReturnType<typeof setTimeout>|null>(null);
   useEffect(() => {
