@@ -1152,7 +1152,7 @@ def heatmap_bairros(request: Request,
             merged_results.append(HeatmapPoint(
                 latitude=lat, longitude=lng, weight=int(r.cnt),
                 municipio=mun_name, bairro=None, level="municipio",
-                population=get_municipio_population(mun_name, r.state)))
+                population=get_municipio_population(mun_name, r.state), state=r.state))
 
     return merged_results
 
