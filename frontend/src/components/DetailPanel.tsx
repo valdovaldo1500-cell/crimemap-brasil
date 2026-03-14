@@ -140,7 +140,7 @@ export default function DetailPanel({ data, onClose, stackIndex = 0, onFocus, ra
   if (!data) return null;
 
   const rate = data.population ? ((data.total / data.population) * 100000).toFixed(1) : null;
-  const shareUrl = getShareUrl(data.state, data.municipio, data.bairro);
+  const shareUrl = shareUrlProp ?? getShareUrl(data.state, data.municipio, data.bairro);
   const shareText = `${data.displayName}: ${data.total.toLocaleString('pt-BR')} ocorrências de crime registradas${rate ? ` (${rate}/100K hab.)` : ''}. Veja os dados no Crime Brasil: ${shareUrl}`;
   const waLink = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
 
