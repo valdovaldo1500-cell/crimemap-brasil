@@ -574,10 +574,11 @@ export default function Home() {
         selectedPeriod,
         selectedYear,
         viewMode,
+        rateMode,
       );
     });
     return urls;
-  }, [detailPanels, filters, selectedPeriod, selectedYear, viewMode]);
+  }, [detailPanels, filters, selectedPeriod, selectedYear, viewMode, rateMode]);
 
   // Sync address bar with open panel using clean SEO paths
   useEffect(() => {
