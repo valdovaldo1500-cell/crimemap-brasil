@@ -1464,8 +1464,10 @@ export default function Home() {
                           const fmt = (v: number) => useRate ? v.toFixed(1) : v.toLocaleString();
                           const toRate = (count: number, stats: any) =>
                             useRate && stats.population ? (count / stats.population) * 100000 : count;
-                          // Use canonical categories for cross-state comparison
-                          const useCats = comparisonStats.every((s: any) => s.crime_categories?.length > 0);
+                          // Use canonical categories only for cross-state comparisons without active tipo filter
+                          const allSameState = comparisonLocations.length >= 2 && comparisonLocations.every((l: any) => l.state === comparisonLocations[0].state);
+                          const hasTypeFilter = (filters?.tipo?.length ?? 0) > 0;
+                          const useCats = !allSameState && !hasTypeFilter && comparisonStats.every((s: any) => s.crime_categories?.length > 0);
                           if (useCats) {
                             const allCats = new Set<string>();
                             comparisonStats.forEach((s: any) => (s.crime_categories || []).forEach((cc: any) => allCats.add(cc.category)));
