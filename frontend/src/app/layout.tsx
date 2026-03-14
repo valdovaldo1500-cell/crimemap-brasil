@@ -50,20 +50,11 @@ export const metadata: Metadata = {
     title: 'Crime Brasil — Mapa Interativo de Criminalidade do Brasil',
     description:
       'Explore dados de criminalidade por estado, cidade e bairro. Compare regiões, filtre por tipo de crime e veja estatísticas por 100 mil habitantes.',
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'Crime Brasil - Mapa de Criminalidade',
-      },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Crime Brasil — Mapa Interativo de Criminalidade',
     description: 'Explore dados de criminalidade por estado, cidade e bairro.',
-    images: ['/og-image.png'],
   },
   alternates: {
     canonical: 'https://crimebrasil.com.br',
