@@ -86,6 +86,7 @@ function buildShareUrl(
   filters: { tipo?: string[]; sexo?: string[]; cor?: string[]; idade_min?: number; idade_max?: number },
   selectedPeriod: string,
   selectedYear: string,
+  viewMode?: 'dots' | 'choropleth',
 ): string {
   const base = typeof window !== 'undefined' ? window.location.origin : 'https://crimebrasil.com.br';
   let path: string;
@@ -105,6 +106,7 @@ function buildShareUrl(
   if (filters.cor?.length) p.set('cor', filters.cor.join(','));
   if (filters.idade_min) p.set('idade_min', String(filters.idade_min));
   if (filters.idade_max) p.set('idade_max', String(filters.idade_max));
+  if (viewMode && viewMode !== 'choropleth') p.set('view', viewMode);
   const qs = p.toString();
   return `${base}${path}${qs ? `?${qs}` : ''}`;
 }
