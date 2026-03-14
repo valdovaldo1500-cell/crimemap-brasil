@@ -1884,6 +1884,37 @@ def autocomplete(request: Request, q: str, db: Session = Depends(get_db)):
 
     return results
 
+@app.get("/api/geocode")
+def geocode_location(municipio: str, state: Optional[str] = None, bairro: Optional[str] = None, db: Session = Depends(get_db)):
+    """Return best-effort lat/lng for a municipio (optionally a specific bairro)."""
+    lat, lng = None, None
+    # 1. Exact bairro match
+    if bairro:
+        geo = db.query(GeocodeCache).filter(GeocodeCache.municipio == municipio, GeocodeCache.bairro == bairro).first()
+        if geo and geo.latitude and geo.longitude:
+            lat, lng = geo.latitude, geo.longitude
+    # 2. Empty-bairro municipality centroid
+    if lat is None:
+        geo = db.query(GeocodeCache).filter(GeocodeCache.municipio == municipio, GeocodeCache.bairro == "").first()
+        if geo and geo.latitude and geo.longitude:
+            lat, lng = geo.latitude, geo.longitude
+    # 3. Any geocache entry for this municipality
+    if lat is None:
+        geo = db.query(GeocodeCache).filter(GeocodeCache.municipio == municipio, GeocodeCache.latitude.isnot(None)).first()
+        if geo and geo.latitude and geo.longitude:
+            lat, lng = geo.latitude, geo.longitude
+    # 4. MUNICIPIO_CENTROIDS lookup table
+    if lat is None:
+        c = MUNICIPIO_CENTROIDS.get(normalize_name(municipio))
+        if c:
+            lat, lng = c
+    # 5. STATE_CENTROIDS fallback
+    if lat is None and state:
+        c = STATE_CENTROIDS.get(state.upper())
+        if c:
+            lat, lng = c
+    return {"municipio": municipio, "bairro": bairro, "latitude": lat, "longitude": lng}
+
 @app.get("/api/search")
 def search_location(q: str, db: Session = Depends(get_db)):
     results = []
