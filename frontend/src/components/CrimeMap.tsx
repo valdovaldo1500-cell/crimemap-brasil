@@ -342,9 +342,9 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
         // Always attempt stats fetch, even for unknown bairros
         try {
           const f = filtersRef.current;
-          const extra_bairros = components
-            ?.map(c => c.bairro)
-            .filter(b => b !== bairro && b !== 'Bairro desconhecido');
+          const extra_bairros = rawBairroNames?.length
+            ? rawBairroNames
+            : components?.map(c => c.bairro).filter(b => b !== bairro && b !== 'Bairro desconhecido');
           const stats = await fetchLocationStats({
             municipio, bairro, state,
             semestre: f.semestre, ano: f.ano, tipo: f.tipo,
