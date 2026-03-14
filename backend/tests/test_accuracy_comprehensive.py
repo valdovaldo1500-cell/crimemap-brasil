@@ -80,7 +80,7 @@ class TestNoDuplicateComponents:
             pytest.skip("No POA bairro data")
 
         for point in data:
-            for comp in point.get("components", []):
+            for comp in point.get("components") or []:
                 w = comp.get("weight", 0)
                 assert w > 0, (
                     f"Zero-weight component '{comp.get('name')}' in bairro '{point.get('bairro')}'"
