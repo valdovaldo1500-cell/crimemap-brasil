@@ -137,8 +137,31 @@ export default async function CidadePage({
     mg: 'minas-gerais',
   };
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Crime Brasil', item: 'https://crimebrasil.com.br' },
+          { '@type': 'ListItem', position: 2, name: stateName, item: `https://crimebrasil.com.br/estado/${stateSlugMap[params.state]}` },
+          { '@type': 'ListItem', position: 3, name: cityTitle, item: `https://crimebrasil.com.br/cidade/${params.state}/${params.slug}` },
+        ],
+      },
+      {
+        '@type': 'Dataset',
+        name: `Criminalidade em ${cityTitle}, ${stateCode}`,
+        description: `Dados de criminalidade de ${cityTitle}, ${stateName}: ocorrências registradas por bairro e tipo de crime.`,
+        url: `https://crimebrasil.com.br/cidade/${params.state}/${params.slug}`,
+        spatialCoverage: { '@type': 'Place', name: cityTitle, address: { '@type': 'PostalAddress', addressLocality: cityTitle, addressRegion: stateCode, addressCountry: 'BR' } },
+      },
+    ],
+  };
+
   return (
-    <div
+    <>
+      <JsonLd data={jsonLd} />
+      <div
       style={{
         minHeight: '100vh',
         background: '#0a0f1a',
