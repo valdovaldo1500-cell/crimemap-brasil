@@ -16,6 +16,9 @@ const STATE_CODES: Record<string, string> = {
   mg: 'MG',
 };
 
+// ISR: generate on first request, revalidate every 24h
+export const revalidate = 86400;
+
 type SeoMunicipality = {
   state: string;
   state_lower: string;
@@ -26,17 +29,12 @@ type SeoMunicipality = {
 
 async function fetchSeoMunicipalities(): Promise<SeoMunicipality[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/seo/municipalities`, { cache: 'force-cache' });
+    const res = await fetch(`${API_BASE}/api/seo/municipalities`, { next: { revalidate: 86400 } });
     if (!res.ok) return [];
     return res.json();
   } catch {
     return [];
   }
-}
-
-export async function generateStaticParams() {
-  const munis = await fetchSeoMunicipalities();
-  return munis.map((m) => ({ state: m.state_lower, slug: m.slug }));
 }
 
 async function fetchLocationStats(stateCode: string, municipio: string) {
