@@ -695,6 +695,14 @@ export default function Home() {
     }
   }, [filters]);
 
+  const resetComparison = useCallback(() => {
+    compareLocationsRef.current = [];
+    setComparisonLocations([]);
+    setComparisonStats([]);
+    setComparisonLoading(false);
+    setComparisonPeriodLabel('');
+  }, []);
+
   const clearComparison = useCallback(() => {
     compareLocationsRef.current = [];
     setComparisonLocations([]);
@@ -702,6 +710,7 @@ export default function Home() {
     setComparisonLoading(false);
     setCompareMode(false);
     setComparePos(null);
+    setComparisonPeriodLabel('');
   }, []);
 
   // Compare box drag/resize handlers
