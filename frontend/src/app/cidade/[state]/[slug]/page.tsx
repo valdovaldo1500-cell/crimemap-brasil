@@ -200,6 +200,7 @@ export default async function CidadePage({
           {stateName} · Dados oficiais de segurança pública · Crime Brasil
         </p>
 
+        <MapRedirect panelType="muni" state={stateCode} municipio={municipioName} />
         <FilterBanner panelType="muni" state={stateCode} municipio={municipioName} />
 
         {data && (
