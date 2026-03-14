@@ -780,6 +780,7 @@ export default function Home() {
           crime_types: data.crime_types || existing.crime_types,
           total: data.total || existing.total || 0,
           population: data.population !== undefined ? data.population : existing.population,
+          populationSource: data.populationSource !== undefined ? data.populationSource : existing.populationSource,
           loading: data.loading ?? false,
           periodLabel,
         };
