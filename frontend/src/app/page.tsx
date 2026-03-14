@@ -603,6 +603,10 @@ export default function Home() {
     return `${selectedPeriod === 'S1' ? 'Jan-Jun' : 'Jul-Dez'} ${selectedYear}`;
   }, [selectedPeriod, selectedYear]);
 
+  const periodLabelRef = useRef(periodLabel);
+  useEffect(() => { periodLabelRef.current = periodLabel; }, [periodLabel]);
+  const [comparisonPeriodLabel, setComparisonPeriodLabel] = useState('');
+
   const onCompareSelect = useCallback(async (location: { municipio: string; bairro?: string; state?: string; displayName: string }) => {
     const currentLocations = compareLocationsRef.current;
     if (currentLocations.length >= 2) return;
