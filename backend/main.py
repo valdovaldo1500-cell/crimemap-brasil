@@ -1077,7 +1077,13 @@ def heatmap_bairros(request: Request,
                     all_components.extend(p.components)
                 else:
                     all_components.append(BairroComponent(bairro=p.bairro or "", weight=p.weight))
-            all_components.sort(key=lambda c: c.weight, reverse=True)
+            _seen: dict[str, int] = {}
+            for c in all_components:
+                _seen[c.bairro] = _seen.get(c.bairro, 0) + c.weight
+            all_components = sorted(
+                [BairroComponent(bairro=b, weight=w) for b, w in _seen.items()],
+                key=lambda c: c.weight, reverse=True
+            )
 
             # Build the display bairro name from the anchor.
             anchor_bairro = anchor.bairro or ""
