@@ -1350,7 +1350,7 @@ export default function Home() {
                     setCompareDragging(true);
                   }}
                 >
-                  <h3 className="text-xs uppercase tracking-wider text-[#7c3aed] font-semibold">Comparar locais <span className="text-[9px] font-normal text-[#64748b] normal-case tracking-normal">({periodLabel})</span></h3>
+                  <h3 className="text-xs uppercase tracking-wider text-[#7c3aed] font-semibold">Comparar locais <span className="text-[9px] font-normal text-[#64748b] normal-case tracking-normal">({comparisonPeriodLabel || periodLabel})</span></h3>
                   <div className="flex items-center gap-2">
                     {comparisonLocations.length >= 2 && (() => {
                       const compareUrl = buildCompareShareUrl(comparisonLocations, filters, selectedPeriod, selectedYear);
