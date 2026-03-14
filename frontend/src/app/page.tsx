@@ -734,7 +734,6 @@ export default function Home() {
   // Compare group drag/resize handlers
   useEffect(() => {
     if (!groupDragging && !groupResizing) return;
-    const activeId = groupDragging || groupResizing;
     const onMove = (e: MouseEvent) => {
       if (groupDragging && groupDragStartRef.current[groupDragging]) {
         const ds = groupDragStartRef.current[groupDragging];
