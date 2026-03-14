@@ -570,6 +570,23 @@ export default function Home() {
     return urls;
   }, [detailPanels, filters, selectedPeriod, selectedYear]);
 
+  // Sync address bar with open panel using clean SEO paths
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const nonLoading = detailPanels.filter(p => !p.loading);
+    if (nonLoading.length === 0) {
+      if (window.location.pathname !== '/') window.history.replaceState({}, '', '/');
+      return;
+    }
+    const last = nonLoading[nonLoading.length - 1];
+    const url = panelShareUrls[last.id];
+    if (!url) return;
+    try {
+      const u = new URL(url);
+      window.history.replaceState({}, '', u.pathname + u.search);
+    } catch {}
+  }, [detailPanels, panelShareUrls]);
+
   const periodLabel = useMemo(() => {
     if (selectedPeriod === '12m') return 'últimos 12 meses';
     if (selectedPeriod === 'ano') return selectedYear;
