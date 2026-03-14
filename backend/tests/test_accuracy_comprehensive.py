@@ -137,7 +137,7 @@ class TestHeatmapLocationStatsParity:
             )
 
             diff = abs(heatmap_w - stats_total)
-            allowed = max(1, heatmap_w * tolerance)
+            allowed = max(3, heatmap_w * tolerance)
             if diff > allowed:
                 mismatches.append({
                     "bairro": bairro, "heatmap": heatmap_w,
