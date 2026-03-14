@@ -13,10 +13,13 @@ export function generateStaticParams() {
   return Object.keys(STATE_MAP).map((slug) => ({ slug }));
 }
 
+// ISR: generate on first request, revalidate every 24h
+export const revalidate = 86400;
+
 async function fetchStateStats(stateCode: string) {
   try {
     const res = await fetch(`${API_BASE}/api/state-stats?state=${stateCode}`, {
-      cache: 'force-cache',
+      next: { revalidate: 86400 },
     });
     if (!res.ok) return null;
     return res.json();
