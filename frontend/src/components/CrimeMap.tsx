@@ -934,7 +934,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
             const circle = L.circleMarker([d.latitude, d.longitude], {
               radius, fillColor: color, fillOpacity: 0.35, color, weight: 2, opacity: 0.3,
             });
-            bindInteractions(circle, label, d.weight, d.municipio, d.bairro || undefined, d.components, d.population);
+            bindInteractions(circle, label, d.weight, d.municipio, d.bairro || undefined, d.components, d.population, d.state);
             markersRef.current?.addLayer(circle);
           });
         } else {
