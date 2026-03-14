@@ -246,18 +246,7 @@ export default async function EstadoPage({ params }: { params: { slug: string } 
           </section>
         )}
 
-        <div
-          style={{
-            background: 'linear-gradient(135deg, #1e3a5f 0%, #1a2744 100%)',
-            borderRadius: '1rem',
-            padding: '2rem',
-            textAlign: 'center',
-            border: '1px solid #2563eb33',
-            marginBottom: '2rem',
-          }}
-        >
-          <MapLinkButton panelType="state" state={state.code} description="Explore dados por cidade e bairro no mapa interativo" />
-        </div>
+        <MapLinkButton panelType="state" state={state.code} description="Explore dados por cidade e bairro no mapa interativo" />
 
         <p style={{ color: '#475569', fontSize: '0.75rem', textAlign: 'center' }}>
           Dados oficiais: SSP/{state.code} · Crime Brasil ·{' '}
