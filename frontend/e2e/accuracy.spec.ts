@@ -63,7 +63,8 @@ test('Accuracy: location-stats total matches heatmap weight for POA bairros', as
     const heatWeight: number = point.weight;
     const rawNames: string[] = point.raw_bairro_names || [];
 
-    const extraParam = rawNames.length ? `&extra_bairros=${encodeURIComponent(rawNames.join(','))}` : '';
+    // API requires repeated extra_bairros params, not comma-separated
+    const extraParam = rawNames.map((n: string) => `&extra_bairros=${encodeURIComponent(n)}`).join('');
     const statsResp = await request.get(
       `${BASE_API}/api/location-stats?municipio=PORTO+ALEGRE&state=RS&bairro=${encodeURIComponent(bairro)}&ultimos_meses=12${extraParam}`,
       { timeout: 30_000 }
