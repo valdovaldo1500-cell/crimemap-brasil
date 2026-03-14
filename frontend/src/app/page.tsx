@@ -901,43 +901,6 @@ export default function Home() {
     return () => window.removeEventListener('mousedown', handler);
   }, [stateMenu]);
 
-  // Re-fetch open DetailPanels when filters change
-  const detailPanelsRef = useRef(detailPanels);
-  detailPanelsRef.current = detailPanels;
-  const prevFiltersRef = useRef(filters);
-  useEffect(() => {
-    if (prevFiltersRef.current === filters) return;
-    prevFiltersRef.current = filters;
-    const panels = detailPanelsRef.current;
-    if (!panels.length) return;
-    panels.forEach(async (panel) => {
-      // Skip panels that were opened for a different time period — they are "snapshots"
-      if (panel.periodLabel && panel.periodLabel !== periodLabel) return;
-      try {
-        if (panel.state && !panel.municipio) {
-          const stats = await fetchStateStats({
-            state: panel.state, ...filters, selected_states: selectedStates,
-          });
-          setDetailPanels(prev => prev.map(p =>
-            p.id === panel.id ? { ...p, total: stats.total ?? p.total, population: stats.population ?? p.population,
-              crime_types: stats.crime_types?.map((ct: any) => ({ tipo: ct.tipo_enquadramento || ct.tipo, count: ct.count })) ?? p.crime_types,
-              crime_categories: stats.crime_categories ?? p.crime_categories, periodLabel } : p
-          ));
-        } else if (panel.municipio) {
-          const stats = await fetchLocationStats({
-            municipio: panel.municipio, bairro: panel.bairro, state: panel.state, ...filters,
-          });
-          setDetailPanels(prev => prev.map(p =>
-            p.id === panel.id ? { ...p, total: stats.total ?? p.total, population: stats.population ?? p.population,
-              crime_types: stats.crime_types?.map((ct: any) => ({ tipo: ct.tipo_enquadramento || ct.tipo, count: ct.count })) ?? p.crime_types,
-              crime_categories: stats.crime_categories ?? p.crime_categories, periodLabel } : p
-          ));
-        }
-      } catch (err) {
-        console.error('Failed to refresh panel:', err);
-      }
-    });
-  }, [filters, periodLabel]);
 
   const activeFilterCount = selectedTypes.length + selectedGrupo.length + selectedSexo.length + selectedCor.length + (idadeMin ? 1 : 0) + (idadeMax ? 1 : 0);
 
