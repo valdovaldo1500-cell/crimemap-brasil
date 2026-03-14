@@ -1086,6 +1086,7 @@ def heatmap_bairros(request: Request,
                 bairro=merged_bairro,
                 population=merged_pop,
                 components=all_components,
+                state=anchor.state,
             ))
 
     # --- Staging fallback: add municipality-level data for RJ/MG ---
