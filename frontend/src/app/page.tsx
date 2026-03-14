@@ -87,6 +87,7 @@ function buildShareUrl(
   selectedPeriod: string,
   selectedYear: string,
   viewMode?: 'dots' | 'choropleth',
+  rateMode?: 'rate' | 'absolute',
 ): string {
   const base = typeof window !== 'undefined' ? window.location.origin : 'https://crimebrasil.com.br';
   let path: string;
