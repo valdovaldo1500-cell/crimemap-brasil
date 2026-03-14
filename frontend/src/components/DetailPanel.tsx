@@ -185,7 +185,7 @@ export default function DetailPanel({ data, onClose, stackIndex = 0, onFocus, ra
             href={waLink}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={e => e.stopPropagation()}
+            onClick={e => { e.stopPropagation(); trackEvent('share_clicked', { share_method: 'whatsapp', location_name: data.displayName }); }}
             className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[#374151] text-[#25D366] transition-colors"
             aria-label="Compartilhar no WhatsApp"
             title="Compartilhar no WhatsApp"
