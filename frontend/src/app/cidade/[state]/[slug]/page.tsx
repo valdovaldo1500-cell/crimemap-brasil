@@ -82,6 +82,11 @@ export async function generateMetadata({
       title: `Criminalidade em ${cityTitle}, ${stateCode} — Crime Brasil`,
       description: `${total} ocorrências registradas em ${cityTitle}, ${stateName}.`,
       url: `https://crimebrasil.com.br/cidade/${params.state}/${params.slug}`,
+      images: [{ url: `https://crimebrasil.com.br/api/og?title=${encodeURIComponent(`Criminalidade em ${cityTitle}`)}&subtitle=${encodeURIComponent(`${stateCode} · Dados por bairro`)}&detail=${encodeURIComponent(`${total} ocorrências registradas`)}`, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      images: [`https://crimebrasil.com.br/api/og?title=${encodeURIComponent(`Criminalidade em ${cityTitle}`)}&subtitle=${encodeURIComponent(`${stateCode} · Dados por bairro`)}&detail=${encodeURIComponent(`${total} ocorrências registradas`)}`],
     },
   };
 }
