@@ -967,7 +967,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
               html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:2px solid ${color};opacity:0.85;display:flex;align-items:center;justify-content:center;"><span style="color:#fff;font-size:${fontSize}px;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,0.7);line-height:1;">${displayValue(d.weight, d.population, isRate)}</span></div>`
             });
             const marker = L.marker([lat, lng], { icon, zIndexOffset: Math.round((1 - intensity) * 1000) });
-            bindInteractions(marker, label, d.weight, d.municipio, d.bairro || undefined, d.components, d.population);
+            bindInteractions(marker, label, d.weight, d.municipio, d.bairro || undefined, d.components, d.population, d.state);
             markersRef.current?.addLayer(marker);
           });
         }
