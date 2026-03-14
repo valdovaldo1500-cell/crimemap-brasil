@@ -84,7 +84,30 @@ export default async function EstadoPage({ params }: { params: { slug: string } 
   const total: number = data?.total ?? 0;
   const rate = population && total ? Math.round((total / population) * 100000) : null;
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Crime Brasil', item: 'https://crimebrasil.com.br' },
+          { '@type': 'ListItem', position: 2, name: state.fullName, item: `https://crimebrasil.com.br/estado/${params.slug}` },
+        ],
+      },
+      {
+        '@type': 'Dataset',
+        name: `Criminalidade em ${state.fullName}`,
+        description: `Dados de criminalidade do estado de ${state.fullName}: ocorrências registradas, tipos de crime e municípios mais afetados.`,
+        url: `https://crimebrasil.com.br/estado/${params.slug}`,
+        spatialCoverage: { '@type': 'Place', name: state.fullName, address: { '@type': 'PostalAddress', addressRegion: state.code, addressCountry: 'BR' } },
+        ...(total ? { measurementTechnique: 'Dados oficiais SSP/' + state.code } : {}),
+      },
+    ],
+  };
+
   return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     <div
       style={{
         minHeight: '100vh',
