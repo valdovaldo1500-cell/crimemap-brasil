@@ -84,6 +84,19 @@ export async function searchLocation(q: string) {
   }
 }
 
+export async function fetchGeocode(municipio: string, state?: string, bairro?: string) {
+  try {
+    const p = new URLSearchParams({ municipio });
+    if (state) p.set('state', state);
+    if (bairro) p.set('bairro', bairro);
+    const res = await fetch(`${API}/api/geocode?${p}`);
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    return res.json();
+  } catch (err: any) {
+    throw new Error(`fetchGeocode failed: ${err.message}`);
+  }
+}
+
 export async function fetchYears() {
   try {
     const res = await fetch(`${API}/api/years`);
