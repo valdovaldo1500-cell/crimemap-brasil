@@ -108,7 +108,7 @@ export default async function EstadoPage({ params }: { params: { slug: string } 
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <JsonLd data={jsonLd} />
     <div
       style={{
         minHeight: '100vh',
