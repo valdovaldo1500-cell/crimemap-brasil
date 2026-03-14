@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { slugify } from '@/lib/slugify';
+import { trackEvent } from '@/lib/analytics';
 
 const STATE_SLUGS: Record<string, string> = {
   RS: 'rio-grande-do-sul',
