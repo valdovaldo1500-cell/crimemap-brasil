@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const BASE_API = 'http://localhost:8000';
+const BASE_API = process.env.BASE_API ?? 'https://crimebrasil.com.br';
 
 async function waitForMapReady(page: import('@playwright/test').Page) {
   await page.waitForSelector('.leaflet-tile-loaded', { timeout: 30_000 });
