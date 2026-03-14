@@ -996,7 +996,7 @@ def heatmap_bairros(request: Request,
             mun_pop = get_municipio_population(m['municipio'], "RS") if bairro_pop is None else None
             results.append(HeatmapPoint(latitude=lat, longitude=lng, weight=m['cnt'],
                 municipio=m['municipio'], bairro=m['bairro'],
-                population=bairro_pop or mun_pop))
+                population=bairro_pop or mun_pop, state='RS'))
     # Add unknown buckets
     for mun_norm, ub in unknown_bucket.items():
         if ub['cnt'] >= 5:  # only show if substantial
@@ -1004,7 +1004,7 @@ def heatmap_bairros(request: Request,
             results.append(HeatmapPoint(latitude=ub['lat'], longitude=ub['lng'], weight=ub['cnt'],
                 municipio=ub['municipio'], bairro='Bairro desconhecido',
                 population=get_municipio_population(ub['municipio'], "RS"),
-                components=[BairroComponent(**c) for c in components]))
+                components=[BairroComponent(**c) for c in components], state='RS'))
 
     # --- Cluster-merging pass ---
     # Group results by municipality, then merge points within 0.3 km of each other.
