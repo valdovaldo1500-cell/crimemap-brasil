@@ -1212,10 +1212,9 @@ export default function Home() {
             aria-label="Filtros"
             onClick={e => e.stopPropagation()}
           >
-          <div className="flex justify-between items-center sm:hidden mb-3">
-            <h2 className="text-base font-bold">Filtros</h2>
-            {/* Fix #12: min touch target on close button */}
-            <button onClick={() => setShowFilters(false)} className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-[#1a2234] border border-[#1e293b] text-[#94a3b8] text-sm" aria-label="Fechar filtros">✕</button>
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-sm font-semibold text-[#94a3b8] uppercase tracking-wider">Filtros</h2>
+            <button onClick={() => setShowFilters(false)} className="min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg bg-[#1a2234] border border-[#1e293b] text-[#94a3b8] text-sm hover:bg-[#1e293b]" aria-label="Fechar filtros">✕</button>
           </div>
           <div>
             <h3 className="text-xs uppercase tracking-wider text-[#94a3b8] mb-2">Estados</h3>
