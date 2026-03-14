@@ -614,133 +614,148 @@ export default function Home() {
 
   const periodLabelRef = useRef(periodLabel);
   useEffect(() => { periodLabelRef.current = periodLabel; }, [periodLabel]);
-  const [comparisonPeriodLabel, setComparisonPeriodLabel] = useState('');
 
   const onCompareSelect = useCallback(async (location: { municipio: string; bairro?: string; state?: string; displayName: string }) => {
-    const currentLocations = compareLocationsRef.current;
-    if (currentLocations.length >= 2) return;
-    const isDup = currentLocations.some(l =>
+    const currentBuilding = buildingLocationsRef.current;
+    const isDup = currentBuilding.some(l =>
       l.state === location.state && l.municipio === location.municipio && l.bairro === location.bairro
     );
     if (isDup) return;
-    if (currentLocations.length === 0) setComparisonPeriodLabel(periodLabelRef.current);
-    // Synchronously update ref so concurrent calls see the updated list immediately
-    const newLocations = [...currentLocations, location];
-    compareLocationsRef.current = newLocations;
-    setComparisonLocations(newLocations);
-    setComparisonLoading(true);
-    try {
-      // Collect all states involved in this comparison for compatible-types filtering
-      const allComparisonStates = newLocations.map(l => l.state).filter(Boolean) as string[];
-      let stats;
-      if (!location.municipio && location.state) {
-        // State-level comparison
-        const allStates = [...newLocations.filter(l => l.state && !l.municipio).map(l => l.state!)];
-        stats = await fetchStateStats({
-          state: location.state,
-          selected_states: allStates,
-          semestre: filters.semestre, ano: filters.ano, tipo: filters.tipo,
-          grupo: filters.grupo, sexo: filters.sexo, cor: filters.cor,
-          idade_min: filters.idade_min, idade_max: filters.idade_max,
-          ultimos_meses: filters.ultimos_meses,
-        });
-        // Re-fetch first state with compatible types filter when 2nd state added
-        if (currentLocations.length === 1 && currentLocations[0].state && !currentLocations[0].municipio) {
-          try {
-            const firstStats = await fetchStateStats({
-              state: currentLocations[0].state,
-              selected_states: allStates,
-              semestre: filters.semestre, ano: filters.ano, tipo: filters.tipo,
-              grupo: filters.grupo, sexo: filters.sexo, cor: filters.cor,
-              idade_min: filters.idade_min, idade_max: filters.idade_max,
-              ultimos_meses: filters.ultimos_meses,
-            });
-            // Single atomic update with both states — avoids race between replace + append
-            setComparisonStats([
-              { ...firstStats, displayName: currentLocations[0].displayName },
-              { ...stats, displayName: location.displayName },
-            ]);
-            return;
-          } catch {}
-        }
-      } else {
-        stats = await fetchLocationStats({
-          municipio: location.municipio,
-          bairro: location.bairro,
-          state: location.state,
-          selected_states: allComparisonStates,
-          semestre: filters.semestre, ano: filters.ano, tipo: filters.tipo,
-          grupo: filters.grupo, sexo: filters.sexo, cor: filters.cor,
-          idade_min: filters.idade_min, idade_max: filters.idade_max,
-          ultimos_meses: filters.ultimos_meses,
-        });
-        // Re-fetch first location with compatible types when 2nd location involves MG
-        if (currentLocations.length === 1 && currentLocations[0].municipio &&
-            allComparisonStates.includes('MG') && allComparisonStates.length > 1) {
-          try {
-            const firstStats = await fetchLocationStats({
-              municipio: currentLocations[0].municipio,
-              bairro: currentLocations[0].bairro,
-              state: currentLocations[0].state,
-              selected_states: allComparisonStates,
-              semestre: filters.semestre, ano: filters.ano, tipo: filters.tipo,
-              grupo: filters.grupo, sexo: filters.sexo, cor: filters.cor,
-              idade_min: filters.idade_min, idade_max: filters.idade_max,
-              ultimos_meses: filters.ultimos_meses,
-            });
-            setComparisonStats([
-              { ...firstStats, displayName: currentLocations[0].displayName },
-              { ...stats, displayName: location.displayName },
-            ]);
-            return;
-          } catch {}
-        }
-      }
-      setComparisonStats(prev => prev.length >= 2 ? prev : [...prev, { ...stats, displayName: location.displayName }]);
-    } catch {
-      setComparisonStats(prev => prev.length >= 2 ? prev : [...prev, { displayName: location.displayName, total: 0, crime_types: [] }]);
-    } finally {
-      setComparisonLoading(false);
-    }
-  }, [filters]);
 
-  const resetComparison = useCallback(() => {
-    compareLocationsRef.current = [];
-    setComparisonLocations([]);
-    setComparisonStats([]);
-    setComparisonLoading(false);
-    setComparisonPeriodLabel('');
+    if (currentBuilding.length === 0) {
+      // First location of new pair
+      setBuildingPeriodLabel(periodLabelRef.current);
+      const newBuilding = [location];
+      buildingLocationsRef.current = newBuilding;
+      setBuildingLocations(newBuilding);
+      setBuildingLoading(true);
+      try {
+        let stats;
+        if (!location.municipio && location.state) {
+          stats = await fetchStateStats({
+            state: location.state,
+            selected_states: [location.state],
+            semestre: filters.semestre, ano: filters.ano, tipo: filters.tipo,
+            grupo: filters.grupo, sexo: filters.sexo, cor: filters.cor,
+            idade_min: filters.idade_min, idade_max: filters.idade_max,
+            ultimos_meses: filters.ultimos_meses,
+          });
+        } else {
+          stats = await fetchLocationStats({
+            municipio: location.municipio,
+            bairro: location.bairro,
+            state: location.state,
+            selected_states: location.state ? [location.state] : [],
+            semestre: filters.semestre, ano: filters.ano, tipo: filters.tipo,
+            grupo: filters.grupo, sexo: filters.sexo, cor: filters.cor,
+            idade_min: filters.idade_min, idade_max: filters.idade_max,
+            ultimos_meses: filters.ultimos_meses,
+          });
+        }
+        setBuildingStats([{ ...stats, displayName: location.displayName }]);
+      } catch {
+        setBuildingStats([{ displayName: location.displayName, total: 0, crime_types: [] }]);
+      } finally {
+        setBuildingLoading(false);
+      }
+    } else {
+      // Second location — complete this pair and push to compareGroups
+      const firstLocation = currentBuilding[0];
+      const newBuilding = [...currentBuilding, location];
+      buildingLocationsRef.current = [];
+      setBuildingLocations([]);
+      setBuildingLoading(true);
+      const snapshotPeriodLabel = buildingPeriodLabel || periodLabelRef.current;
+      try {
+        const allComparisonStates = newBuilding.map(l => l.state).filter(Boolean) as string[];
+        let firstStats: any, secondStats: any;
+        if (!location.municipio && location.state) {
+          const allStates = newBuilding.filter(l => l.state && !l.municipio).map(l => l.state!);
+          [firstStats, secondStats] = await Promise.all([
+            fetchStateStats({ state: firstLocation.state!, selected_states: allStates, semestre: filters.semestre, ano: filters.ano, tipo: filters.tipo, grupo: filters.grupo, sexo: filters.sexo, cor: filters.cor, idade_min: filters.idade_min, idade_max: filters.idade_max, ultimos_meses: filters.ultimos_meses }),
+            fetchStateStats({ state: location.state, selected_states: allStates, semestre: filters.semestre, ano: filters.ano, tipo: filters.tipo, grupo: filters.grupo, sexo: filters.sexo, cor: filters.cor, idade_min: filters.idade_min, idade_max: filters.idade_max, ultimos_meses: filters.ultimos_meses }),
+          ]);
+        } else {
+          [firstStats, secondStats] = await Promise.all([
+            fetchLocationStats({ municipio: firstLocation.municipio, bairro: firstLocation.bairro, state: firstLocation.state, selected_states: allComparisonStates, semestre: filters.semestre, ano: filters.ano, tipo: filters.tipo, grupo: filters.grupo, sexo: filters.sexo, cor: filters.cor, idade_min: filters.idade_min, idade_max: filters.idade_max, ultimos_meses: filters.ultimos_meses }),
+            fetchLocationStats({ municipio: location.municipio, bairro: location.bairro, state: location.state, selected_states: allComparisonStates, semestre: filters.semestre, ano: filters.ano, tipo: filters.tipo, grupo: filters.grupo, sexo: filters.sexo, cor: filters.cor, idade_min: filters.idade_min, idade_max: filters.idade_max, ultimos_meses: filters.ultimos_meses }),
+          ]);
+        }
+        const groupId = `${Date.now()}-${Math.random()}`;
+        setCompareGroups(prev => [...prev, {
+          id: groupId,
+          locations: newBuilding,
+          stats: [
+            { ...firstStats, displayName: firstLocation.displayName },
+            { ...secondStats, displayName: location.displayName },
+          ],
+          periodLabel: snapshotPeriodLabel,
+          pos: null,
+          size: { w: 483 },
+        }]);
+      } catch {
+        const groupId = `${Date.now()}-${Math.random()}`;
+        setCompareGroups(prev => [...prev, {
+          id: groupId,
+          locations: newBuilding,
+          stats: [
+            { displayName: firstLocation.displayName, total: 0, crime_types: [] },
+            { displayName: location.displayName, total: 0, crime_types: [] },
+          ],
+          periodLabel: snapshotPeriodLabel,
+          pos: null,
+          size: { w: 483 },
+        }]);
+      } finally {
+        setBuildingStats([]);
+        setBuildingLoading(false);
+      }
+    }
+  }, [filters, buildingPeriodLabel]);
+
+  const resetBuilding = useCallback(() => {
+    buildingLocationsRef.current = [];
+    setBuildingLocations([]);
+    setBuildingStats([]);
+    setBuildingLoading(false);
+    setBuildingPeriodLabel('');
   }, []);
 
   const clearComparison = useCallback(() => {
-    compareLocationsRef.current = [];
-    setComparisonLocations([]);
-    setComparisonStats([]);
-    setComparisonLoading(false);
+    buildingLocationsRef.current = [];
+    setBuildingLocations([]);
+    setBuildingStats([]);
+    setBuildingLoading(false);
+    setBuildingPeriodLabel('');
+    setCompareGroups([]);
     setCompareMode(false);
-    setComparePos(null);
-    setComparisonPeriodLabel('');
   }, []);
 
-  // Compare box drag/resize handlers
+  // Compare group drag/resize handlers
   useEffect(() => {
-    if (!compareDragging && !compareResizing) return;
+    if (!groupDragging && !groupResizing) return;
+    const activeId = groupDragging || groupResizing;
     const onMove = (e: MouseEvent) => {
-      if (compareDragging && compareDragStart.current) {
-        setComparePos({
-          x: compareDragStart.current.px + (e.clientX - compareDragStart.current.x),
-          y: compareDragStart.current.py + (e.clientY - compareDragStart.current.y),
-        });
-      } else if (compareResizing && compareResizeStart.current) {
-        const newW = Math.max(300, compareResizeStart.current.w + (e.clientX - compareResizeStart.current.x));
-        setCompareSize({ w: newW });
+      if (groupDragging && groupDragStartRef.current[groupDragging]) {
+        const ds = groupDragStartRef.current[groupDragging];
+        setCompareGroups(prev => prev.map(g => g.id === groupDragging
+          ? { ...g, pos: { x: ds.px + (e.clientX - ds.x), y: ds.py + (e.clientY - ds.y) } }
+          : g
+        ));
+      } else if (groupResizing && groupResizeStartRef.current[groupResizing]) {
+        const rs = groupResizeStartRef.current[groupResizing];
+        const newW = Math.max(300, rs.w + (e.clientX - rs.x));
+        setCompareGroups(prev => prev.map(g => g.id === groupResizing
+          ? { ...g, size: { w: newW } }
+          : g
+        ));
       }
     };
-    const onEnd = () => { setCompareDragging(false); setCompareResizing(false); };
+    const onEnd = () => { setGroupDragging(null); setGroupResizing(null); };
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onEnd);
     return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onEnd); };
-  }, [compareDragging, compareResizing]);
+  }, [groupDragging, groupResizing]);
 
   const onDetailOpen = useCallback((data: any) => {
     const panelId = data.actionId || data.displayName || String(Date.now());
