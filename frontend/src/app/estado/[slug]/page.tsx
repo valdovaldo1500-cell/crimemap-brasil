@@ -279,5 +279,6 @@ export default async function EstadoPage({ params }: { params: { slug: string } 
         </p>
       </div>
     </div>
+    </>
   );
 }
