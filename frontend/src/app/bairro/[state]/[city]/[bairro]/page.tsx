@@ -111,6 +111,7 @@ export default async function BairroPage({
 
   const topTypes: { tipo_enquadramento: string; count: number }[] = data?.crime_types?.slice(0, 10) ?? [];
   const population: number | null = data?.population ?? null;
+  const populationSource: string | null = data?.population_source ?? null;
   const total: number = data?.total ?? 0;
   const rate = population && total ? Math.round((total / population) * 100000) : null;
 
