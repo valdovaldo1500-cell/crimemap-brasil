@@ -11,16 +11,15 @@ const STATE_SLUGS: Record<string, string> = {
 
 function getShareUrl(state?: string, municipio?: string, bairro?: string): string {
   const base = 'https://crimebrasil.com.br';
-  if (!state || (!municipio && !state)) return base;
-  if (municipio && !bairro) {
+  if (!state) return base;
+  if (!municipio) {
     const stateSlug = STATE_SLUGS[state];
-    if (stateSlug) return `${base}/cidade/${state.toLowerCase()}/${slugify(municipio)}`;
+    return stateSlug ? `${base}/estado/${stateSlug}` : base;
   }
-  if (state && !municipio) {
-    const stateSlug = STATE_SLUGS[state];
-    if (stateSlug) return `${base}/estado/${stateSlug}`;
+  if (bairro) {
+    return `${base}/bairro/${state.toLowerCase()}/${slugify(municipio)}/${slugify(bairro)}`;
   }
-  return base;
+  return `${base}/cidade/${state.toLowerCase()}/${slugify(municipio)}`;
 }
 
 function prettifyCrimeType(s: string): string {
