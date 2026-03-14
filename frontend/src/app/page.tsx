@@ -319,6 +319,8 @@ export default function Home() {
     if (statesParam) setSelectedStates(statesParam.split(',').filter(Boolean));
     const viewParam = sp.get('view');
     if (viewParam === 'dots' || viewParam === 'choropleth') setViewMode(viewParam);
+    const rateParam = sp.get('rate');
+    if (rateParam === 'rate' || rateParam === 'absolute') setRateMode(rateParam);
 
     const panel = sp.get('panel');
     const state = sp.get('state');
