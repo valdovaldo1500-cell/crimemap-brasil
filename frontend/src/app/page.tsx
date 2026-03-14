@@ -86,23 +86,27 @@ function buildShareUrl(
   filters: { tipo?: string[]; sexo?: string[]; cor?: string[]; idade_min?: number; idade_max?: number },
   selectedPeriod: string,
   selectedYear: string,
-  selectedStates: string[],
 ): string {
   const base = typeof window !== 'undefined' ? window.location.origin : 'https://crimebrasil.com.br';
+  let path: string;
+  if (panelType === 'state') {
+    const stateSlug = STATE_SLUGS_MAP[state];
+    path = stateSlug ? `/estado/${stateSlug}` : '/';
+  } else if (panelType === 'bairro' && bairro) {
+    path = `/bairro/${state.toLowerCase()}/${slugify(municipio)}/${slugify(bairro)}`;
+  } else {
+    path = `/cidade/${state.toLowerCase()}/${slugify(municipio)}`;
+  }
   const p = new URLSearchParams();
-  p.set('panel', panelType);
-  if (state) p.set('state', state);
-  if (municipio) p.set('municipio', municipio);
-  if (bairro) p.set('bairro', bairro);
-  p.set('per', selectedPeriod);
+  if (selectedPeriod && selectedPeriod !== '12m') p.set('per', selectedPeriod);
   if (selectedYear && selectedPeriod !== '12m') p.set('ano', selectedYear);
   if (filters.tipo?.length) p.set('tipos', filters.tipo.join(','));
   if (filters.sexo?.length) p.set('sexo', filters.sexo.join(','));
   if (filters.cor?.length) p.set('cor', filters.cor.join(','));
   if (filters.idade_min) p.set('idade_min', String(filters.idade_min));
   if (filters.idade_max) p.set('idade_max', String(filters.idade_max));
-  if (selectedStates.length > 0) p.set('states', selectedStates.join(','));
-  return `${base}/?${p.toString()}`;
+  const qs = p.toString();
+  return `${base}${path}${qs ? `?${qs}` : ''}`;
 }
 
 function buildCompareShareUrl(
