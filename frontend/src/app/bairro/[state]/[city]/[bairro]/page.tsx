@@ -149,6 +149,7 @@ export default async function BairroPage({
             {cityTitle} · {stateName} · Dados oficiais de segurança pública · Crime Brasil
           </p>
 
+          <MapRedirect panelType="bairro" state={stateCode} municipio={municipioName} bairro={bairroName} />
           <FilterBanner panelType="bairro" state={stateCode} municipio={municipioName} bairro={bairroName} />
 
           {data && (
