@@ -1415,7 +1415,7 @@ export default function Home() {
                     <h3 className="text-xs uppercase tracking-wider text-[#7c3aed] font-semibold">Comparação <span className="text-[9px] font-normal text-[#64748b] normal-case tracking-normal">({group.periodLabel})</span></h3>
                     <div className="flex items-center gap-2">
                       {(() => {
-                        const compareUrl = buildCompareShareUrl(comparisonLocations, filters, selectedPeriod, selectedYear);
+                        const compareUrl = buildCompareShareUrl(comparisonLocations, filters, selectedPeriod, selectedYear, viewMode, rateMode);
                         const compareText = `Comparação de criminalidade: ${comparisonLocations.map((l: any) => l.displayName).join(' vs ')}. Veja no Crime Brasil: ${compareUrl}`;
                         return <>
                           <a
