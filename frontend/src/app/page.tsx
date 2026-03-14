@@ -229,6 +229,8 @@ export default function Home() {
   const compareLocationsRef = useRef<any[]>([]);
   const pendingPanelRef = useRef<{ panel: string; state: string; municipio: string; bairro?: string } | null>(null);
   const pendingCompareRef = useRef<string[]>([]);
+  const urlPeriodSetRef = useRef(false);
+  const urlYearSetRef = useRef(false);
   const [urlInitDone, setUrlInitDone] = useState(false);
 
   // System-wide static info
