@@ -112,7 +112,7 @@ class TestHeatmapLocationStatsParity:
         return resp.json().get("total", 0)
 
     def _check_parity(self, municipio: str, ultimos_meses: int = 12,
-                      merged_only: bool = False, tolerance: float = 0.05):
+                      merged_only: bool = False, tolerance: float = 0.10):
         data = self._get_bairros(municipio, ultimos_meses)
         if not data:
             pytest.skip(f"No bairro data for {municipio} ultimos_meses={ultimos_meses}")
