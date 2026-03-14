@@ -1,7 +1,5 @@
 'use client';
 import { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 
 interface FilterBannerProps {
   panelType: 'state' | 'muni' | 'bairro';
