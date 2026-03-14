@@ -147,6 +147,8 @@ export default async function EstadoPage({ params }: { params: { slug: string } 
           Dados oficiais de segurança pública · Crime Brasil
         </p>
 
+        <FilterBanner panelType="state" state={state.code} />
+
         {data && (
           <div
             style={{
