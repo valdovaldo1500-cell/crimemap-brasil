@@ -342,12 +342,16 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
         // Always attempt stats fetch, even for unknown bairros
         try {
           const f = filtersRef.current;
+          const extra_bairros = components
+            ?.map(c => c.bairro)
+            .filter(b => b !== bairro && b !== 'Bairro desconhecido');
           const stats = await fetchLocationStats({
             municipio, bairro, state,
             semestre: f.semestre, ano: f.ano, tipo: f.tipo,
             grupo: f.grupo, sexo: f.sexo, cor: f.cor,
             idade_min: f.idade_min, idade_max: f.idade_max,
             ultimos_meses: f.ultimos_meses,
+            ...(extra_bairros?.length ? { extra_bairros } : {}),
           });
           onDetailOpenRef.current({ actionId, displayName, municipio, bairro, state, total: stats.total ?? count, population: stats.population ?? population, components,
             isUnknown: false, loading: false,
