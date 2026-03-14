@@ -107,6 +107,7 @@ function buildShareUrl(
   if (filters.idade_min) p.set('idade_min', String(filters.idade_min));
   if (filters.idade_max) p.set('idade_max', String(filters.idade_max));
   if (viewMode && viewMode !== 'choropleth') p.set('view', viewMode);
+  if (rateMode && rateMode !== 'rate') p.set('rate', rateMode);
   const qs = p.toString();
   return `${base}${path}${qs ? `?${qs}` : ''}`;
 }
