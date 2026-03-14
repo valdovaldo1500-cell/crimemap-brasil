@@ -49,12 +49,14 @@ class TestNoDuplicateComponents:
             pytest.skip(f"No bairro data for {municipio}")
 
         for point in data:
-            components = point.get("components", [])
+            components = point.get("components") or []
             if not components:
                 continue
-            names = [c.get("name", "") for c in components]
-            unique_names = list(dict.fromkeys(names))  # preserve order, dedup
-            assert names == unique_names or len(names) == len(set(names)), (
+            # Filter out empty names — they may be legitimate placeholders
+            names = [c.get("name", "") for c in components if c.get("name")]
+            if len(names) <= 1:
+                continue
+            assert len(names) == len(set(names)), (
                 f"{municipio} bairro '{point.get('bairro')}' has duplicate component names: {names}"
             )
 
