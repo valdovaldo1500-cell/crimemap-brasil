@@ -1152,7 +1152,13 @@ def heatmap_bairros(request: Request,
                     _absorbed.add(_i)
                     _comps_i = _pt_i.components or [BairroComponent(bairro=_pt_i.bairro, weight=_pt_i.weight)]
                     _comps_j = _pt_j.components or [BairroComponent(bairro=_pt_j.bairro, weight=_pt_j.weight)]
-                    _all_comps = sorted(_comps_j + _comps_i, key=lambda c: c.weight, reverse=True)
+                    _seen2: dict[str, int] = {}
+                    for _c in _comps_j + _comps_i:
+                        _seen2[_c.bairro] = _seen2.get(_c.bairro, 0) + _c.weight
+                    _all_comps = sorted(
+                        [BairroComponent(bairro=b, weight=w) for b, w in _seen2.items()],
+                        key=lambda c: c.weight, reverse=True
+                    )
                     _merged_raw: list[str] = list(_pt_j.raw_bairro_names or [])
                     for _n in (_pt_i.raw_bairro_names or []):
                         if _n not in _merged_raw:
