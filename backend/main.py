@@ -717,7 +717,15 @@ def heatmap_municipios(request: Request,
     # Merge: crimes data takes priority over staging for same municipality
     # Normalize names (strip accents) to avoid duplicates like SAO LEOPOLDO vs SÃO LEOPOLDO
     crimes_munis = {normalize_name(r.municipio) for r in crimes_results if r.municipio}
-    deduped_staging = [r for r in staging_results if not r.municipio or normalize_name(r.municipio) not in crimes_munis]
+    # Also dedup within staging itself (accent variants like Barra do Pirai / Barra do Piraí)
+    staging_seen: dict[str, HeatmapPoint] = {}
+    for r in staging_results:
+        norm = normalize_name(r.municipio) if r.municipio else ""
+        if norm in staging_seen:
+            staging_seen[norm].weight += r.weight  # merge weights
+        else:
+            staging_seen[norm] = r
+    deduped_staging = [r for norm, r in staging_seen.items() if norm not in crimes_munis]
     return crimes_results + deduped_staging
 
 @app.get("/api/heatmap/bairros", response_model=List[HeatmapPoint])
