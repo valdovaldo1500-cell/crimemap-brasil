@@ -1089,6 +1089,56 @@ def heatmap_bairros(request: Request,
                 state=anchor.state,
             ))
 
+    # --- Containment-merge pass ---
+    # Fold RS bairros whose GeoJSON polygon centroid lies inside another RS bairro's
+    # polygon into that container. This merges loteamentos (tiny subdivisions embedded
+    # inside larger bairros) so they don't render as invisible dots on the map.
+    # Uses polygon centroid (from GeoJSON rings), not geocoded crime average, for reliability.
+    _mun_result_groups: dict[str, list[int]] = defaultdict(list)
+    for _idx, _pt in enumerate(merged_results):
+        if _pt.state == 'RS' and _pt.bairro and _pt.bairro != 'Bairro desconhecido' and not getattr(_pt, 'level', None):
+            _mun_k = normalize_name(_pt.municipio) if _pt.municipio else ""
+            _mun_result_groups[_mun_k].append(_idx)
+
+    _absorbed: set[int] = set()
+    for _mun_k, _idxs in _mun_result_groups.items():
+        _polys_for_mun = BAIRRO_POLYGON_INDEX.get(_resolve_polygon_mun(_mun_k), [])
+        if not _polys_for_mun:
+            continue
+        _ring_map: dict[str, list] = {_bn: _rings for _bn, _disp, _rings in _polys_for_mun}
+        for _i in _idxs:
+            if _i in _absorbed:
+                continue
+            _pt_i = merged_results[_i]
+            _rings_i = _ring_map.get(normalize_name(_pt_i.bairro))
+            if not _rings_i:
+                continue
+            # Compute polygon centroid from outer ring vertices (lon, lat)
+            _ring0 = _rings_i[0]
+            _cx = sum(v[0] for v in _ring0) / len(_ring0)
+            _cy = sum(v[1] for v in _ring0) / len(_ring0)
+            for _j in _idxs:
+                if _i == _j or _j in _absorbed:
+                    continue
+                _pt_j = merged_results[_j]
+                _rings_j = _ring_map.get(normalize_name(_pt_j.bairro))
+                if not _rings_j:
+                    continue
+                _contained = any(_point_in_polygon(_cx, _cy, _rj) for _rj in _rings_j)
+                if _contained:
+                    _absorbed.add(_i)
+                    _comps_i = _pt_i.components or [BairroComponent(bairro=_pt_i.bairro, weight=_pt_i.weight)]
+                    _comps_j = _pt_j.components or [BairroComponent(bairro=_pt_j.bairro, weight=_pt_j.weight)]
+                    _all_comps = sorted(_comps_j + _comps_i, key=lambda c: c.weight, reverse=True)
+                    merged_results[_j] = HeatmapPoint(
+                        latitude=_pt_j.latitude, longitude=_pt_j.longitude,
+                        weight=_pt_j.weight + _pt_i.weight,
+                        municipio=_pt_j.municipio, bairro=_pt_j.bairro,
+                        population=_pt_j.population, components=_all_comps, state=_pt_j.state,
+                    )
+                    break
+    merged_results = [_pt for _i, _pt in enumerate(merged_results) if _i not in _absorbed]
+
     # --- Staging fallback: add municipality-level data for RJ/MG ---
     # At bairro zoom, RS has per-bairro data but RJ/MG only have municipality aggregates.
     # Include them as level="municipio" so the frontend renders municipality polygons instead.
