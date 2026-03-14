@@ -788,13 +788,13 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
           const bairroData = data.filter((d: any) => d.level !== 'municipio');
           const muniData = data.filter((d: any) => d.level === 'municipio');
 
-          const bairroLookup: Record<string, {weight:number, intensity:number, municipio:string, bairro:string, population:number|null, components?: {bairro:string, weight:number}[]}> = {};
+          const bairroLookup: Record<string, {weight:number, intensity:number, municipio:string, bairro:string, population:number|null, components?: {bairro:string, weight:number}[], rawBairroNames?: string[]}> = {};
           bairroData.forEach((d:any) => {
             const munKey = normalizeGeoName(d.municipio || '');
             const bairroKey = normalizeGeoName(d.bairro || '');
             const key = munKey + '|' + bairroKey;
             const intensity = dvMap.get(d) ?? 0.5;
-            bairroLookup[key] = { weight: d.weight, intensity, municipio: d.municipio, bairro: d.bairro, population: d.population || null, components: d.components };
+            bairroLookup[key] = { weight: d.weight, intensity, municipio: d.municipio, bairro: d.bairro, population: d.population || null, components: d.components, rawBairroNames: d.raw_bairro_names };
           });
 
           // Municipality-level lookup for RJ/MG polygon rendering
