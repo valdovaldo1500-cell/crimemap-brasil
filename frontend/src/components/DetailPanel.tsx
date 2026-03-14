@@ -262,7 +262,7 @@ export default function DetailPanel({ data, onClose, stackIndex = 0, onFocus, ra
                 </div>
                 <div className="text-xs text-[#94a3b8] mb-3">
                   <span className="font-mono text-[#f1f5f9]">{data.total.toLocaleString()}</span> ocorrências
-                  {data.population && <span className="ml-2 text-[#64748b]">(pop: {data.population.toLocaleString()})</span>}
+                  {data.population && <span className="ml-2 text-[#64748b]">{data.populationSource === 'municipio' ? '(pop. município:' : '(pop:'} {data.population.toLocaleString()})</span>}
                 </div>
               </>
             ) : (
@@ -274,7 +274,7 @@ export default function DetailPanel({ data, onClose, stackIndex = 0, onFocus, ra
                 {rate && (
                   <div className="text-xs text-[#94a3b8] mb-3">
                     <span className="font-mono text-[#f1f5f9]">{rate}</span> /100K hab.
-                    {data.population && <span className="ml-2 text-[#64748b]">(pop: {data.population.toLocaleString()})</span>}
+                    {data.population && <span className="ml-2 text-[#64748b]">{data.populationSource === 'municipio' ? '(pop. município:' : '(pop:'} {data.population.toLocaleString()})</span>}
                   </div>
                 )}
               </>
