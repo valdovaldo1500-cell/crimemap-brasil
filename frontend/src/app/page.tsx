@@ -306,9 +306,9 @@ export default function Home() {
     if (!sp.get('panel') && !sp.get('compare')) { setUrlInitDone(true); return; }
 
     const per = sp.get('per') as 'ano' | 'S1' | 'S2' | '12m';
-    if (per) setSelectedPeriod(per);
+    if (per) { setSelectedPeriod(per); urlPeriodSetRef.current = true; }
     const ano = sp.get('ano');
-    if (ano) setSelectedYear(ano);
+    if (ano) { setSelectedYear(ano); urlYearSetRef.current = true; }
     const tipos = sp.get('tipos');
     if (tipos) setSelectedTypes(tipos.split(',').filter(Boolean));
     const sexo = sp.get('sexo');
