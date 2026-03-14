@@ -256,24 +256,7 @@ export default async function EstadoPage({ params }: { params: { slug: string } 
             marginBottom: '2rem',
           }}
         >
-          <p style={{ color: '#93c5fd', marginBottom: '1rem', fontSize: '1rem' }}>
-            Explore dados por cidade e bairro no mapa interativo
-          </p>
-          <Link
-            href={`/?state=${state.code}`}
-            style={{
-              display: 'inline-block',
-              background: '#2563eb',
-              color: '#fff',
-              padding: '0.75rem 2rem',
-              borderRadius: '0.5rem',
-              textDecoration: 'none',
-              fontWeight: 600,
-              fontSize: '1rem',
-            }}
-          >
-            Ver no mapa interativo →
-          </Link>
+          <MapLinkButton panelType="state" state={state.code} description="Explore dados por cidade e bairro no mapa interativo" />
         </div>
 
         <p style={{ color: '#475569', fontSize: '0.75rem', textAlign: 'center' }}>
