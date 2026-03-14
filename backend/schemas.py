@@ -35,6 +35,7 @@ class HeatmapPoint(BaseModel):
     components: Optional[List[BairroComponent]] = None
     level: Optional[str] = None  # "municipio" when bairro endpoint returns municipality-level data (RJ/MG)
     state: Optional[str] = None
+    raw_bairro_names: Optional[List[str]] = None
 
 class CrimeTypeCount(BaseModel):
     tipo_enquadramento: str
