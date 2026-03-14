@@ -335,6 +335,7 @@ export default function Home() {
     if (compareParam === '1' && locs.length >= 1) {
       pendingCompareRef.current = locs;
       setCompareMode(true);
+      setSelectedStates([]);
     }
 
     if (!panel && !compareParam) {
