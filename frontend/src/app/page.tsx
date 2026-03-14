@@ -308,7 +308,7 @@ export default function Home() {
       setCompareMode(true);
     }
 
-    window.history.replaceState({}, '', '/');
+    if (!panel && !compareParam) window.history.replaceState({}, '', '/');
     setUrlInitDone(true);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
