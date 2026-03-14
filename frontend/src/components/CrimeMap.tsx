@@ -895,9 +895,10 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
                 const info = bairroLookup[key];
                 const displayName = props.name || '';
                 const municipio = props.municipio || '';
+                const featureState = props._state || '';
                 if (info) {
                   matchedKeys.add(key);
-                  bindInteractions(layer, `${displayName}, ${municipio}`, info.weight, municipio, displayName, undefined, info.population);
+                  bindInteractions(layer, `${displayName}, ${municipio}`, info.weight, municipio, displayName, undefined, info.population, featureState);
                   addPolygonHover(layer);
                   const ctr = L.geoJSON(feature).getBounds().getCenter();
                   const lbl = L.marker(ctr, {
