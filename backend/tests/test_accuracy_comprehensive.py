@@ -580,7 +580,8 @@ class TestMGCompatibilityFilter:
     def test_mg_with_rs_restricts_to_compatible_types(self):
         """RS+MG should yield fewer types than RS alone (MG compatibility filter)."""
         resp_rs = client.get("/api/filter-options", params={"selected_states": "RS"})
-        resp_mg_rs = client.get("/api/filter-options", params={"selected_states": "RS,MG"})
+        # Must use repeated params — comma-separated is not supported
+        resp_mg_rs = client.get("/api/filter-options", params=[("selected_states", "RS"), ("selected_states", "MG")])
         assert resp_rs.status_code == 200
         assert resp_mg_rs.status_code == 200
 
