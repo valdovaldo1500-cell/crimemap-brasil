@@ -176,7 +176,10 @@ export default function DetailPanel({ data, onClose, stackIndex = 0, onFocus, ra
         onMouseDown={onDragStart}
         onTouchStart={onDragStart}
       >
-        <span className="text-sm font-semibold text-[#f1f5f9] truncate mr-2">{data.displayName}{data.periodLabel && <span className="text-[9px] font-normal text-[#64748b] ml-1.5">({data.periodLabel})</span>}</span>
+        <div className="flex items-baseline gap-1.5 min-w-0 mr-2">
+          <span className="text-sm font-semibold text-[#f1f5f9] truncate">{data.displayName}</span>
+          {data.periodLabel && <span className="text-[9px] font-normal text-[#64748b] flex-shrink-0">({data.periodLabel})</span>}
+        </div>
         <div className="flex items-center gap-1 flex-shrink-0" onMouseDown={e => e.stopPropagation()}>
           {/* WhatsApp share */}
           <a
