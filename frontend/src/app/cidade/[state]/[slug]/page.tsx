@@ -198,6 +198,8 @@ export default async function CidadePage({
           {stateName} · Dados oficiais de segurança pública · Crime Brasil
         </p>
 
+        <FilterBanner panelType="muni" state={stateCode} municipio={municipioName} />
+
         {data && (
           <div
             style={{
