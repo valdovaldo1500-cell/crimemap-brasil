@@ -898,12 +898,27 @@ export default function Home() {
     const pendingCompare = pendingCompareRef.current;
     if (pendingCompare.length > 0) {
       pendingCompareRef.current = [];
+      // Zoom to first location
+      if (pendingCompare[0]) {
+        const parts0 = pendingCompare[0].split(':');
+        const s0 = parts0[0], m0 = parts0[1] || '', b0 = parts0[2] || undefined;
+        if (m0) {
+          const targetZoom0 = b0 ? 13 : 10;
+          fetchGeocode(m0, s0, b0 || undefined).then((geo: any) => {
+            if (geo?.latitude && geo?.longitude) {
+              setCenter([geo.latitude, geo.longitude]);
+              setZoom(targetZoom0);
+            }
+          }).catch(() => {});
+        }
+      }
       pendingCompare.slice(0, 2).forEach(loc => {
         const parts = loc.split(':');
         const s = parts[0];
         const m = parts[1] || '';
         const b = parts[2] || undefined;
-        onCompareSelect({ state: s, municipio: m, bairro: b || undefined, displayName: m || s });
+        const displayName = b ? `${b}, ${m}` : m || s;
+        onCompareSelect({ state: s, municipio: m, bairro: b || undefined, displayName });
       });
     }
   }, [urlInitDone, initialLoading]); // eslint-disable-line react-hooks/exhaustive-deps
