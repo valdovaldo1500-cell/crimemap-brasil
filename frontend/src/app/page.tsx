@@ -217,17 +217,20 @@ export default function Home() {
   const [showSources, setShowSources] = useState(false);
   const [dataSourcesApi, setDataSourcesApi] = useState<any[] | null>(null);
 
-  // Comparison mode
+  // Comparison mode — multi-pane
   const [compareMode, setCompareMode] = useState(false);
-  const [comparisonLocations, setComparisonLocations] = useState<any[]>([]);
-  const [comparisonStats, setComparisonStats] = useState<any[]>([]);
-  const [comparisonLoading, setComparisonLoading] = useState(false);
-  const [comparePos, setComparePos] = useState<{x: number, y: number} | null>(null);
-  const [compareSize, setCompareSize] = useState({ w: 483 });
-  const [compareDragging, setCompareDragging] = useState(false);
-  const [compareResizing, setCompareResizing] = useState(false);
-  const compareDragStart = useRef<{x: number, y: number, px: number, py: number} | null>(null);
-  const compareResizeStart = useRef<{x: number, y: number, w: number} | null>(null);
+  const [compareGroups, setCompareGroups] = useState<any[]>([]);  // completed pairs
+  const [buildingLocations, setBuildingLocations] = useState<any[]>([]);  // 0-1 locations being built into next pair
+  const [buildingStats, setBuildingStats] = useState<any[]>([]);
+  const [buildingLoading, setBuildingLoading] = useState(false);
+  const [buildingPeriodLabel, setBuildingPeriodLabel] = useState('');
+  const buildingLocationsRef = useRef<any[]>([]);
+  // drag/resize state per-group stored in refs keyed by group id
+  const groupDragStartRef = useRef<Record<string, {x: number, y: number, px: number, py: number}>>({});
+  const groupResizeStartRef = useRef<Record<string, {x: number, w: number}>>({});
+  const [groupDragging, setGroupDragging] = useState<string | null>(null);
+  const [groupResizing, setGroupResizing] = useState<string | null>(null);
+  // legacy refs kept for URL init
   const compareLocationsRef = useRef<any[]>([]);
   const pendingPanelRef = useRef<{ panel: string; state: string; municipio: string; bairro?: string } | null>(null);
   const pendingCompareRef = useRef<string[]>([]);
