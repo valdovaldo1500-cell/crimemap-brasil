@@ -1147,11 +1147,16 @@ def heatmap_bairros(request: Request,
                     _comps_i = _pt_i.components or [BairroComponent(bairro=_pt_i.bairro, weight=_pt_i.weight)]
                     _comps_j = _pt_j.components or [BairroComponent(bairro=_pt_j.bairro, weight=_pt_j.weight)]
                     _all_comps = sorted(_comps_j + _comps_i, key=lambda c: c.weight, reverse=True)
+                    _merged_raw: list[str] = list(_pt_j.raw_bairro_names or [])
+                    for _n in (_pt_i.raw_bairro_names or []):
+                        if _n not in _merged_raw:
+                            _merged_raw.append(_n)
                     merged_results[_j] = HeatmapPoint(
                         latitude=_pt_j.latitude, longitude=_pt_j.longitude,
                         weight=_pt_j.weight + _pt_i.weight,
                         municipio=_pt_j.municipio, bairro=_pt_j.bairro,
                         population=_pt_j.population, components=_all_comps, state=_pt_j.state,
+                        raw_bairro_names=_merged_raw or None,
                     )
                     break
     merged_results = [_pt for _i, _pt in enumerate(merged_results) if _i not in _absorbed]
