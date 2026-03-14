@@ -290,7 +290,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
 
 
   useEffect(() => {
-    if (mapRef.current) mapRef.current.setView(center, zoom);
+    if (mapRef.current) { mapRef.current.setView(center, zoom); setCurrentZoom(zoom); }
   }, [center, zoom]);
 
   const trackPopup = (l: any) => {
