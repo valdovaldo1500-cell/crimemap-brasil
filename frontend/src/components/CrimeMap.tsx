@@ -478,8 +478,8 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
     if (filters.selected_states) params.selected_states = filters.selected_states;
     if (filters.ultimos_meses) params.ultimos_meses = filters.ultimos_meses;
     if (zoomLevel === 'bairros') {
-      const latPad = (params.north - params.south) * 0.15;
-      const lngPad = (params.east - params.west) * 0.15;
+      const latPad = (params.north - params.south) * 1.0;
+      const lngPad = (params.east - params.west) * 1.0;
       params.south -= latPad;
       params.north += latPad;
       params.west -= lngPad;
