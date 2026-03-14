@@ -40,7 +40,7 @@ async function fetchSeoMunicipalities(): Promise<SeoMunicipality[]> {
 async function fetchLocationStats(stateCode: string, municipio: string) {
   try {
     const params = new URLSearchParams({ state: stateCode, municipio });
-    const res = await fetch(`${API_BASE}/api/location-stats?${params}`, { cache: 'force-cache' });
+    const res = await fetch(`${API_BASE}/api/location-stats?${params}`, { next: { revalidate: 86400 } });
     if (!res.ok) return null;
     return res.json();
   } catch {
