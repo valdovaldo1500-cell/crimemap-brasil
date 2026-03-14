@@ -161,8 +161,8 @@ export default async function BairroPage({
           {data && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
               <StatCard label="Total de ocorrências" value={formatNum(total)} />
-              {population && <StatCard label="População do bairro" value={formatNum(population)} />}
-              {rate && <StatCard label="Taxa por 100 mil hab." value={formatNum(rate)} />}
+              {population && <StatCard label={populationSource === 'municipio' ? 'Pop. do município (est.)' : 'População do bairro'} value={formatNum(population)} />}
+              {rate && populationSource !== 'municipio' && <StatCard label="Taxa por 100 mil hab." value={formatNum(rate)} />}
             </div>
           )}
 
