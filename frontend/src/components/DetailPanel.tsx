@@ -44,6 +44,7 @@ interface DetailPanelProps {
     displayName: string;
     total: number;
     population?: number | null;
+    populationSource?: string | null;
     crime_types?: { tipo: string; count: number }[];
     components?: { bairro: string; weight: number }[];
     isUnknown?: boolean;
