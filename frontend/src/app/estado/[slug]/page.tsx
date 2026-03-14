@@ -3,6 +3,7 @@ import Link from 'next/link';
 import JsonLd from '@/components/JsonLd';
 import FilterBanner from '@/components/FilterBanner';
 import MapLinkButton from '@/components/MapLinkButton';
+import MapRedirect from '@/components/MapRedirect';
 
 const API_BASE = 'https://crimebrasil.com.br';
 
