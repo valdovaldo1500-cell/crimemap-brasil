@@ -1511,7 +1511,13 @@ def location_stats(request: Request,
     q = db.query(Crime).filter(Crime.municipio_fato.in_(municipio_names))
     q = q.filter(Crime.latitude.isnot(None))
     if bairro:
-        q = q.filter(func.normalize_text(Crime.bairro) == normalize_name(bairro))
+        bairro_names = [normalize_name(bairro)]
+        if extra_bairros:
+            bairro_names.extend(normalize_name(b) for b in extra_bairros)
+        if len(bairro_names) == 1:
+            q = q.filter(func.normalize_text(Crime.bairro) == bairro_names[0])
+        else:
+            q = q.filter(func.normalize_text(Crime.bairro).in_(bairro_names))
     if ultimos_meses:
         threshold_date, _, _ = _ultimos_meses_range(ultimos_meses)
         q = q.filter(Crime.data_fato >= threshold_date)
