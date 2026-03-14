@@ -11,7 +11,7 @@ interface MapLinkButtonProps {
   description?: string;
 }
 
-const BTN_STYLE = { display: 'inline-block', background: '#2563eb', color: '#fff', padding: '0.75rem 2rem', borderRadius: '0.5rem', textDecoration: 'none', fontWeight: 600, fontSize: '1rem' } as const;
+const BTN_STYLE = { display: 'inline-block', background: '#7c3aed', color: '#fff', padding: '0.75rem 2rem', borderRadius: '0.5rem', textDecoration: 'none', fontWeight: 600, fontSize: '1rem' } as const;
 const WRAP_STYLE = { background: 'linear-gradient(135deg, #1e3a5f 0%, #1a2744 100%)', borderRadius: '1rem', padding: '2rem', textAlign: 'center' as const, border: '1px solid #2563eb33', marginBottom: '2rem' } as const;
 
 function buildBase(panelType: string, state: string, municipio?: string, bairro?: string) {
