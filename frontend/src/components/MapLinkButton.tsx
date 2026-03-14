@@ -34,7 +34,7 @@ function MapLinkButtonInner({ panelType, state, municipio, bairro, description }
   return (
     <div style={WRAP_STYLE}>
       {description && <p style={{ color: '#93c5fd', marginBottom: '1rem', fontSize: '1rem' }}>{description}</p>}
-      <Link href={`/?${p.toString()}`} style={BTN_STYLE}>Ver no mapa interativo →</Link>
+      <Link href={`/?${p.toString()}`} style={BTN_STYLE}>Ver dados com filtros aplicados no mapa interativo →</Link>
     </div>
   );
 }
@@ -46,7 +46,7 @@ export default function MapLinkButton(props: MapLinkButtonProps) {
     <Suspense fallback={
       <div style={WRAP_STYLE}>
         {description && <p style={{ color: '#93c5fd', marginBottom: '1rem', fontSize: '1rem' }}>{description}</p>}
-        <a href={fallback} style={BTN_STYLE}>Ver no mapa interativo →</a>
+        <a href={fallback} style={BTN_STYLE}>Ver dados com filtros aplicados no mapa interativo →</a>
       </div>
     }>
       <MapLinkButtonInner {...props} />
