@@ -143,13 +143,12 @@ export default function DetailPanel({ data, onClose, stackIndex = 0, onFocus, ra
   const shareUrl = shareUrlProp ?? getShareUrl(data.state, data.municipio, data.bairro);
   const sep = shareUrl.includes('?') ? '&' : '?';
   const waShareUrl = `${shareUrl}${sep}utm_source=whatsapp&utm_medium=social&utm_campaign=panel_share`;
-  const copyShareUrl = `${shareUrl}${sep}utm_source=link_copy&utm_medium=social&utm_campaign=panel_share`;
   const shareText = `${data.displayName}: ${data.total.toLocaleString('pt-BR')} ocorrências de crime registradas${rate ? ` (${rate}/100K hab.)` : ''}. Veja os dados no Crime Brasil: ${waShareUrl}`;
   const waLink = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
 
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(copyShareUrl).then(() => {
+    navigator.clipboard.writeText(shareUrl).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
