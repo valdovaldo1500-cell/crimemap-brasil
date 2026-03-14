@@ -1088,6 +1088,12 @@ def heatmap_bairros(request: Request,
             pop_values = [p.population for p in cluster_pts if p.population is not None]
             merged_pop = sum(pop_values) if pop_values else None
 
+            merged_raw: list[str] = []
+            for p in cluster_pts:
+                for n in (p.raw_bairro_names or []):
+                    if n not in merged_raw:
+                        merged_raw.append(n)
+
             merged_results.append(HeatmapPoint(
                 latitude=anchor.latitude,
                 longitude=anchor.longitude,
@@ -1097,6 +1103,7 @@ def heatmap_bairros(request: Request,
                 population=merged_pop,
                 components=all_components,
                 state=anchor.state,
+                raw_bairro_names=merged_raw or None,
             ))
 
     # --- Containment-merge pass ---
