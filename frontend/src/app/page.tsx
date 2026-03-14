@@ -1372,8 +1372,9 @@ export default function Home() {
                       </>;
                     })()}
                     {comparisonLocations.length > 0 && (
-                      <button onClick={clearComparison} className="text-[10px] text-[#94a3b8] hover:text-[#f1f5f9]">Limpar</button>
+                      <button onClick={resetComparison} className="text-[10px] text-[#94a3b8] hover:text-[#f1f5f9]">Limpar</button>
                     )}
+                    <button onClick={clearComparison} className="text-[10px] text-[#94a3b8] hover:text-[#f1f5f9]" title="Fechar comparação">✕</button>
                   </div>
                 </div>
                 <p className="text-[10px] text-[#64748b] mb-2 leading-snug">Compare criminalidade entre dois locais — mesma janela de tempo e filtros ativos.</p>
