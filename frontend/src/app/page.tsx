@@ -842,6 +842,7 @@ export default function Home() {
         actionId, displayName, municipio, bairro, state,
         total: stats.total ?? 0,
         population: stats.population,
+        populationSource: stats.population_source ?? null,
         isUnknown: false,
         loading: false,
         ...(stats.crime_types ? { crime_types: stats.crime_types.map((ct: any) => ({ tipo: ct.tipo_enquadramento || ct.tipo, count: ct.count })) } : {}),
