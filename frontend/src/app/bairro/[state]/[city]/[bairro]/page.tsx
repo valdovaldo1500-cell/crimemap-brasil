@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { unslugify } from '@/lib/slugify';
 import FilterBanner from '@/components/FilterBanner';
 import MapLinkButton from '@/components/MapLinkButton';
+import MapRedirect from '@/components/MapRedirect';
 import JsonLd from '@/components/JsonLd';
 
 const API_BASE = 'https://crimebrasil.com.br';
