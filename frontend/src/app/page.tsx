@@ -72,6 +72,12 @@ const STATE_CENTROIDS_MAP: Record<string, [number, number]> = {
   AP: [0.03, -51.05], RR: [2.82, -60.67], DF: [-15.78, -47.93],
 };
 
+const STATE_SLUGS_MAP: Record<string, string> = {
+  RS: 'rio-grande-do-sul',
+  RJ: 'rio-de-janeiro',
+  MG: 'minas-gerais',
+};
+
 function buildShareUrl(
   panelType: 'state' | 'muni' | 'bairro',
   state: string,
