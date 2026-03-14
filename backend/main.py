@@ -820,6 +820,7 @@ def heatmap_bairros(request: Request,
                     polygon_compound_map[(mun, part_norm)] = p[0]
         polygon_names_by_mun[mun] = names
     merged: dict[tuple[str, str], dict] = {}
+    raw_names_map: dict[tuple, list] = {}
     fuzzy_key_map: dict[tuple[str, str], tuple[str, str]] = {}
     for r in rows:
         if not (r.lat and r.lng):
