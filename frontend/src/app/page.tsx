@@ -94,10 +94,12 @@ function buildShareUrl(
   if (panelType === 'state') {
     const stateSlug = STATE_SLUGS_MAP[state];
     path = stateSlug ? `/estado/${stateSlug}` : '/';
-  } else if (panelType === 'bairro' && bairro) {
+  } else if (panelType === 'bairro' && bairro && state) {
     path = `/bairro/${state.toLowerCase()}/${slugify(municipio)}/${slugify(bairro)}`;
-  } else {
+  } else if (state) {
     path = `/cidade/${state.toLowerCase()}/${slugify(municipio)}`;
+  } else {
+    return `${base}/`; // fallback if no state
   }
   const p = new URLSearchParams();
   if (selectedPeriod && selectedPeriod !== '12m') p.set('per', selectedPeriod);
