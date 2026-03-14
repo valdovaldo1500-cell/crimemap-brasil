@@ -200,6 +200,9 @@ export default function Home() {
   const compareDragStart = useRef<{x: number, y: number, px: number, py: number} | null>(null);
   const compareResizeStart = useRef<{x: number, y: number, w: number} | null>(null);
   const compareLocationsRef = useRef<any[]>([]);
+  const pendingPanelRef = useRef<{ panel: string; state: string; municipio: string; bairro?: string } | null>(null);
+  const pendingCompareRef = useRef<string[]>([]);
+  const [urlInitDone, setUrlInitDone] = useState(false);
 
   // System-wide static info
   const [systemInfo, setSystemInfo] = useState<any>(null);
