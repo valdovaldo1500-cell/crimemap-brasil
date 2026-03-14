@@ -317,6 +317,8 @@ export default function Home() {
     if (idadeMaxParam) setIdadeMax(idadeMaxParam);
     const statesParam = sp.get('states');
     if (statesParam) setSelectedStates(statesParam.split(',').filter(Boolean));
+    const viewParam = sp.get('view');
+    if (viewParam === 'dots' || viewParam === 'choropleth') setViewMode(viewParam);
 
     const panel = sp.get('panel');
     const state = sp.get('state');
