@@ -614,6 +614,7 @@ export default function Home() {
       l.state === location.state && l.municipio === location.municipio && l.bairro === location.bairro
     );
     if (isDup) return;
+    if (currentLocations.length === 0) setComparisonPeriodLabel(periodLabelRef.current);
     // Synchronously update ref so concurrent calls see the updated list immediately
     const newLocations = [...currentLocations, location];
     compareLocationsRef.current = newLocations;
