@@ -845,23 +845,33 @@ export default function Home() {
         if (centroid) { setCenter(centroid); setZoom(7); }
       } else if (pending.municipio) {
         openLocationDetailRef.current(pending.state, pending.municipio, pending.bairro);
-        const targetZoom = pending.bairro ? 13 : 10;
-        searchLocation(pending.municipio).then((results: any[]) => {
-          const match = results?.find((r: any) => r.type === 'municipio' && r.latitude && r.longitude)
-            || results?.find((r: any) => r.latitude && r.longitude);
-          if (match?.latitude && match?.longitude) {
-            setCenter([match.latitude, match.longitude]);
-            setZoom(targetZoom);
-          } else {
-            // Fallback: use dedicated geocode endpoint (checks geocache + centroids)
-            fetchGeocode(pending.municipio, pending.state, pending.bairro).then((geo: any) => {
-              if (geo?.latitude && geo?.longitude) {
-                setCenter([geo.latitude, geo.longitude]);
-                setZoom(targetZoom);
-              }
-            }).catch(() => {});
-          }
-        }).catch(() => {});
+        if (pending.bairro) {
+          // Bairro-level: use geocode directly for bairro-specific coordinates
+          fetchGeocode(pending.municipio, pending.state, pending.bairro).then((geo: any) => {
+            if (geo?.latitude && geo?.longitude) {
+              setCenter([geo.latitude, geo.longitude]);
+              setZoom(13);
+            }
+          }).catch(() => {});
+        } else {
+          // City-level: use search
+          const targetZoom = 10;
+          searchLocation(pending.municipio).then((results: any[]) => {
+            const match = results?.find((r: any) => r.type === 'municipio' && r.latitude && r.longitude)
+              || results?.find((r: any) => r.latitude && r.longitude);
+            if (match?.latitude && match?.longitude) {
+              setCenter([match.latitude, match.longitude]);
+              setZoom(targetZoom);
+            } else {
+              fetchGeocode(pending.municipio, pending.state).then((geo: any) => {
+                if (geo?.latitude && geo?.longitude) {
+                  setCenter([geo.latitude, geo.longitude]);
+                  setZoom(targetZoom);
+                }
+              }).catch(() => {});
+            }
+          }).catch(() => {});
+        }
       }
     }
 
