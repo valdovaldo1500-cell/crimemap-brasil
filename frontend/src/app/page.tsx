@@ -53,6 +53,81 @@ function formatSemester(sem: string): string {
   return s === 'S1' ? `Jan-Jun ${year}` : `Jul-Dez ${year}`;
 }
 
+const STATE_FULL_NAMES_SHARE: Record<string, string> = {
+  RS: 'Rio Grande do Sul',
+  RJ: 'Rio de Janeiro',
+  MG: 'Minas Gerais',
+};
+
+function buildShareUrl(
+  panelType: 'state' | 'muni' | 'bairro',
+  state: string,
+  municipio: string,
+  bairro: string | undefined,
+  filters: { tipo?: string[]; sexo?: string[]; cor?: string[]; idade_min?: number; idade_max?: number },
+  selectedPeriod: string,
+  selectedYear: string,
+  selectedStates: string[],
+): string {
+  const base = typeof window !== 'undefined' ? window.location.origin : 'https://crimebrasil.com.br';
+  const p = new URLSearchParams();
+  p.set('panel', panelType);
+  if (state) p.set('state', state);
+  if (municipio) p.set('municipio', municipio);
+  if (bairro) p.set('bairro', bairro);
+  p.set('per', selectedPeriod);
+  if (selectedYear && selectedPeriod !== '12m') p.set('ano', selectedYear);
+  if (filters.tipo?.length) p.set('tipos', filters.tipo.join(','));
+  if (filters.sexo?.length) p.set('sexo', filters.sexo.join(','));
+  if (filters.cor?.length) p.set('cor', filters.cor.join(','));
+  if (filters.idade_min) p.set('idade_min', String(filters.idade_min));
+  if (filters.idade_max) p.set('idade_max', String(filters.idade_max));
+  if (selectedStates.length > 0) p.set('states', selectedStates.join(','));
+  return `${base}/?${p.toString()}`;
+}
+
+function buildCompareShareUrl(
+  comparisonLocations: any[],
+  filters: { tipo?: string[]; sexo?: string[]; cor?: string[]; idade_min?: number; idade_max?: number },
+  selectedPeriod: string,
+  selectedYear: string,
+): string {
+  const base = typeof window !== 'undefined' ? window.location.origin : 'https://crimebrasil.com.br';
+  const p = new URLSearchParams();
+  p.set('compare', '1');
+  comparisonLocations.forEach(l => {
+    p.append('loc', `${l.state || ''}:${l.municipio || ''}:${l.bairro || ''}`);
+  });
+  p.set('per', selectedPeriod);
+  if (selectedYear && selectedPeriod !== '12m') p.set('ano', selectedYear);
+  if (filters.tipo?.length) p.set('tipos', filters.tipo.join(','));
+  if (filters.sexo?.length) p.set('sexo', filters.sexo.join(','));
+  if (filters.cor?.length) p.set('cor', filters.cor.join(','));
+  if (filters.idade_min) p.set('idade_min', String(filters.idade_min));
+  if (filters.idade_max) p.set('idade_max', String(filters.idade_max));
+  return `${base}/?${p.toString()}`;
+}
+
+function CompareShareCopy({ url }: { url: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      className={`text-[10px] ${copied ? 'text-green-400' : 'text-[#94a3b8] hover:text-white'}`}
+      title="Copiar link"
+      onMouseDown={e => e.stopPropagation()}
+      onClick={e => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(url).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        });
+      }}
+    >
+      {copied ? '✓ Copiado!' : 'Copiar link'}
+    </button>
+  );
+}
+
 export default function Home() {
   const [stats, setStats] = useState<any>(null);
   const [crimeTypes, setCrimeTypes] = useState<any[]>([]);
