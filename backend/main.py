@@ -496,10 +496,23 @@ async def _build_autocomplete_index():
         )).fetchall()
         bairros = []
         for r in rows3:
+            lat, lng = r[3], r[4]
+            # Prefer polygon centroid over crime-record AVG (avoids city-fallback geocoding noise)
+            mun_norm = normalize_name(r[1])
+            b_norm = normalize_name(r[0])
+            c_mun = BAIRRO_CENTROIDS.get(mun_norm)
+            if c_mun is None:
+                canon = _CENTROIDS_MUN_FUZZY.get(normalize_fuzzy(mun_norm))
+                if canon:
+                    c_mun = BAIRRO_CENTROIDS[canon]
+            if c_mun:
+                coord = c_mun.get(b_norm)
+                if coord:
+                    lat, lng = coord[0], coord[1]
             bairros.append({
-                'bairro': r[0], 'bairro_normalized': normalize_name(r[0]),
-                'municipio': r[1], 'municipio_normalized': normalize_name(r[1]),
-                'count': r[2], 'lat': r[3], 'lng': r[4]
+                'bairro': r[0], 'bairro_normalized': b_norm,
+                'municipio': r[1], 'municipio_normalized': mun_norm,
+                'count': r[2], 'lat': lat, 'lng': lng
             })
         _autocomplete_bairros = bairros
 
