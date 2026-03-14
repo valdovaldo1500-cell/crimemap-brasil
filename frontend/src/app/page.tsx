@@ -525,6 +525,24 @@ export default function Home() {
     selected_states: selectedStates.length > 0 ? selectedStates : undefined,
   }), [selectedTypes, selectedGrupo, selectedYear, selectedPeriod, selectedSexo, selectedCor, idadeMin, idadeMax, selectedStates]);
 
+  const panelShareUrls = useMemo(() => {
+    const urls: Record<string, string> = {};
+    detailPanels.forEach(panel => {
+      const panelType = !panel.municipio ? 'state' : panel.bairro ? 'bairro' : 'muni';
+      urls[panel.id] = buildShareUrl(
+        panelType,
+        panel.state || '',
+        panel.municipio || '',
+        panel.bairro,
+        filters,
+        selectedPeriod,
+        selectedYear,
+        selectedStates,
+      );
+    });
+    return urls;
+  }, [detailPanels, filters, selectedPeriod, selectedYear, selectedStates]);
+
   const periodLabel = useMemo(() => {
     if (selectedPeriod === '12m') return 'últimos 12 meses';
     if (selectedPeriod === 'ano') return selectedYear;
