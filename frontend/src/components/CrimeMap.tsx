@@ -314,7 +314,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
     });
   };
 
-  const bindInteractions = (layer: L.Layer, displayName: string, count: number, municipio: string, bairro?: string, components?: {bairro: string, weight: number}[], population?: number | null, state?: string) => {
+  const bindInteractions = (layer: L.Layer, displayName: string, count: number, municipio: string, bairro?: string, components?: {bairro: string, weight: number}[], population?: number | null, state?: string, rawBairroNames?: string[]) => {
     const l = layer as any;
     const isRate = rateModeRef.current === 'rate';
     l.bindTooltip(tooltipText(displayName, count, population, isRate, compareModeRef.current ? 'Clique para comparar' : undefined), { sticky: true });
