@@ -858,9 +858,11 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
 
           // --- Layer 2: Bairro polygons for RS data ---
           const allBairroFeatures: any[] = [];
-          for (const [, bairroGeo] of Object.entries(bairroGeoDataRefs.current)) {
-            if (!bairroGeo?.features) continue;
-            allBairroFeatures.push(...bairroGeo.features);
+          for (const [stateSigla, bairroGeo] of Object.entries(bairroGeoDataRefs.current)) {
+            if (!(bairroGeo as any)?.features) continue;
+            allBairroFeatures.push(...(bairroGeo as any).features.map((f: any) => ({
+              ...f, properties: { ...f.properties, _state: stateSigla.toUpperCase() }
+            })));
           }
           if (allBairroFeatures.length > 0) {
             const mapBounds = mapRef.current!.getBounds();
