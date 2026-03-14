@@ -308,7 +308,12 @@ export default function Home() {
       setCompareMode(true);
     }
 
-    if (!panel && !compareParam) window.history.replaceState({}, '', '/');
+    if (!panel && !compareParam) {
+      window.history.replaceState({}, '', '/');
+    } else {
+      ['utm_source', 'utm_medium', 'utm_campaign'].forEach(k => sp.delete(k));
+      window.history.replaceState({}, '', sp.toString() ? `/?${sp.toString()}` : '/');
+    }
     setUrlInitDone(true);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
