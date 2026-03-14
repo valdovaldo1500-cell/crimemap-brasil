@@ -898,7 +898,12 @@ def heatmap_bairros(request: Request,
 
     for old_key, (mun_norm, new_bairro_norm, new_display) in pip_remap.items():
         old_data = merged.pop(old_key)
+        old_raw = raw_names_map.pop(old_key, [])
         new_key = (mun_norm, new_bairro_norm)
+        existing_raw = raw_names_map.setdefault(new_key, [])
+        for n in old_raw:
+            if n not in existing_raw:
+                existing_raw.append(n)
         if new_key in merged:
             merged[new_key]['cnt'] += old_data['cnt']
         else:
