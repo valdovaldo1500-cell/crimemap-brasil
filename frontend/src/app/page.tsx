@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { fetchCrimeTypes, fetchSemesters, fetchAutocomplete, fetchSexoValues, fetchCorValues, fetchGrupoValues, fetchFilterOptions, submitBugReport, fetchAvailableStates, fetchStateFilterInfo, fetchLocationStats, fetchStateStats, fetchSystemInfo, fetchDataAvailability } from '@/lib/api';
+import { fetchCrimeTypes, fetchSemesters, fetchAutocomplete, fetchSexoValues, fetchCorValues, fetchGrupoValues, fetchFilterOptions, submitBugReport, fetchAvailableStates, fetchStateFilterInfo, fetchLocationStats, fetchStateStats, fetchSystemInfo, fetchDataAvailability, searchLocation } from '@/lib/api';
 import { calcRate, formatRate } from '@/lib/rates';
 import DetailPanel from '@/components/DetailPanel';
 import WelcomeModal from '@/components/WelcomeModal';
