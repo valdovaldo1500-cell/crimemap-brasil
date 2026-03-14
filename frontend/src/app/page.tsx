@@ -786,8 +786,18 @@ export default function Home() {
       if (pending.panel === 'state') {
         const name = STATE_FULL_NAMES_SHARE[pending.state] || pending.state;
         openStateDetailRef.current(pending.state, name);
+        const centroid = STATE_CENTROIDS_MAP[pending.state];
+        if (centroid) { setCenter(centroid); setZoom(7); }
       } else if (pending.municipio) {
         openLocationDetailRef.current(pending.state, pending.municipio, pending.bairro);
+        const targetZoom = pending.bairro ? 13 : 10;
+        searchLocation(pending.municipio).then((results: any[]) => {
+          const match = results?.[0];
+          if (match?.latitude && match?.longitude) {
+            setCenter([match.latitude, match.longitude]);
+            setZoom(targetZoom);
+          }
+        }).catch(() => {});
       }
     }
 
