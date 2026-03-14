@@ -567,10 +567,11 @@ export default function Home() {
         filters,
         selectedPeriod,
         selectedYear,
+        viewMode,
       );
     });
     return urls;
-  }, [detailPanels, filters, selectedPeriod, selectedYear]);
+  }, [detailPanels, filters, selectedPeriod, selectedYear, viewMode]);
 
   // Sync address bar with open panel using clean SEO paths
   useEffect(() => {
