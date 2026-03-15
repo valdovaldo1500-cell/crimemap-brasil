@@ -47,26 +47,21 @@ async function apiGet(request: any, url: string, timeoutOrOpts: any = 60_000): P
 // --------------- helpers ---------------
 
 async function waitForMapReady(page: Page) {
-  // Force-dismiss welcome modal via localStorage (before tiles load)
-  await page.evaluate(() => localStorage.setItem('crimebrasil_welcomed', 'true'));
-  // If modal is already showing, remove it from DOM
-  await page.evaluate(() => {
-    const dialog = document.querySelector('[role="dialog"]');
-    if (dialog) dialog.remove();
-    // Remove any backdrop
-    const backdrop = document.querySelector('.fixed.inset-0.z-\\[9999\\]');
-    if (backdrop) backdrop.remove();
-  });
   await page.waitForSelector('.leaflet-tile-loaded', { timeout: 60_000 });
   await page.waitForFunction(() => document.body.textContent?.includes('Ocorrências'), { timeout: 60_000 });
-  // Double-check modal is gone
-  await page.evaluate(() => {
-    document.querySelectorAll('[role="dialog"]').forEach(el => el.remove());
-    document.querySelectorAll('.fixed.inset-0').forEach(el => {
-      if ((el as HTMLElement).style.zIndex === '9999' || el.classList.contains('bg-black/60')) el.remove();
+  // If welcome modal appeared despite addInitScript, dismiss it by clicking through
+  const dialog = page.locator('[role="dialog"]');
+  if (await dialog.isVisible({ timeout: 2000 }).catch(() => false)) {
+    // Force remove via JS (most reliable)
+    await page.evaluate(() => {
+      document.querySelectorAll('[role="dialog"]').forEach(el => el.remove());
+      document.querySelectorAll('.fixed.inset-0').forEach(el => {
+        if (getComputedStyle(el).zIndex === '9999') el.remove();
+      });
+      localStorage.setItem('crimebrasil_welcomed', 'true');
     });
-  });
-  await page.waitForTimeout(300);
+    await page.waitForTimeout(500);
+  }
 }
 
 async function openFilters(page: Page) {
