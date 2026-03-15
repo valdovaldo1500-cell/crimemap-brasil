@@ -37,6 +37,7 @@ def _cache_get(key: str):
 def _cache_set(key: str, value):
     _query_cache[key] = (time.time(), value)
 
+_homepage_stats_cache: dict = {}
 _autocomplete_munis: list[dict] = []   # [{name, name_normalized, state, count, lat, lng}]
 _autocomplete_bairros: list[dict] = [] # [{bairro, bairro_normalized, municipio, municipio_normalized, count, lat, lng}]
 _autocomplete_cache_ready = False
