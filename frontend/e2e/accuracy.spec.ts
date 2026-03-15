@@ -173,7 +173,7 @@ test('Accuracy: 12m filter-options has >= types than 3m', async ({ request }) =>
 test('Accuracy: RS+MG filter-options has fewer tipos than RS alone', async ({ request }) => {
   const respRS = await request.get(`${BASE_API}/api/filter-options?selected_states=RS`, { timeout: 30_000 });
   // API needs repeated params — comma-separated is not supported
-  const respMGRS = await request.get(`${BASE_API}/api/filter-options?selected_states=RS&selected_states=MG`);
+  const respMGRS = await request.get(`${BASE_API}/api/filter-options?selected_states=RS&selected_states=MG`, { timeout: 30_000 });
   expect(respRS.ok()).toBeTruthy();
   expect(respMGRS.ok()).toBeTruthy();
 
