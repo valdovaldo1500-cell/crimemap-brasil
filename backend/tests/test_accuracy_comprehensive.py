@@ -708,6 +708,25 @@ class TestAPIContract:
             missing = required - set(point.keys())
             assert not missing, f"Heatmap municipio point missing fields: {missing}"
 
+    def test_heatmap_municipios_includes_state(self):
+        """Every heatmap municipio point must have a non-null state field.
+        Without this, the share URL can't include the state path and falls back to homepage.
+        """
+        for query_state in ["RS", "RJ"]:
+            resp = client.get("/api/heatmap/municipios", params={
+                "selected_states": query_state, "ultimos_meses": 12,
+            })
+            assert resp.status_code == 200
+            data = resp.json()
+            if not data:
+                continue
+            null_state = [p for p in data if not p.get("state")]
+            assert not null_state, (
+                f"{query_state}: {len(null_state)}/{len(data)} municipio points have state=null "
+                f"(share URL will show homepage). Examples: "
+                + str([p.get("municipio") for p in null_state[:5]])
+            )
+
     def test_location_stats_required_fields(self):
         resp = client.get("/api/location-stats", params={
             "municipio": _POA, "state": "RS", "ultimos_meses": 12,
