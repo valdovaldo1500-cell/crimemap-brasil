@@ -28,6 +28,22 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+// Rate-limit-aware fetch helper — retries on 429/503
+async function apiGet(request: any, url: string, timeout = 60_000): Promise<any> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const r = await request.get(url, { timeout });
+    if (r.ok()) return r;
+    const status = r.status();
+    if (status === 429 || status === 503) {
+      // Rate limited — wait and retry
+      await new Promise(resolve => setTimeout(resolve, 5000 * (attempt + 1)));
+      continue;
+    }
+    return r; // Non-retryable error
+  }
+  return request.get(url, { timeout }); // final attempt
+}
+
 // --------------- helpers ---------------
 
 async function waitForMapReady(page: Page) {
