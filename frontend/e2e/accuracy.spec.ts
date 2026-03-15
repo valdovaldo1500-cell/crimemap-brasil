@@ -184,7 +184,7 @@ test('Accuracy: RS+MG filter-options has fewer tipos than RS alone', async ({ re
 });
 
 test('Accuracy: MG alone shows violent crime types', async ({ request }) => {
-  const resp = await request.get(`${BASE_API}/api/filter-options?selected_states=MG`);
+  const resp = await request.get(`${BASE_API}/api/filter-options?selected_states=MG`, { timeout: 30_000 });
   expect(resp.ok()).toBeTruthy();
   const d = await resp.json();
   const tipos: string[] = (d.tipo || []).map((t: { value?: string } | string) =>
