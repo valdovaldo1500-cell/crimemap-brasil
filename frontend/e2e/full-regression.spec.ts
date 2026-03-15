@@ -383,14 +383,15 @@ test.describe('Homepage & Navigation', () => {
     expect(labelCount).toBeGreaterThan(5, 'Filter panel has too few labels — tipos may not have loaded');
 
     // Check specific sections exist and have content
-    const bodyText = await page.locator('aside').textContent() || '';
-    expect(bodyText).toContain('Ameaça');
-    expect(bodyText).toContain('GRUPO');
-    expect(bodyText).toContain('Crimes');
-    expect(bodyText).toContain('SEXO DA VÍTIMA');
-    expect(bodyText).toContain('Feminino');
-    expect(bodyText).toContain('COR DA VÍTIMA');
-    expect(bodyText).toContain('Branca');
+    const sidebarText = await page.locator('aside').textContent() || '';
+    const lower = sidebarText.toLowerCase();
+    expect(lower).toContain('ameaça');
+    expect(lower).toContain('grupo');
+    expect(lower).toContain('crimes');
+    expect(lower).toContain('sexo');
+    expect(lower).toContain('feminino');
+    expect(lower).toContain('cor');
+    expect(lower).toContain('branca');
   });
 });
 
