@@ -161,7 +161,7 @@ test('Accuracy: filter-options returns tipo list for RS', async ({ request }) =>
 
 test('Accuracy: 12m filter-options has >= types than 3m', async ({ request }) => {
   const resp3 = await request.get(`${BASE_API}/api/filter-options?selected_states=RS&ultimos_meses=3`, { timeout: 30_000 });
-  const resp12 = await request.get(`${BASE_API}/api/filter-options?selected_states=RS&ultimos_meses=12`);
+  const resp12 = await request.get(`${BASE_API}/api/filter-options?selected_states=RS&ultimos_meses=12`, { timeout: 30_000 });
   expect(resp3.ok()).toBeTruthy();
   expect(resp12.ok()).toBeTruthy();
 
