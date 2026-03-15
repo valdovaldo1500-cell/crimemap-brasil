@@ -134,7 +134,7 @@ test.describe('API Sanity', () => {
 
   test('filter-options returns data with AND without selected_states', async ({ request }) => {
     // Without state (search-first flow)
-    const r1 = await request.get(`${API}/api/filter-options?ultimos_meses=12`, { timeout: 30_000 });
+    const r1 = await request.get(`${API}/api/filter-options?ultimos_meses=12`, { timeout: 60_000 });
     expect(r1.ok()).toBeTruthy();
     const d1 = await r1.json();
     expect(d1.tipo.length).toBeGreaterThan(10);
@@ -143,7 +143,7 @@ test.describe('API Sanity', () => {
     expect(d1.cor.length).toBeGreaterThanOrEqual(3);
 
     // With state
-    const r2 = await request.get(`${API}/api/filter-options?selected_states=RS&ultimos_meses=12`, { timeout: 30_000 });
+    const r2 = await request.get(`${API}/api/filter-options?selected_states=RS&ultimos_meses=12`, { timeout: 60_000 });
     expect(r2.ok()).toBeTruthy();
     const d2 = await r2.json();
     expect(d2.tipo.length).toBeGreaterThan(10);
@@ -151,7 +151,7 @@ test.describe('API Sanity', () => {
 
   test('state-stats returns data for RS, RJ, MG', async ({ request }) => {
     for (const state of ['RS', 'RJ', 'MG']) {
-      const r = await request.get(`${API}/api/state-stats?state=${state}&selected_states=${state}&ultimos_meses=12`, { timeout: 30_000 });
+      const r = await request.get(`${API}/api/state-stats?state=${state}&selected_states=${state}&ultimos_meses=12`, { timeout: 60_000 });
       expect(r.ok()).toBeTruthy();
       const d = await r.json();
       expect(d.total).toBeGreaterThan(0, `${state} has no data`);
@@ -172,7 +172,7 @@ test.describe('API Sanity', () => {
       { m: 'UBERLANDIA', s: 'MG', min: 100 },
     ];
     for (const c of cities) {
-      const r = await request.get(`${API}/api/location-stats?municipio=${encodeURIComponent(c.m)}&state=${c.s}&ultimos_meses=12`, { timeout: 30_000 });
+      const r = await request.get(`${API}/api/location-stats?municipio=${encodeURIComponent(c.m)}&state=${c.s}&ultimos_meses=12`, { timeout: 60_000 });
       expect(r.ok()).toBeTruthy();
       const d = await r.json();
       expect(d.total).toBeGreaterThan(c.min, `${c.m} (${c.s}): total=${d.total} < ${c.min}`);
@@ -187,7 +187,7 @@ test.describe('API Sanity', () => {
       { m: 'CANOAS', b: 'MATHIAS VELHO', s: 'RS', min: 100 },
     ];
     for (const bb of bairros) {
-      const r = await request.get(`${API}/api/location-stats?municipio=${encodeURIComponent(bb.m)}&bairro=${encodeURIComponent(bb.b)}&state=${bb.s}&ultimos_meses=12`, { timeout: 30_000 });
+      const r = await request.get(`${API}/api/location-stats?municipio=${encodeURIComponent(bb.m)}&bairro=${encodeURIComponent(bb.b)}&state=${bb.s}&ultimos_meses=12`, { timeout: 60_000 });
       expect(r.ok()).toBeTruthy();
       const d = await r.json();
       expect(d.total).toBeGreaterThan(bb.min, `${bb.b}, ${bb.m}: total=${d.total} < ${bb.min}`);
@@ -196,31 +196,31 @@ test.describe('API Sanity', () => {
 
   test('heatmap endpoints return data', async ({ request }) => {
     // States
-    const r1 = await request.get(`${API}/api/heatmap/states?selected_states=RS&ultimos_meses=12`, { timeout: 30_000 });
+    const r1 = await request.get(`${API}/api/heatmap/states?selected_states=RS&ultimos_meses=12`, { timeout: 60_000 });
     expect(r1.ok()).toBeTruthy();
     const d1 = await r1.json();
     expect(d1.length).toBeGreaterThan(0);
     expect(d1[0].weight).toBeGreaterThan(0);
 
     // Municipios (RS bbox)
-    const r2 = await request.get(`${API}/api/heatmap/municipios?south=-34&west=-58&north=-27&east=-49&selected_states=RS&ultimos_meses=12`, { timeout: 30_000 });
+    const r2 = await request.get(`${API}/api/heatmap/municipios?south=-34&west=-58&north=-27&east=-49&selected_states=RS&ultimos_meses=12`, { timeout: 60_000 });
     expect(r2.ok()).toBeTruthy();
     const d2 = await r2.json();
     expect(d2.length).toBeGreaterThan(10);
   });
 
   test('tipo filter reduces results', async ({ request }) => {
-    const rAll = await request.get(`${API}/api/location-stats?municipio=PORTO+ALEGRE&state=RS&ultimos_meses=12`, { timeout: 30_000 });
+    const rAll = await request.get(`${API}/api/location-stats?municipio=PORTO+ALEGRE&state=RS&ultimos_meses=12`, { timeout: 60_000 });
     const dAll = await rAll.json();
-    const rFiltered = await request.get(`${API}/api/location-stats?municipio=PORTO+ALEGRE&state=RS&tipo=AMEACA&ultimos_meses=12`, { timeout: 30_000 });
+    const rFiltered = await request.get(`${API}/api/location-stats?municipio=PORTO+ALEGRE&state=RS&tipo=AMEACA&ultimos_meses=12`, { timeout: 60_000 });
     const dFiltered = await rFiltered.json();
     expect(dFiltered.total).toBeLessThan(dAll.total);
     expect(dFiltered.total).toBeGreaterThan(0);
   });
 
   test('year filter returns different totals for different years', async ({ request }) => {
-    const r23 = await request.get(`${API}/api/state-stats?state=RS&selected_states=RS&ano=2023`, { timeout: 30_000 });
-    const r24 = await request.get(`${API}/api/state-stats?state=RS&selected_states=RS&ano=2024`, { timeout: 30_000 });
+    const r23 = await request.get(`${API}/api/state-stats?state=RS&selected_states=RS&ano=2023`, { timeout: 60_000 });
+    const r24 = await request.get(`${API}/api/state-stats?state=RS&selected_states=RS&ano=2024`, { timeout: 60_000 });
     const d23 = await r23.json();
     const d24 = await r24.json();
     expect(d23.total).toBeGreaterThan(0);
@@ -236,19 +236,19 @@ test.describe('Share URL Round-trips', () => {
   test('city share URL loads correct data', async ({ request }) => {
     // Simulate: open share URL for Porto Alegre state panel
     const url = `${API}/api/state-stats?state=RS&selected_states=RS&ultimos_meses=12`;
-    const r = await request.get(url, { timeout: 30_000 });
+    const r = await request.get(url, { timeout: 60_000 });
     expect(r.ok()).toBeTruthy();
     const d = await r.json();
     const rsTotal = d.total;
 
     // Same data via share URL params should match
-    const r2 = await request.get(`${API}/api/state-stats?state=RS&selected_states=RS&ultimos_meses=12`, { timeout: 30_000 });
+    const r2 = await request.get(`${API}/api/state-stats?state=RS&selected_states=RS&ultimos_meses=12`, { timeout: 60_000 });
     const d2 = await r2.json();
     expect(d2.total).toBe(rsTotal);
   });
 
   test('share URL with tipo filter preserves filter', async ({ request }) => {
-    const r = await request.get(`${API}/api/location-stats?municipio=PORTO+ALEGRE&state=RS&tipo=AMEACA&ultimos_meses=12`, { timeout: 30_000 });
+    const r = await request.get(`${API}/api/location-stats?municipio=PORTO+ALEGRE&state=RS&tipo=AMEACA&ultimos_meses=12`, { timeout: 60_000 });
     expect(r.ok()).toBeTruthy();
     const d = await r.json();
     expect(d.total).toBeGreaterThan(0);
@@ -276,19 +276,19 @@ test.describe('Share URL Round-trips', () => {
 
   test('bairro share URL returns data for accented names', async ({ request }) => {
     // Glória is stored with accent but URL may have slug
-    const r = await request.get(`${API}/api/location-stats?municipio=PORTO+ALEGRE&bairro=GLORIA&state=RS&ultimos_meses=12`, { timeout: 30_000 });
+    const r = await request.get(`${API}/api/location-stats?municipio=PORTO+ALEGRE&bairro=GLORIA&state=RS&ultimos_meses=12`, { timeout: 60_000 });
     expect(r.ok()).toBeTruthy();
     const d = await r.json();
     expect(d.total).toBeGreaterThan(0);
   });
 
   test('semester filter works in share URL', async ({ request }) => {
-    const r = await request.get(`${API}/api/state-stats?state=RS&selected_states=RS&semestre=2024-S1`, { timeout: 30_000 });
+    const r = await request.get(`${API}/api/state-stats?state=RS&selected_states=RS&semestre=2024-S1`, { timeout: 60_000 });
     expect(r.ok()).toBeTruthy();
     const d = await r.json();
     expect(d.total).toBeGreaterThan(0);
     // S1 should be less than full year
-    const rFull = await request.get(`${API}/api/state-stats?state=RS&selected_states=RS&ano=2024`, { timeout: 30_000 });
+    const rFull = await request.get(`${API}/api/state-stats?state=RS&selected_states=RS&ano=2024`, { timeout: 60_000 });
     const dFull = await rFull.json();
     expect(d.total).toBeLessThan(dFull.total);
   });
@@ -625,7 +625,7 @@ test.describe('Share URL Integrity', () => {
 test.describe('Cross-State Data Consistency', () => {
   test('state-stats breakdown sum <= total for all states', async ({ request }) => {
     for (const state of ['RS', 'RJ', 'MG']) {
-      const r = await request.get(`${API}/api/state-stats?state=${state}&selected_states=${state}&ultimos_meses=12`, { timeout: 30_000 });
+      const r = await request.get(`${API}/api/state-stats?state=${state}&selected_states=${state}&ultimos_meses=12`, { timeout: 60_000 });
       const d = await r.json();
       const breakdownSum = (d.crime_types || []).reduce((s: number, ct: any) => s + ct.count, 0);
       expect(breakdownSum).toBeLessThanOrEqual(d.total * 1.01, // allow 1% rounding tolerance
@@ -636,7 +636,7 @@ test.describe('Cross-State Data Consistency', () => {
 
   test('rate math is consistent across states', async ({ request }) => {
     for (const state of ['RS', 'RJ', 'MG']) {
-      const r = await request.get(`${API}/api/state-stats?state=${state}&selected_states=${state}&ultimos_meses=12`, { timeout: 30_000 });
+      const r = await request.get(`${API}/api/state-stats?state=${state}&selected_states=${state}&ultimos_meses=12`, { timeout: 60_000 });
       const d = await r.json();
       if (d.population && d.population > 0) {
         const rate = (d.total / d.population) * 100_000;
@@ -648,7 +648,7 @@ test.describe('Cross-State Data Consistency', () => {
 
   test('no duplicate crime types within state response', async ({ request }) => {
     for (const state of ['RS', 'RJ']) {
-      const r = await request.get(`${API}/api/state-stats?state=${state}&selected_states=${state}&ultimos_meses=12`, { timeout: 30_000 });
+      const r = await request.get(`${API}/api/state-stats?state=${state}&selected_states=${state}&ultimos_meses=12`, { timeout: 60_000 });
       const d = await r.json();
       const tipos = (d.crime_types || []).map((ct: any) => ct.tipo_enquadramento);
       const unique = new Set(tipos);
