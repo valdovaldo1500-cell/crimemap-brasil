@@ -26,12 +26,17 @@ const API = process.env.BASE_API ?? SITE;
 async function waitForMapReady(page: Page) {
   await page.waitForSelector('.leaflet-tile-loaded', { timeout: 60_000 });
   await page.waitForFunction(() => document.body.textContent?.includes('Ocorrências'), { timeout: 60_000 });
-  // dismiss welcome modal if present
-  const closeBtn = page.locator('[aria-label="Fechar modal"], button:has-text("Fechar")').first();
-  if (await closeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-    await closeBtn.click();
-    await page.waitForTimeout(300);
+  // dismiss welcome modal if present ("Pular" button or close button)
+  for (const selector of ['button:has-text("Pular")', '[aria-label="Fechar modal"]', 'button:has-text("Fechar")', '[aria-label="Mensagem de boas-vindas"] button']) {
+    const btn = page.locator(selector).first();
+    if (await btn.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await btn.click();
+      await page.waitForTimeout(500);
+      break;
+    }
   }
+  // Wait for modal to fully disappear
+  await page.waitForFunction(() => !document.querySelector('[role="dialog"]'), { timeout: 5000 }).catch(() => {});
 }
 
 async function openFilters(page: Page) {
