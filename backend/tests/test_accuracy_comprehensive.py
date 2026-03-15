@@ -745,3 +745,252 @@ class TestAPIContract:
             assert not zero_weight, (
                 f"{state}: {len(zero_weight)} municipio points with weight <= 0"
             )
+
+
+class TestCrossTableTipoFiltering:
+    """Catches cross-table tipo mismatches: RS stores UPPERCASE, RJ staging stores lowercase.
+
+    Without normalization, selecting 'AMEACA' (from RS) won't match RJ staging's 'ameaca',
+    and vice versa. Users see duplicate entries in the sidebar and broken filters.
+    """
+
+    def _get_tipo_values(self, states: list[str]) -> list[str]:
+        """Return raw tipo values from filter-options for given states."""
+        params = [("selected_states", s) for s in states] + [("ultimos_meses", "12")]
+        resp = client.get("/api/filter-options", params=params)
+        assert resp.status_code == 200
+        tipos = resp.json().get("tipo", [])
+        return [t["value"] if isinstance(t, dict) else t for t in tipos]
+
+    def _normalize_tipo(self, s: str) -> str:
+        return _strip_accents(s.lower().replace("_", " ").strip())
+
+    def test_no_duplicate_tipo_display_names(self):
+        """filter-options for RS+RJ must not return two tipos that display identically."""
+        values = self._get_tipo_values(["RS", "RJ"])
+        if not values:
+            pytest.skip("No tipo data for RS+RJ")
+
+        seen: dict[str, list[str]] = {}
+        for v in values:
+            norm = self._normalize_tipo(v)
+            seen.setdefault(norm, []).append(v)
+
+        duplicates = {k: v for k, v in seen.items() if len(v) > 1}
+        assert not duplicates, (
+            f"Duplicate tipo display names (case/accent mismatch between tables): {duplicates}"
+        )
+
+    def test_tipo_filter_returns_results_for_rj_city(self):
+        """Selecting any RJ tipo must return heatmap results for RJ."""
+        rj_tipos = self._get_tipo_values(["RJ"])
+        if not rj_tipos:
+            pytest.skip("No RJ tipo data")
+
+        # Pick the first tipo
+        tipo = rj_tipos[0]
+        resp = client.get("/api/heatmap/municipios", params=[
+            ("selected_states", "RJ"), ("tipo", tipo), ("ultimos_meses", "12"),
+        ])
+        assert resp.status_code == 200
+        data = resp.json()
+        total_weight = sum(p.get("weight", 0) for p in data)
+        assert total_weight > 0, (
+            f"RJ tipo '{tipo}' returned 0 heatmap weight — filter may not match staging crime_type"
+        )
+
+    def test_tipo_filter_returns_results_for_rs_city(self):
+        """Selecting any RS tipo must return heatmap results for RS."""
+        rs_tipos = self._get_tipo_values(["RS"])
+        if not rs_tipos:
+            pytest.skip("No RS tipo data")
+
+        tipo = rs_tipos[0]
+        resp = client.get("/api/heatmap/municipios", params={
+            "selected_states": "RS", "tipo": tipo, "ultimos_meses": 12,
+        })
+        assert resp.status_code == 200
+        data = resp.json()
+        total_weight = sum(p.get("weight", 0) for p in data)
+        assert total_weight > 0, (
+            f"RS tipo '{tipo}' returned 0 heatmap weight"
+        )
+
+    def test_tipo_filter_consistent_across_tables(self):
+        """A tipo that exists in both RS and RJ must return results from BOTH when filtered."""
+        rs_tipos = set(self._get_tipo_values(["RS"]))
+        rj_tipos = set(self._get_tipo_values(["RJ"]))
+        if not rs_tipos or not rj_tipos:
+            pytest.skip("Missing tipo data for RS or RJ")
+
+        # Find tipos that appear in both (by normalized name)
+        rs_norm = {self._normalize_tipo(t): t for t in rs_tipos}
+        rj_norm = {self._normalize_tipo(t): t for t in rj_tipos}
+        common = set(rs_norm.keys()) & set(rj_norm.keys())
+        if not common:
+            pytest.skip("No common tipo between RS and RJ")
+
+        # Pick one common tipo — use the RS variant (uppercase)
+        norm_key = next(iter(common))
+        rs_value = rs_norm[norm_key]
+
+        resp = client.get("/api/heatmap/municipios", params=[
+            ("selected_states", "RS"), ("selected_states", "RJ"),
+            ("tipo", rs_value), ("ultimos_meses", "12"),
+        ])
+        assert resp.status_code == 200
+        data = resp.json()
+
+        # Check both states have results
+        rs_weight = sum(p.get("weight", 0) for p in data if p.get("state") == "RS")
+        rj_weight = sum(p.get("weight", 0) for p in data if p.get("state") == "RJ")
+
+        # RS should always work (same table, same case)
+        assert rs_weight > 0, f"RS has 0 weight for tipo '{rs_value}'"
+        # RJ should ALSO work if cross-table normalization is correct
+        assert rj_weight > 0, (
+            f"RJ has 0 weight for tipo '{rs_value}' (RS variant) — "
+            f"cross-table tipo normalization is broken. RJ uses '{rj_norm[norm_key]}'"
+        )
+
+    def test_filter_options_tipo_values_all_produce_heatmap_results(self):
+        """Every tipo in filter-options must produce non-zero heatmap results when selected."""
+        for state in ["RS", "RJ"]:
+            tipos = self._get_tipo_values([state])
+            if not tipos:
+                continue
+            # Sample up to 5 tipos to keep test fast
+            for tipo in tipos[:5]:
+                resp = client.get("/api/heatmap/municipios", params={
+                    "selected_states": state, "tipo": tipo, "ultimos_meses": 12,
+                })
+                assert resp.status_code == 200
+                data = resp.json()
+                total_weight = sum(p.get("weight", 0) for p in data)
+                assert total_weight > 0, (
+                    f"{state} tipo '{tipo}' is in filter-options but produces 0 heatmap results — dead filter"
+                )
+
+
+class TestFilterParamForwarding:
+    """Ensures API correctly applies all filter params (share URL contract).
+
+    If the API ignores a param, shared URLs with those params won't reproduce the view.
+    """
+
+    def test_tipo_filter_reduces_location_stats_total(self):
+        """location-stats with tipo filter must return fewer crimes than unfiltered."""
+        resp_all = client.get("/api/location-stats", params={
+            "municipio": _POA, "state": "RS", "ultimos_meses": 12,
+        })
+        assert resp_all.status_code == 200
+        total_all = resp_all.json().get("total", 0)
+        if total_all == 0:
+            pytest.skip("No POA data")
+
+        # Get a specific tipo
+        fo_resp = client.get("/api/filter-options", params={"selected_states": "RS"})
+        tipos = fo_resp.json().get("tipo", [])
+        if not tipos:
+            pytest.skip("No RS tipos")
+        tipo_value = tipos[0]["value"] if isinstance(tipos[0], dict) else tipos[0]
+
+        resp_filtered = client.get("/api/location-stats", params={
+            "municipio": _POA, "state": "RS", "ultimos_meses": 12, "tipo": tipo_value,
+        })
+        assert resp_filtered.status_code == 200
+        total_filtered = resp_filtered.json().get("total", 0)
+
+        assert total_filtered < total_all, (
+            f"Tipo filter '{tipo_value}' did not reduce total: filtered={total_filtered} vs all={total_all}"
+        )
+
+    def test_ultimos_meses_filter_reduces_total(self):
+        """Shorter time window must return fewer or equal crimes."""
+        resp12 = client.get("/api/location-stats", params={
+            "municipio": _POA, "state": "RS", "ultimos_meses": 12,
+        })
+        resp3 = client.get("/api/location-stats", params={
+            "municipio": _POA, "state": "RS", "ultimos_meses": 3,
+        })
+        assert resp12.status_code == 200
+        assert resp3.status_code == 200
+
+        total12 = resp12.json().get("total", 0)
+        total3 = resp3.json().get("total", 0)
+        if total12 == 0:
+            pytest.skip("No POA 12m data")
+
+        assert total3 <= total12, (
+            f"3m total ({total3}) > 12m total ({total12}) — time window filter not applied"
+        )
+
+
+class TestCompareFeature:
+    """Validates location-stats returns data for RJ cities used in comparisons."""
+
+    _RJ_CITIES = [
+        "RIO DE JANEIRO", "NITEROI", "CABO FRIO",
+        "ARRAIAL DO CABO", "DUQUE DE CAXIAS",
+    ]
+
+    def test_location_stats_cabo_frio_rj(self):
+        resp = client.get("/api/location-stats", params={
+            "municipio": "CABO FRIO", "state": "RJ", "ultimos_meses": 12,
+        })
+        assert resp.status_code == 200
+        d = resp.json()
+        assert d.get("total", 0) > 0, (
+            "Cabo Frio (RJ) location-stats returned 0 — compare feature will show nothing"
+        )
+
+    def test_location_stats_arraial_do_cabo_rj(self):
+        resp = client.get("/api/location-stats", params={
+            "municipio": "ARRAIAL DO CABO", "state": "RJ", "ultimos_meses": 12,
+        })
+        assert resp.status_code == 200
+        d = resp.json()
+        assert d.get("total", 0) > 0, (
+            "Arraial do Cabo (RJ) location-stats returned 0 — compare feature will show nothing"
+        )
+
+    def test_location_stats_multiple_rj_cities(self):
+        """All major RJ cities must return non-zero totals from location-stats."""
+        failures = []
+        for city in self._RJ_CITIES:
+            resp = client.get("/api/location-stats", params={
+                "municipio": city, "state": "RJ", "ultimos_meses": 12,
+            })
+            if resp.status_code != 200:
+                failures.append(f"{city}: HTTP {resp.status_code}")
+                continue
+            total = resp.json().get("total", 0)
+            if total == 0:
+                failures.append(f"{city}: total=0")
+
+        assert not failures, (
+            f"RJ cities with no location-stats data: {'; '.join(failures)}"
+        )
+
+    def test_location_stats_with_duplicate_selected_states(self):
+        """Compare sends ['RJ','RJ'] when both cities are in RJ — must not break."""
+        resp_single = client.get("/api/location-stats", params={
+            "municipio": "RIO DE JANEIRO", "state": "RJ", "ultimos_meses": 12,
+            "selected_states": "RJ",
+        })
+        resp_dup = client.get("/api/location-stats", params=[
+            ("municipio", "RIO DE JANEIRO"), ("state", "RJ"), ("ultimos_meses", "12"),
+            ("selected_states", "RJ"), ("selected_states", "RJ"),
+        ])
+        assert resp_single.status_code == 200
+        assert resp_dup.status_code == 200
+
+        total_single = resp_single.json().get("total", 0)
+        total_dup = resp_dup.json().get("total", 0)
+
+        if total_single == 0:
+            pytest.skip("No RJ Rio data")
+
+        assert total_dup == total_single, (
+            f"Duplicate selected_states changed result: single={total_single} dup={total_dup}"
+        )
