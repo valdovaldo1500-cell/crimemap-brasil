@@ -1448,11 +1448,15 @@ export default function Home() {
                           <span className="text-[10px] text-amber-400 leading-snug">Dados parciais — MG inclui apenas crimes violentos. RS/RJ filtrados para tipos compatíveis.</span>
                         </div>
                       )}
-                      <div className="grid grid-cols-3 gap-1 text-xs border-t border-[#1e293b] pt-1">
-                        <div className="text-[#94a3b8]">Total</div>
-                        <div className="text-center font-mono">{comparisonStats[0].total?.toLocaleString() || 0}</div>
-                        <div className="text-center font-mono">{comparisonStats[1].total?.toLocaleString() || 0}</div>
-                      </div>
+                      {(() => {
+                        const showRate = rateMode === 'rate' && comparisonStats[0].population && comparisonStats[1].population;
+                        const val = (s: any) => showRate ? ((s.total / s.population) * 100000).toFixed(1) : (s.total?.toLocaleString() || 0);
+                        return <div className="grid grid-cols-3 gap-1 text-xs border-t border-[#1e293b] pt-1">
+                          <div className="text-[#94a3b8]">{showRate ? '/100K' : 'Total'}</div>
+                          <div className="text-center font-mono">{val(comparisonStats[0])}</div>
+                          <div className="text-center font-mono">{val(comparisonStats[1])}</div>
+                        </div>;
+                      })()}
                       {(comparisonStats[0].population || comparisonStats[1].population) && (
                         <div className="grid grid-cols-3 gap-1 text-xs">
                           <div className="text-[#94a3b8]">Hab.</div>
@@ -1460,7 +1464,7 @@ export default function Home() {
                           <div className="text-center font-mono">{comparisonStats[1].population ? comparisonStats[1].population.toLocaleString('pt-BR') : '—'}</div>
                         </div>
                       )}
-                      {comparisonStats[0].population && comparisonStats[1].population && (
+                      {rateMode !== 'rate' && comparisonStats[0].population && comparisonStats[1].population && (
                         <div className="grid grid-cols-3 gap-1 text-xs">
                           <div className="text-[#94a3b8]">/100K</div>
                           <div className="text-center font-mono">{((comparisonStats[0].total / comparisonStats[0].population) * 100000).toFixed(1)}</div>
