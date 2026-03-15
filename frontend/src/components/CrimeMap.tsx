@@ -798,11 +798,11 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
           });
 
           // Municipality-level lookup for RJ/MG polygon rendering
-          const muniLookup: Record<string, {weight:number, intensity:number, municipio:string, population:number|null}> = {};
+          const muniLookup: Record<string, {weight:number, intensity:number, municipio:string, population:number|null, state:string|null}> = {};
           muniData.forEach((d:any) => {
             const key = normalizeGeoName(d.municipio || '');
             const intensity = dvMap.get(d) ?? 0.5;
-            muniLookup[key] = { weight: d.weight, intensity, municipio: d.municipio, population: d.population || null };
+            muniLookup[key] = { weight: d.weight, intensity, municipio: d.municipio, population: d.population || null, state: d.state || null };
           });
 
           const matchedKeys = new Set<string>();
