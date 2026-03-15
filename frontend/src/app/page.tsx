@@ -732,6 +732,33 @@ export default function Home() {
     setCompareMode(false);
   }, []);
 
+  // Re-fetch compare groups when filters change
+  const prevFiltersRef = useRef(filters);
+  useEffect(() => {
+    if (prevFiltersRef.current === filters) return;
+    prevFiltersRef.current = filters;
+    if (compareGroups.length === 0) return;
+    // Re-fetch all existing compare groups with new filters
+    const refetch = async () => {
+      const updated = await Promise.all(compareGroups.map(async (group) => {
+        const locs = group.locations;
+        const allComparisonStates = locs.map((l: any) => l.state).filter(Boolean) as string[];
+        const isStateLevel = locs.every((l: any) => !l.municipio && l.state);
+        try {
+          const allStates = isStateLevel ? locs.map((l: any) => l.state!) : allComparisonStates;
+          const [s0, s1] = await Promise.all(locs.map((l: any) =>
+            isStateLevel
+              ? fetchStateStats({ state: l.state, selected_states: allStates, semestre: filters.semestre, ano: filters.ano, tipo: filters.tipo, grupo: filters.grupo, sexo: filters.sexo, cor: filters.cor, idade_min: filters.idade_min, idade_max: filters.idade_max, ultimos_meses: filters.ultimos_meses })
+              : fetchLocationStats({ municipio: l.municipio, bairro: l.bairro, state: l.state, selected_states: allComparisonStates, semestre: filters.semestre, ano: filters.ano, tipo: filters.tipo, grupo: filters.grupo, sexo: filters.sexo, cor: filters.cor, idade_min: filters.idade_min, idade_max: filters.idade_max, ultimos_meses: filters.ultimos_meses })
+          ));
+          return { ...group, stats: [{ ...s0, displayName: locs[0].displayName }, { ...s1, displayName: locs[1].displayName }] };
+        } catch { return group; }
+      }));
+      setCompareGroups(updated);
+    };
+    refetch();
+  }, [filters]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Compare group drag/resize handlers
   useEffect(() => {
     if (!groupDragging && !groupResizing) return;
