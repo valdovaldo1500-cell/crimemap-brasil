@@ -298,7 +298,7 @@ export default function Home() {
       fetchSemesters().then((s: string[]) => { setSemesters(s); if (s.length > 0) { if (!urlYearSetRef.current) setSelectedYear(s[0].split('-')[0]); if (!urlPeriodSetRef.current) setSelectedPeriod('12m'); } }),
       fetchFilterOptions({ ultimos_meses: 12 }).then((opts: any) => {
         const VALID_GRUPOS = ['CRIMES', 'CONTRAVENCOES'];
-        setCrimeTypes((opts.tipo || []).map((t: any) => ({ tipo_enquadramento: t.value, count: t.count })));
+        setCrimeTypes((opts.tipo || []).map((t: any) => ({ tipo_enquadramento: t.value, count: t.count, aliases: t.aliases || [] })));
         setGrupoValues((opts.grupo || []).filter((g: any) => VALID_GRUPOS.includes(g.value)));
         setSexoValues(opts.sexo || []);
         setCorValues(opts.cor || []);
@@ -381,7 +381,7 @@ export default function Home() {
       if (selectedStates.length) params.selected_states = selectedStates;
       fetchFilterOptions(params).then((opts: any) => {
         const VALID_GRUPOS = ['CRIMES', 'CONTRAVENCOES'];
-        setCrimeTypes((opts.tipo || []).map((t: any) => ({ tipo_enquadramento: t.value, count: t.count })));
+        setCrimeTypes((opts.tipo || []).map((t: any) => ({ tipo_enquadramento: t.value, count: t.count, aliases: t.aliases || [] })));
         setGrupoValues((opts.grupo || []).filter((g: any) => VALID_GRUPOS.includes(g.value)));
         setSexoValues(opts.sexo || []);
         setCorValues(opts.cor || []);
