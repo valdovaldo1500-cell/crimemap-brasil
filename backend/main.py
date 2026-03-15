@@ -1513,7 +1513,7 @@ def filter_options(request: Request,
             CrimeStaging.state.in_(staging_total_states)
         )
         if tipo:
-            st_q = st_q.filter(CrimeStaging.crime_type.in_(tipo))
+            st_q = st_q.filter(_staging_tipo_filter(tipo))
         if ultimos_meses:
             _, thresh_year, thresh_month = _ultimos_meses_range(ultimos_meses)
             st_q = st_q.filter(
