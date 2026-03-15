@@ -877,3 +877,58 @@ test('Accuracy: compare filter-options tipo normalization for RS+RJ', async ({ r
     `filter-options has duplicate normalized tipos for RS+RJ: ${duplicates.join(' | ')}`
   );
 });
+
+test('Regression: filter-options returns data without selected_states param', async ({ request }) => {
+  // Catches the bug where frontend guard prevented fetchFilterOptions
+  // when no state was selected (search-first flow had empty filter panel)
+  const resp = await request.get(
+    `${BASE_API}/api/filter-options?ultimos_meses=12`,
+    { timeout: 60_000 }
+  );
+  expect(resp.ok()).toBeTruthy();
+  const d = await resp.json();
+
+  // Must return crime types even without selected_states
+  expect((d.tipo || []).length).toBeGreaterThan(10,
+    'filter-options returned < 10 tipos without selected_states — filters would appear empty'
+  );
+  expect((d.grupo || []).length).toBeGreaterThanOrEqual(2,
+    'filter-options returned < 2 grupo without selected_states'
+  );
+  expect((d.sexo || []).length).toBeGreaterThanOrEqual(2,
+    'filter-options returned < 2 sexo without selected_states'
+  );
+  expect((d.cor || []).length).toBeGreaterThanOrEqual(3,
+    'filter-options returned < 3 cor without selected_states'
+  );
+  expect(d.total).toBeGreaterThan(100000,
+    'filter-options total is too low without selected_states'
+  );
+});
+
+test('Accuracy: location-stats returns data for cities across all 3 states', async ({ request }) => {
+  // Verifies data availability broadly — not just Porto Alegre
+  const cities = [
+    { municipio: 'RESTINGA SECA', state: 'RS', minTotal: 100 },
+    { municipio: 'CANOAS', state: 'RS', minTotal: 5000 },
+    { municipio: 'PELOTAS', state: 'RS', minTotal: 5000 },
+    { municipio: 'NITEROI', state: 'RJ', minTotal: 1000 },
+    { municipio: 'CABO FRIO', state: 'RJ', minTotal: 1000 },
+    { municipio: 'UBERLANDIA', state: 'MG', minTotal: 100 },
+  ];
+
+  for (const city of cities) {
+    const resp = await request.get(
+      `${BASE_API}/api/location-stats?municipio=${encodeURIComponent(city.municipio)}&state=${city.state}&ultimos_meses=12`,
+      { timeout: 60_000 }
+    );
+    expect(resp.ok()).toBeTruthy();
+    const d = await resp.json();
+    expect(d.total).toBeGreaterThan(city.minTotal,
+      `${city.municipio} (${city.state}) total=${d.total} < expected min ${city.minTotal}`
+    );
+    expect((d.crime_types || []).length).toBeGreaterThan(0,
+      `${city.municipio} (${city.state}) has no crime_types`
+    );
+  }
+});
