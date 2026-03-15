@@ -743,11 +743,11 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
           const mergedGeoData = mergedFeatures.length > 0 ? { type: 'FeatureCollection', features: mergedFeatures } : geoDataRef.current;
           if (!mergedGeoData) { setLoading(false); return; }
 
-          const lookup: Record<string, {weight:number, intensity:number, municipio:string, population:number|null}> = {};
+          const lookup: Record<string, {weight:number, intensity:number, municipio:string, population:number|null, state:string|null}> = {};
           data.forEach((d:any) => {
             const key = normalizeGeoName(d.municipio || '');
             const intensity = dvMap.get(d) ?? 0.5;
-            lookup[key] = { weight: d.weight, intensity, municipio: d.municipio, population: d.population || null };
+            lookup[key] = { weight: d.weight, intensity, municipio: d.municipio, population: d.population || null, state: d.state || null };
           });
 
           geoJsonRef.current = L.geoJSON(mergedGeoData, {
