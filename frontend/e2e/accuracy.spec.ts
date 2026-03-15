@@ -7,13 +7,15 @@ async function waitForMapReady(page: import('@playwright/test').Page) {
   await page.waitForFunction(() => {
     return document.body.textContent?.includes('Ocorrências');
   }, { timeout: 60_000 });
-  // Dismiss welcome dialog if present
-  const welcomeDialog = page.locator('[role="dialog"][aria-label="Mensagem de boas-vindas"]');
-  if (await welcomeDialog.isVisible({ timeout: 2_000 }).catch(() => false)) {
-    const closeBtn = welcomeDialog.locator('button').last();
-    await closeBtn.click();
-    await welcomeDialog.waitFor({ state: 'hidden', timeout: 5_000 }).catch(() => {});
-  }
+  // Dismiss welcome dialog if present (use JS click to bypass overlay interception)
+  await page.evaluate(() => {
+    const dialog = document.querySelector('[role="dialog"][aria-label="Mensagem de boas-vindas"]');
+    if (dialog) {
+      const btns = dialog.querySelectorAll('button');
+      if (btns.length > 0) (btns[btns.length - 1] as HTMLElement).click();
+    }
+  });
+  await page.waitForTimeout(500);
 }
 
 async function openSidebarAndWait(page: import('@playwright/test').Page) {
