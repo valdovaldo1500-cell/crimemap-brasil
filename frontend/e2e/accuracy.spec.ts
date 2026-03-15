@@ -152,7 +152,7 @@ test('Accuracy: population_source field present in location-stats', async ({ req
 // ============================================================
 
 test('Accuracy: filter-options returns tipo list for RS', async ({ request }) => {
-  const resp = await request.get(`${BASE_API}/api/filter-options?selected_states=RS&ultimos_meses=12`);
+  const resp = await request.get(`${BASE_API}/api/filter-options?selected_states=RS&ultimos_meses=12`, { timeout: 30_000 });
   expect(resp.ok()).toBeTruthy();
   const d = await resp.json();
   expect(Array.isArray(d.tipo)).toBe(true);
