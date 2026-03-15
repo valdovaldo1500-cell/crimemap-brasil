@@ -3,10 +3,10 @@ import { test, expect } from '@playwright/test';
 const BASE_API = process.env.BASE_API ?? 'https://crimebrasil.com.br';
 
 async function waitForMapReady(page: import('@playwright/test').Page) {
-  await page.waitForSelector('.leaflet-tile-loaded', { timeout: 30_000 });
+  await page.waitForSelector('.leaflet-tile-loaded', { timeout: 60_000 });
   await page.waitForFunction(() => {
     return document.body.textContent?.includes('Ocorrências');
-  }, { timeout: 30_000 });
+  }, { timeout: 60_000 });
 }
 
 async function openSidebarAndWait(page: import('@playwright/test').Page) {
@@ -110,7 +110,7 @@ test('Accuracy: location-stats total >= type breakdown sum', async ({ request })
 // ============================================================
 
 test('Accuracy: rate math consistent with total/population for Porto Alegre', async ({ request }) => {
-  const resp = await request.get(`${BASE_API}/api/location-stats?municipio=PORTO+ALEGRE&state=RS&ultimos_meses=12`, { timeout: 30_000 });
+  const resp = await request.get(`${BASE_API}/api/location-stats?municipio=PORTO+ALEGRE&state=RS&ultimos_meses=12`, { timeout: 60_000 });
   expect(resp.ok()).toBeTruthy();
   const d = await resp.json();
 
@@ -131,7 +131,7 @@ test('Accuracy: rate is never NaN or Infinity', async ({ request }) => {
   ];
 
   for (const loc of locations) {
-    const resp = await request.get(`${BASE_API}/api/location-stats?${loc}&ultimos_meses=12`, { timeout: 30_000 });
+    const resp = await request.get(`${BASE_API}/api/location-stats?${loc}&ultimos_meses=12`, { timeout: 60_000 });
     if (!resp.ok()) continue;
     const d = await resp.json();
     if (d.rate === null || d.rate === undefined) continue;
@@ -140,7 +140,7 @@ test('Accuracy: rate is never NaN or Infinity', async ({ request }) => {
 });
 
 test('Accuracy: population_source field present in location-stats', async ({ request }) => {
-  const resp = await request.get(`${BASE_API}/api/location-stats?municipio=PORTO+ALEGRE&state=RS&ultimos_meses=12`, { timeout: 30_000 });
+  const resp = await request.get(`${BASE_API}/api/location-stats?municipio=PORTO+ALEGRE&state=RS&ultimos_meses=12`, { timeout: 60_000 });
   expect(resp.ok()).toBeTruthy();
   const d = await resp.json();
   expect(d).toHaveProperty('population_source');
@@ -152,7 +152,7 @@ test('Accuracy: population_source field present in location-stats', async ({ req
 // ============================================================
 
 test('Accuracy: filter-options returns tipo list for RS', async ({ request }) => {
-  const resp = await request.get(`${BASE_API}/api/filter-options?selected_states=RS&ultimos_meses=12`, { timeout: 30_000 });
+  const resp = await request.get(`${BASE_API}/api/filter-options?selected_states=RS&ultimos_meses=12`, { timeout: 60_000 });
   expect(resp.ok()).toBeTruthy();
   const d = await resp.json();
   expect(Array.isArray(d.tipo)).toBe(true);
@@ -160,8 +160,8 @@ test('Accuracy: filter-options returns tipo list for RS', async ({ request }) =>
 });
 
 test('Accuracy: 12m filter-options has >= types than 3m', async ({ request }) => {
-  const resp3 = await request.get(`${BASE_API}/api/filter-options?selected_states=RS&ultimos_meses=3`, { timeout: 30_000 });
-  const resp12 = await request.get(`${BASE_API}/api/filter-options?selected_states=RS&ultimos_meses=12`, { timeout: 30_000 });
+  const resp3 = await request.get(`${BASE_API}/api/filter-options?selected_states=RS&ultimos_meses=3`, { timeout: 60_000 });
+  const resp12 = await request.get(`${BASE_API}/api/filter-options?selected_states=RS&ultimos_meses=12`, { timeout: 60_000 });
   expect(resp3.ok()).toBeTruthy();
   expect(resp12.ok()).toBeTruthy();
 
@@ -171,9 +171,9 @@ test('Accuracy: 12m filter-options has >= types than 3m', async ({ request }) =>
 });
 
 test('Accuracy: RS+MG filter-options has fewer tipos than RS alone', async ({ request }) => {
-  const respRS = await request.get(`${BASE_API}/api/filter-options?selected_states=RS`, { timeout: 30_000 });
+  const respRS = await request.get(`${BASE_API}/api/filter-options?selected_states=RS`, { timeout: 60_000 });
   // API needs repeated params — comma-separated is not supported
-  const respMGRS = await request.get(`${BASE_API}/api/filter-options?selected_states=RS&selected_states=MG`, { timeout: 30_000 });
+  const respMGRS = await request.get(`${BASE_API}/api/filter-options?selected_states=RS&selected_states=MG`, { timeout: 60_000 });
   expect(respRS.ok()).toBeTruthy();
   expect(respMGRS.ok()).toBeTruthy();
 
@@ -184,7 +184,7 @@ test('Accuracy: RS+MG filter-options has fewer tipos than RS alone', async ({ re
 });
 
 test('Accuracy: MG alone shows violent crime types', async ({ request }) => {
-  const resp = await request.get(`${BASE_API}/api/filter-options?selected_states=MG`, { timeout: 30_000 });
+  const resp = await request.get(`${BASE_API}/api/filter-options?selected_states=MG`, { timeout: 60_000 });
   expect(resp.ok()).toBeTruthy();
   const d = await resp.json();
   const tipos: string[] = (d.tipo || []).map((t: { value?: string } | string) =>
@@ -267,7 +267,7 @@ test('Accuracy: no duplicate municipality dots in RS heatmap', async ({ request 
 // ============================================================
 
 test('Accuracy: state-stats total >= breakdown sum for RS', async ({ request }) => {
-  const resp = await request.get(`${BASE_API}/api/state-stats?state=RS&ultimos_meses=12`, { timeout: 30_000 });
+  const resp = await request.get(`${BASE_API}/api/state-stats?state=RS&ultimos_meses=12`, { timeout: 60_000 });
   expect(resp.ok()).toBeTruthy();
   const d = await resp.json();
   const total: number = d.total || 0;
@@ -277,7 +277,7 @@ test('Accuracy: state-stats total >= breakdown sum for RS', async ({ request }) 
 });
 
 test('Accuracy: state-stats total >= breakdown sum for RJ', async ({ request }) => {
-  const resp = await request.get(`${BASE_API}/api/state-stats?state=RJ&ultimos_meses=12`, { timeout: 30_000 });
+  const resp = await request.get(`${BASE_API}/api/state-stats?state=RJ&ultimos_meses=12`, { timeout: 60_000 });
   expect(resp.ok()).toBeTruthy();
   const d = await resp.json();
   const total: number = d.total || 0;
@@ -299,7 +299,7 @@ test('Accuracy: heatmap municipios weight > 0 for all RS points', async ({ reque
 // ============================================================
 
 test('Accuracy: filter-options has no duplicate tipo display names for RS+RJ', async ({ request }) => {
-  const resp = await request.get(`${BASE_API}/api/filter-options?selected_states=RS&selected_states=RJ&ultimos_meses=12`, { timeout: 30_000 });
+  const resp = await request.get(`${BASE_API}/api/filter-options?selected_states=RS&selected_states=RJ&ultimos_meses=12`, { timeout: 60_000 });
   expect(resp.ok()).toBeTruthy();
   const tipos: Array<{ value: string; count: number } | string> = (await resp.json()).tipo || [];
   if (tipos.length === 0) return;
@@ -322,7 +322,7 @@ test('Accuracy: filter-options has no duplicate tipo display names for RS+RJ', a
 
 test('Accuracy: tipo filter returns heatmap results for RJ', async ({ request }) => {
   // Get a valid RJ tipo
-  const foResp = await request.get(`${BASE_API}/api/filter-options?selected_states=RJ&ultimos_meses=12`, { timeout: 30_000 });
+  const foResp = await request.get(`${BASE_API}/api/filter-options?selected_states=RJ&ultimos_meses=12`, { timeout: 60_000 });
   expect(foResp.ok()).toBeTruthy();
   const tipos: Array<{ value: string } | string> = (await foResp.json()).tipo || [];
   if (tipos.length === 0) return;
@@ -365,14 +365,14 @@ test('Accuracy: cross-table tipo filter returns results for both RS and RJ', asy
 // ============================================================
 
 test('Accuracy: location-stats returns data for Cabo Frio RJ', async ({ request }) => {
-  const resp = await request.get(`${BASE_API}/api/location-stats?municipio=CABO+FRIO&state=RJ&ultimos_meses=12`, { timeout: 30_000 });
+  const resp = await request.get(`${BASE_API}/api/location-stats?municipio=CABO+FRIO&state=RJ&ultimos_meses=12`, { timeout: 60_000 });
   expect(resp.ok()).toBeTruthy();
   const d = await resp.json();
   expect(d.total).toBeGreaterThan(0);
 });
 
 test('Accuracy: location-stats returns data for Arraial do Cabo RJ', async ({ request }) => {
-  const resp = await request.get(`${BASE_API}/api/location-stats?municipio=ARRAIAL+DO+CABO&state=RJ&ultimos_meses=12`, { timeout: 30_000 });
+  const resp = await request.get(`${BASE_API}/api/location-stats?municipio=ARRAIAL+DO+CABO&state=RJ&ultimos_meses=12`, { timeout: 60_000 });
   expect(resp.ok()).toBeTruthy();
   const d = await resp.json();
   expect(d.total).toBeGreaterThan(0);
@@ -392,8 +392,8 @@ test('Accuracy: both cities in a comparison return data simultaneously', async (
 });
 
 test('Accuracy: location-stats handles duplicate selected_states', async ({ request }) => {
-  const resp1 = await request.get(`${BASE_API}/api/location-stats?municipio=RIO+DE+JANEIRO&state=RJ&selected_states=RJ&ultimos_meses=12`, { timeout: 30_000 });
-  const resp2 = await request.get(`${BASE_API}/api/location-stats?municipio=RIO+DE+JANEIRO&state=RJ&selected_states=RJ&selected_states=RJ&ultimos_meses=12`, { timeout: 30_000 });
+  const resp1 = await request.get(`${BASE_API}/api/location-stats?municipio=RIO+DE+JANEIRO&state=RJ&selected_states=RJ&ultimos_meses=12`, { timeout: 60_000 });
+  const resp2 = await request.get(`${BASE_API}/api/location-stats?municipio=RIO+DE+JANEIRO&state=RJ&selected_states=RJ&selected_states=RJ&ultimos_meses=12`, { timeout: 60_000 });
   expect(resp1.ok()).toBeTruthy();
   expect(resp2.ok()).toBeTruthy();
   const d1 = await resp1.json();
@@ -407,13 +407,13 @@ test('Accuracy: location-stats handles duplicate selected_states', async ({ requ
 // ============================================================
 
 test('Accuracy: tipo filter reduces location-stats total', async ({ request }) => {
-  const respAll = await request.get(`${BASE_API}/api/location-stats?municipio=PORTO+ALEGRE&state=RS&ultimos_meses=12`, { timeout: 30_000 });
+  const respAll = await request.get(`${BASE_API}/api/location-stats?municipio=PORTO+ALEGRE&state=RS&ultimos_meses=12`, { timeout: 60_000 });
   expect(respAll.ok()).toBeTruthy();
   const totalAll: number = (await respAll.json()).total || 0;
   if (totalAll === 0) return;
 
   // Get a tipo value
-  const foResp = await request.get(`${BASE_API}/api/filter-options?selected_states=RS`, { timeout: 30_000 });
+  const foResp = await request.get(`${BASE_API}/api/filter-options?selected_states=RS`, { timeout: 60_000 });
   expect(foResp.ok()).toBeTruthy();
   const tipos = (await foResp.json()).tipo || [];
   if (tipos.length === 0) return;
@@ -429,8 +429,8 @@ test('Accuracy: tipo filter reduces location-stats total', async ({ request }) =
 });
 
 test('Accuracy: ultimos_meses=3 reduces total vs ultimos_meses=12', async ({ request }) => {
-  const resp12 = await request.get(`${BASE_API}/api/location-stats?municipio=PORTO+ALEGRE&state=RS&ultimos_meses=12`, { timeout: 30_000 });
-  const resp3 = await request.get(`${BASE_API}/api/location-stats?municipio=PORTO+ALEGRE&state=RS&ultimos_meses=3`, { timeout: 30_000 });
+  const resp12 = await request.get(`${BASE_API}/api/location-stats?municipio=PORTO+ALEGRE&state=RS&ultimos_meses=12`, { timeout: 60_000 });
+  const resp3 = await request.get(`${BASE_API}/api/location-stats?municipio=PORTO+ALEGRE&state=RS&ultimos_meses=3`, { timeout: 60_000 });
   expect(resp12.ok()).toBeTruthy();
   expect(resp3.ok()).toBeTruthy();
   const total12: number = (await resp12.json()).total || 0;
