@@ -24,7 +24,7 @@ const API = process.env.BASE_API ?? SITE;
 // Suppress welcome modal for all tests by setting localStorage before navigation
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
-    localStorage.setItem('crimebrasil_welcome_seen', 'true');
+    localStorage.setItem('crimebrasil_welcomed', 'true');
   });
 });
 
