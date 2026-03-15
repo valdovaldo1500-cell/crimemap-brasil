@@ -1536,26 +1536,31 @@ export default function Home() {
                             );
                           })}</div>;
                         }
-                        const allTypes = new Set<string>();
-                        comparisonStats.forEach((s: any) => (s.crime_types || []).forEach((ct: any) => allTypes.add(ct.tipo_enquadramento)));
-                        const typeArr = Array.from(allTypes).sort((a, b) => {
-                          const totalA = comparisonStats.reduce((sum: number, s: any) => sum + ((s.crime_types || []).find((c: any) => c.tipo_enquadramento === a)?.count || 0), 0);
-                          const totalB = comparisonStats.reduce((sum: number, s: any) => sum + ((s.crime_types || []).find((c: any) => c.tipo_enquadramento === b)?.count || 0), 0);
+                        // Merge crime types by normalized key (strip accents + uppercase) to avoid duplicates across states
+                        const typeMap = new Map<string, { label: string; counts: [number, number] }>();
+                        comparisonStats.forEach((s: any, idx: number) => (s.crime_types || []).forEach((ct: any) => {
+                          const norm = stripAccents(ct.tipo_enquadramento).toUpperCase();
+                          const existing = typeMap.get(norm);
+                          if (existing) {
+                            existing.counts[idx] += ct.count;
+                          } else {
+                            const counts: [number, number] = [0, 0];
+                            counts[idx] = ct.count;
+                            typeMap.set(norm, { label: ct.tipo_enquadramento, counts });
+                          }
+                        }));
+                        const typeArr = Array.from(typeMap.entries()).sort((a, b) => {
+                          const totalA = a[1].counts[0] + a[1].counts[1];
+                          const totalB = b[1].counts[0] + b[1].counts[1];
                           return totalB - totalA;
                         });
-                        const getCount = (stats: any, tipo: string) => {
-                          const ct = (stats.crime_types || []).find((c: any) => c.tipo_enquadramento === tipo);
-                          return ct ? ct.count : 0;
-                        };
-                        return <div className="max-h-60 overflow-y-auto">{typeArr.map(tipo => {
-                          const raw0 = getCount(comparisonStats[0], tipo);
-                          const raw1 = getCount(comparisonStats[1], tipo);
-                          const c0 = toRate(raw0, comparisonStats[0]);
-                          const c1 = toRate(raw1, comparisonStats[1]);
+                        return <div className="max-h-60 overflow-y-auto">{typeArr.map(([norm, { label, counts }]) => {
+                          const c0 = toRate(counts[0], comparisonStats[0]);
+                          const c1 = toRate(counts[1], comparisonStats[1]);
                           const diff = c0 > 0 ? (((c1 - c0) / c0) * 100) : 0;
                           return (
-                            <div key={tipo} className="grid grid-cols-4 gap-1 text-[10px]">
-                              <div className="text-[#94a3b8] truncate" title={prettifyCrimeType(tipo)}>{prettifyCrimeType(tipo)}</div>
+                            <div key={norm} className="grid grid-cols-4 gap-1 text-[10px]">
+                              <div className="text-[#94a3b8] truncate" title={prettifyCrimeType(label)}>{prettifyCrimeType(label)}</div>
                               <div className="text-center font-mono">{fmt(c0)}</div>
                               <div className="text-center font-mono">{fmt(c1)}</div>
                               <div className={`text-center font-mono ${diff > 0 ? 'text-red-400' : diff < 0 ? 'text-green-400' : 'text-[#94a3b8]'}`}>
