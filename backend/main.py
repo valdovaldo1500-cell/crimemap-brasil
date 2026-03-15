@@ -560,7 +560,7 @@ def _compute_homepage_stats():
 
         # Year range
         crimes_range = db.execute(text(
-            "SELECT MIN(SUBSTR(data_fato, -4)), MAX(SUBSTR(data_fato, -4)) FROM crimes WHERE data_fato IS NOT NULL"
+            "SELECT MIN(SUBSTR(data_fato, -4)), MAX(SUBSTR(data_fato, -4)) FROM crimes WHERE data_fato IS NOT NULL AND CAST(SUBSTR(data_fato, -4) AS INTEGER) >= 2000"
         )).first()
         staging_range = db.execute(text(
             "SELECT MIN(year), MAX(year) FROM crimes_staging WHERE state IN ('RS','RJ','MG') AND year >= 2000"
