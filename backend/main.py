@@ -1205,7 +1205,7 @@ def heatmap_bairros(request: Request,
             (func.coalesce(func.sum(CrimeStaging.occurrences), 0) +
              func.coalesce(func.sum(CrimeStaging.victims), 0)).label("cnt")
         ).filter(CrimeStaging.municipio.isnot(None), CrimeStaging.state.in_(staging_states))
-        if effective_tipo: sq = sq.filter(CrimeStaging.crime_type.in_(effective_tipo))
+        if effective_tipo: sq = sq.filter(_staging_tipo_filter(effective_tipo))
         if ultimos_meses:
             _, thresh_year, thresh_month = _ultimos_meses_range(ultimos_meses)
             sq = sq.filter(
@@ -2287,7 +2287,7 @@ def heatmap_states(request: Request,
                 (func.coalesce(func.sum(CrimeStaging.occurrences), 0) +
                  func.coalesce(func.sum(CrimeStaging.victims), 0)).label("cnt")
             ).filter(CrimeStaging.state == state_code, CrimeStaging.crime_type.isnot(None))
-            if effective_tipo: sq = sq.filter(CrimeStaging.crime_type.in_(effective_tipo))
+            if effective_tipo: sq = sq.filter(_staging_tipo_filter(effective_tipo))
             if ultimos_meses:
                 _, thresh_year2, thresh_month2 = _ultimos_meses_range(ultimos_meses)
                 sq = sq.filter(
