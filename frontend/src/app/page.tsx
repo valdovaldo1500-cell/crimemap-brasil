@@ -1284,7 +1284,7 @@ export default function Home() {
             <input value={crimeTypeSearch} onChange={e=>setCrimeTypeSearch(e.target.value)} placeholder="Buscar tipo..." className="w-full bg-[#1a2234] border border-[#1e293b] rounded-lg px-3 py-1.5 text-sm text-[#f1f5f9] placeholder-[#475569] focus:outline-none focus:border-[#3b82f6] mb-2" />
             {/* Fix #12: py-2 px-1 minimum on filter labels for WCAG 44px touch targets */}
             <div className="space-y-0.5 max-h-64 overflow-y-auto">
-              {crimeTypes.filter((ct:any)=>!crimeTypeSearch||stripAccents(prettifyCrimeType(ct.tipo_enquadramento)).toLowerCase().includes(stripAccents(crimeTypeSearch).toLowerCase())).map((ct:any)=>(
+              {crimeTypes.filter((ct:any)=>{if(!crimeTypeSearch)return true;const q=stripAccents(crimeTypeSearch).toLowerCase();const main=stripAccents(prettifyCrimeType(ct.tipo_enquadramento)).toLowerCase();if(main.includes(q))return true;return(ct.aliases||[]).some((a:string)=>stripAccents(prettifyCrimeType(a)).toLowerCase().includes(q));}).map((ct:any)=>(
                 <label key={ct.tipo_enquadramento} className="flex items-center gap-2 px-2 py-2 min-h-[44px] rounded-lg hover:bg-[#1a2234] cursor-pointer text-sm">
                   <input type="checkbox" checked={selectedTypes.includes(ct.tipo_enquadramento)} onChange={()=>toggleType(ct.tipo_enquadramento)} />
                   <span className="flex-1 truncate">{prettifyCrimeType(ct.tipo_enquadramento)}</span>
