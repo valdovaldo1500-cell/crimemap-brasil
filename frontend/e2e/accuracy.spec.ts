@@ -551,6 +551,41 @@ test('Share URL round-trip: bairro with accents (Gloria) shows data', async ({ p
   }
 });
 
+test('Accuracy: all detail panel crime types exist in filter options', async ({ request }) => {
+  // For each city, every type in location-stats must appear in filter-options (by normalized name)
+  const cities = [
+    { municipio: 'SAO PEDRO DA ALDEIA', state: 'RJ' },
+    { municipio: 'PORTO ALEGRE', state: 'RS' },
+  ];
+
+  for (const { municipio, state } of cities) {
+    const [statsResp, filterResp] = await Promise.all([
+      request.get(`${BASE_API}/api/location-stats?municipio=${encodeURIComponent(municipio)}&state=${state}&ultimos_meses=12`, { timeout: 60_000 }),
+      request.get(`${BASE_API}/api/filter-options?selected_states=${state}&ultimos_meses=12`, { timeout: 60_000 }),
+    ]);
+    if (!statsResp.ok() || !filterResp.ok()) continue;
+    const statsData = await statsResp.json();
+    const filterData = await filterResp.json();
+
+    const panelTypes: string[] = (statsData.crime_types || []).map((ct: any) => ct.tipo_enquadramento || ct.tipo);
+    const filterTypes: string[] = (filterData.tipo || []).map((t: any) => typeof t === 'string' ? t : t.value);
+    // Include aliases
+    for (const t of filterData.tipo || []) {
+      if (typeof t === 'object' && t.aliases) {
+        filterTypes.push(...t.aliases);
+      }
+    }
+
+    function norm(s: string): string {
+      return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/_/g, ' ').trim();
+    }
+
+    const filterNorms = new Set(filterTypes.map(norm));
+    const missing = panelTypes.filter(pt => !filterNorms.has(norm(pt)));
+    expect(missing).toHaveLength(0);
+  }
+});
+
 test('Share URL: heatmap municipios include state field (not null)', async ({ request }) => {
   for (const state of ['RS', 'RJ']) {
     const resp = await request.get(`${BASE_API}/api/heatmap/municipios?selected_states=${state}&ultimos_meses=12`, { timeout: 60_000 });
