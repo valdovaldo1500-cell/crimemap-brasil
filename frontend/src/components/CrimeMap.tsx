@@ -457,10 +457,40 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
   // from cachedDataRef without triggering a new fetch.
   const loadData = useCallback(async () => {
     if (!mapRef.current) return;
-    // Skip heavy heatmap-states fetch when no states selected (homepage shows grey map)
+    // Skip heavy heatmap-states fetch when no states selected — render interactive grey map
     if (zoomLevel === 'states' && selectedStates.length === 0 && !compareMode) {
+      ++loadIdRef.current;
       if (markersRef.current) markersRef.current.clearLayers();
       if (geoJsonRef.current) { mapRef.current.removeLayer(geoJsonRef.current); geoJsonRef.current = null; }
+      if (statesGeoDataRef.current && viewMode === 'choropleth') {
+        const qualityMap: Record<string, string> = {};
+        availableStates.forEach(s => { qualityMap[s.sigla] = s.quality; });
+        geoJsonRef.current = L.geoJSON(statesGeoDataRef.current, {
+          style: (feature) => {
+            const sigla = feature?.properties?.sigla || '';
+            const quality = qualityMap[sigla] || 'none';
+            if (quality !== 'full' && quality !== 'partial') {
+              return { fillColor: '#0f172a', fillOpacity: 0.12, color: '#1e293b', weight: 0.3, interactive: false, className: 'state-disabled' };
+            }
+            return { fillColor: '#2563eb', fillOpacity: 0.45, color: '#3b82f6', weight: 1.5 };
+          },
+          onEachFeature: (feature, layer) => {
+            const sigla = feature?.properties?.sigla || '';
+            const name = feature?.properties?.name || '';
+            const quality = qualityMap[sigla] || 'none';
+            if (quality !== 'full' && quality !== 'partial') return;
+            layer.bindTooltip(`<b>${name} (${sigla})</b><br>Clique para filtrar`, { sticky: true });
+            layer.on('mouseover', () => (layer as any).setStyle({ fillOpacity: 0.55, color: '#60a5fa', weight: 2.5 }));
+            layer.on('mouseout', () => (layer as any).setStyle({ fillOpacity: 0.45, color: '#3b82f6', weight: 1.5 }));
+            layer.on('click', (e: any) => {
+              if (onStateMenuRef.current) {
+                onStateMenuRef.current(sigla, name, e.originalEvent.clientX, e.originalEvent.clientY);
+              }
+            });
+          }
+        }).addTo(mapRef.current!);
+      }
+      if (brazilOutlineRef.current) brazilOutlineRef.current.bringToBack();
       setLoading(false);
       setEmptyResult(false);
       return;

@@ -545,8 +545,8 @@ def _compute_homepage_stats():
         )).scalar() or 0
         total = crimes_count + staging_count
 
-        # Municipios count from autocomplete index (already computed)
-        total_munis = len(_autocomplete_munis) if _autocomplete_munis else 0
+        # Municipios count from autocomplete index (deduplicated by normalized name)
+        total_munis = len(set(m['name_normalized'] for m in _autocomplete_munis if m['name_normalized'] != '-')) if _autocomplete_munis else 0
 
         # If autocomplete not ready yet, compute from DB
         if total_munis == 0:
