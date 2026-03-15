@@ -653,8 +653,8 @@ def heatmap_municipios(request: Request,
         q = q.filter(Crime.longitude.between(west, east))
     q = q.group_by(Crime.municipio_fato)
     crimes_results = [HeatmapPoint(latitude=float(r.lat), longitude=float(r.lng),
-        weight=r.cnt, municipio=r.municipio_fato,
-        population=get_municipio_population(r.municipio_fato, "RS")) for r in q.all() if r.lat and r.lng]
+        weight=r.cnt, municipio=r.municipio_fato, state=r.state,
+        population=get_municipio_population(r.municipio_fato, r.state or "RS")) for r in q.all() if r.lat and r.lng]
 
     # Also query staging table for all detailed states (RS, RJ, MG)
     # Crimes table data takes priority for dedup (see merge below)
