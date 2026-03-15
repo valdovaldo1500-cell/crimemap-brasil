@@ -47,26 +47,26 @@ async function apiGet(request: any, url: string, timeout = 60_000): Promise<any>
 // --------------- helpers ---------------
 
 async function waitForMapReady(page: Page) {
+  // Force-dismiss welcome modal via localStorage (before tiles load)
+  await page.evaluate(() => localStorage.setItem('crimebrasil_welcomed', 'true'));
+  // If modal is already showing, remove it from DOM
+  await page.evaluate(() => {
+    const dialog = document.querySelector('[role="dialog"]');
+    if (dialog) dialog.remove();
+    // Remove any backdrop
+    const backdrop = document.querySelector('.fixed.inset-0.z-\\[9999\\]');
+    if (backdrop) backdrop.remove();
+  });
   await page.waitForSelector('.leaflet-tile-loaded', { timeout: 60_000 });
   await page.waitForFunction(() => document.body.textContent?.includes('Ocorrências'), { timeout: 60_000 });
-  // dismiss welcome modal: first skip typing ("Pular ▸"), then close ("Explorar o mapa →")
-  const dialog = page.locator('[role="dialog"]');
-  if (await dialog.isVisible({ timeout: 3000 }).catch(() => false)) {
-    // Skip typing animation
-    const skipBtn = page.locator('button:has-text("Pular")').first();
-    if (await skipBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await skipBtn.click();
-      await page.waitForTimeout(500);
-    }
-    // Close the modal
-    const exploreBtn = page.locator('button:has-text("Explorar")').first();
-    if (await exploreBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await exploreBtn.click();
-      await page.waitForTimeout(500);
-    }
-  }
-  // Wait for modal to fully disappear
-  await page.waitForFunction(() => !document.querySelector('[role="dialog"]'), { timeout: 5000 }).catch(() => {});
+  // Double-check modal is gone
+  await page.evaluate(() => {
+    document.querySelectorAll('[role="dialog"]').forEach(el => el.remove());
+    document.querySelectorAll('.fixed.inset-0').forEach(el => {
+      if ((el as HTMLElement).style.zIndex === '9999' || el.classList.contains('bg-black/60')) el.remove();
+    });
+  });
+  await page.waitForTimeout(300);
 }
 
 async function openFilters(page: Page) {
