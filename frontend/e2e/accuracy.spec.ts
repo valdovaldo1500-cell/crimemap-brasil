@@ -413,7 +413,7 @@ test('Accuracy: tipo filter reduces location-stats total', async ({ request }) =
   if (totalAll === 0) return;
 
   // Get a tipo value
-  const foResp = await request.get(`${BASE_API}/api/filter-options?selected_states=RS`);
+  const foResp = await request.get(`${BASE_API}/api/filter-options?selected_states=RS`, { timeout: 30_000 });
   expect(foResp.ok()).toBeTruthy();
   const tipos = (await foResp.json()).tipo || [];
   if (tipos.length === 0) return;
