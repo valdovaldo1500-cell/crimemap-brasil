@@ -273,6 +273,16 @@ export async function fetchDataAvailability(p: any = {}) {
   }
 }
 
+export async function fetchHomepageStats() {
+  try {
+    const res = await fetch(`${API}/api/homepage-stats`);
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    return res.json();
+  } catch (err: any) {
+    throw new Error(`fetchHomepageStats failed: ${err.message}`);
+  }
+}
+
 export async function fetchSystemInfo() {
   try {
     const res = await fetch(`${API}/api/system-info`);
