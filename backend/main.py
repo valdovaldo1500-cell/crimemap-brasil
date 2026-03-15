@@ -718,7 +718,7 @@ def heatmap_municipios(request: Request,
             if not (west <= lng <= east):
                 continue
         staging_results.append(HeatmapPoint(latitude=lat, longitude=lng,
-            weight=int(r.cnt), municipio=mun_name,
+            weight=int(r.cnt), municipio=mun_name, state=r.state,
             population=get_municipio_population(mun_name, r.state)))
 
     # Merge: crimes data takes priority over staging for same municipality
