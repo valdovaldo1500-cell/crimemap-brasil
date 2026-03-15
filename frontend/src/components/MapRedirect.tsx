@@ -14,8 +14,7 @@ const MAP_PARAMS = ['per', 'view', 'rate', 'tipos', 'sexo', 'cor', 'idade_min', 
 function MapRedirectInner({ panelType, state, municipio, bairro }: MapRedirectProps) {
   const searchParams = useSearchParams();
   useEffect(() => {
-    const hasMapParams = MAP_PARAMS.some(k => searchParams.has(k));
-    if (!hasMapParams) return;
+    // Always redirect to the map view — share URLs should open the map with detail panel
     const p = new URLSearchParams(searchParams.toString());
     p.set('panel', panelType);
     p.set('state', state);
