@@ -21,6 +21,13 @@ import { test, expect, Page } from '@playwright/test';
 const SITE = process.env.SITE_URL ?? 'https://crimebrasil.com.br';
 const API = process.env.BASE_API ?? SITE;
 
+// Suppress welcome modal for all tests by setting localStorage before navigation
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('crimebrasil_welcome_seen', 'true');
+  });
+});
+
 // --------------- helpers ---------------
 
 async function waitForMapReady(page: Page) {
