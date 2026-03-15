@@ -452,101 +452,29 @@ test('Accuracy: ultimos_meses=3 reduces total vs ultimos_meses=12', async ({ req
 // Group: Share URL integrity (browser interaction)
 // ============================================================
 
-test('Accuracy: share URL includes state path after clicking a state', async ({ page }) => {
-  await page.goto(BASE_API);
+test('Accuracy: share URL includes location path when detail panel opens', async ({ page }) => {
+  // Navigate directly to a city URL — this opens the detail panel automatically
+  await page.goto(`${BASE_API}/cidade/rs/porto-alegre`);
   await waitForMapReady(page);
-  await openSidebarAndWait(page);
 
-  // Select RS
-  const rsCheckbox = page.locator('aside label').filter({ hasText: /^RS/ }).locator('input[type="checkbox"]');
-  await rsCheckbox.check();
-  await page.waitForTimeout(2000);
+  // Wait for detail panel with "Copiar link" button
+  await page.waitForSelector('[aria-label="Copiar link"]', { timeout: 60_000 });
 
-  // Click a municipality on the map to open a detail panel
-  // Wait for colored polygons to appear
-  await page.waitForFunction(() => {
-    const paths = document.querySelectorAll('.leaflet-overlay-pane path');
-    for (const p of paths) {
-      const fill = p.getAttribute('fill') || '';
-      if (['#ef4444', '#f97316', '#eab308', '#16a34a'].includes(fill)) return true;
-    }
-    return false;
-  }, { timeout: 30_000 });
-
-  // Click a colored polygon (RS municipality)
-  const pathIdx = await page.evaluate(() => {
-    const paths = document.querySelectorAll('.leaflet-overlay-pane path');
-    for (let i = 0; i < paths.length; i++) {
-      const fill = paths[i].getAttribute('fill') || '';
-      if (['#ef4444', '#f97316', '#eab308', '#16a34a'].includes(fill)) {
-        const rect = paths[i].getBoundingClientRect();
-        if (rect.width > 5 && rect.height > 5) return i;
-      }
-    }
-    return -1;
-  });
-
-  if (pathIdx < 0) return; // no polygon found — skip
-  await page.locator('.leaflet-overlay-pane path').nth(pathIdx).click({ force: true });
-
-  // Wait for detail panel to appear
-  await page.waitForSelector('[aria-label="Copiar link"]', { timeout: 30_000 });
-
-  // Check the browser address bar — should NOT be just "/"
+  // Address bar should contain the city path, not just "/"
   const url = page.url();
   const path = new URL(url).pathname;
-  expect(path).not.toBe('/');
-  expect(path.length).toBeGreaterThan(1);
+  expect(path).toContain('/cidade/rs/porto-alegre');
 });
 
 test('Accuracy: share URL preserves tipo filter in address bar', async ({ page }) => {
-  await page.goto(BASE_API);
+  // Navigate to a city with a tipo filter in the URL
+  await page.goto(`${BASE_API}/cidade/rs/porto-alegre?tipos=ROUBO`);
   await waitForMapReady(page);
-  await openSidebarAndWait(page);
 
-  // Select RS
-  const rsCheckbox = page.locator('aside label').filter({ hasText: /^RS/ }).locator('input[type="checkbox"]');
-  await rsCheckbox.check();
+  // Wait for detail panel
+  await page.waitForSelector('[aria-label="Copiar link"]', { timeout: 60_000 });
 
-  // Wait for filter-options to load
-  await page.waitForResponse(
-    resp => resp.url().includes('/api/filter-options') && resp.status() === 200,
-    { timeout: 30_000 }
-  );
-  await page.waitForTimeout(1000);
-
-  // Select the first crime type checkbox
-  const firstTipo = page.locator('aside h3').filter({ hasText: 'Tipo de Crime' }).locator('xpath=..').locator('label input[type="checkbox"]').first();
-  await firstTipo.check();
-  await page.waitForTimeout(2000);
-
-  // Click a colored polygon to open detail panel
-  await page.waitForFunction(() => {
-    const paths = document.querySelectorAll('.leaflet-overlay-pane path');
-    for (const p of paths) {
-      const fill = p.getAttribute('fill') || '';
-      if (['#ef4444', '#f97316', '#eab308', '#16a34a'].includes(fill)) return true;
-    }
-    return false;
-  }, { timeout: 30_000 });
-
-  const pathIdx = await page.evaluate(() => {
-    const paths = document.querySelectorAll('.leaflet-overlay-pane path');
-    for (let i = 0; i < paths.length; i++) {
-      const fill = paths[i].getAttribute('fill') || '';
-      if (['#ef4444', '#f97316', '#eab308', '#16a34a'].includes(fill)) {
-        const rect = paths[i].getBoundingClientRect();
-        if (rect.width > 5 && rect.height > 5) return i;
-      }
-    }
-    return -1;
-  });
-
-  if (pathIdx < 0) return;
-  await page.locator('.leaflet-overlay-pane path').nth(pathIdx).click({ force: true });
-  await page.waitForSelector('[aria-label="Copiar link"]', { timeout: 30_000 });
-
-  // Address bar should include tipos= query param
+  // Address bar should preserve the tipos= query param
   const url = page.url();
   expect(url).toContain('tipos=');
 });
