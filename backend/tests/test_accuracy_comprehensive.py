@@ -997,3 +997,116 @@ class TestCompareFeature:
         assert total_dup == total_single, (
             f"Duplicate selected_states changed result: single={total_single} dup={total_dup}"
         )
+
+
+class TestShareUrlRoundTrip:
+    """Verifies the share URL contract: slugify → unslugify → API lookup must return data.
+
+    This is the exact flow that breaks when share URLs strip accents:
+    1. DetailPanel.getShareUrl() calls slugify(bairroName) → URL slug
+    2. SEO page calls unslugify(slug) → reconstructed name (accents lost!)
+    3. API call with reconstructed name must still return data
+    """
+
+    def _slugify(self, text: str) -> str:
+        import re
+        return re.sub(
+            r'^-+|-+$', '',
+            re.sub(r'[^a-z0-9]+', '-',
+                   unicodedata.normalize('NFD', text.lower())
+                   .encode('ascii', 'ignore').decode('ascii'))
+        )
+
+    def _unslugify(self, slug: str) -> str:
+        return slug.replace('-', ' ').upper()
+
+    def test_city_roundtrip_porto_alegre(self):
+        """Porto Alegre: slugify → unslugify → API must return data."""
+        original = "PORTO ALEGRE"
+        slug = self._slugify(original)
+        reconstructed = self._unslugify(slug)
+        resp = client.get("/api/location-stats", params={
+            "municipio": reconstructed, "state": "RS", "ultimos_meses": 12,
+        })
+        assert resp.status_code == 200
+        assert resp.json().get("total", 0) > 0, (
+            f"Round-trip failed: '{original}' → slug '{slug}' → '{reconstructed}' → 0 results"
+        )
+
+    def test_city_roundtrip_accented_names(self):
+        """Cities with accents: slugify strips them, API must still match."""
+        cities = [
+            ("SAO LEOPOLDO", "RS"), ("NITEROI", "RJ"),
+            ("CAXIAS DO SUL", "RS"), ("RIO DE JANEIRO", "RJ"),
+        ]
+        failures = []
+        for city, state in cities:
+            slug = self._slugify(city)
+            reconstructed = self._unslugify(slug)
+            resp = client.get("/api/location-stats", params={
+                "municipio": reconstructed, "state": state, "ultimos_meses": 12,
+            })
+            if resp.status_code != 200 or resp.json().get("total", 0) == 0:
+                failures.append(f"{state}/{city} → '{slug}' → '{reconstructed}' → 0")
+
+        assert not failures, f"City round-trip failures: {'; '.join(failures)}"
+
+    def test_bairro_roundtrip_poa_bairros(self):
+        """POA bairros: slugify → unslugify → API must return data for each."""
+        # Get actual bairro names from heatmap
+        resp = client.get("/api/heatmap/bairros", params={
+            "municipio": _POA, "selected_states": "RS", "ultimos_meses": 12,
+        })
+        assert resp.status_code == 200
+        data = resp.json()
+        if not data:
+            pytest.skip("No POA bairro data")
+
+        # Test round-trip for named bairros (exclude unknown/merged)
+        failures = []
+        tested = 0
+        for point in data:
+            bairro = point.get("bairro", "")
+            if not bairro or bairro in ("-", "Bairro desconhecido") or "+" in bairro:
+                continue
+
+            slug = self._slugify(bairro)
+            reconstructed = self._unslugify(slug)
+
+            resp2 = client.get("/api/location-stats", params={
+                "municipio": _POA, "state": "RS", "bairro": reconstructed, "ultimos_meses": 12,
+            })
+            if resp2.status_code != 200:
+                failures.append(f"'{bairro}' → '{slug}' → '{reconstructed}' → HTTP {resp2.status_code}")
+            elif resp2.json().get("total", 0) == 0:
+                failures.append(f"'{bairro}' → '{slug}' → '{reconstructed}' → 0 results")
+
+            tested += 1
+            if tested >= 15:
+                break
+
+        assert not failures, (
+            f"Bairro share URL round-trip failures ({len(failures)}/{tested}):\n"
+            + "\n".join(f"  {f}" for f in failures)
+        )
+
+    def test_bairro_roundtrip_accented_names(self):
+        """Bairros with accents are the highest-risk case for share URLs."""
+        accented = [
+            "Centro Histórico", "Glória", "São João", "São Geraldo",
+            "Três Figueiras", "Ipanema",
+        ]
+        failures = []
+        for bairro in accented:
+            slug = self._slugify(bairro)
+            reconstructed = self._unslugify(slug)
+            resp = client.get("/api/location-stats", params={
+                "municipio": _POA, "state": "RS", "bairro": reconstructed, "ultimos_meses": 12,
+            })
+            total = resp.json().get("total", 0) if resp.status_code == 200 else -1
+            if total <= 0:
+                failures.append(f"'{bairro}' → '{slug}' → '{reconstructed}' → total={total}")
+
+        assert not failures, (
+            f"Accented bairro round-trip failures:\n" + "\n".join(f"  {f}" for f in failures)
+        )
