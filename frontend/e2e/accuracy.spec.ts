@@ -444,7 +444,7 @@ test('Accuracy: ultimos_meses=3 reduces total vs ultimos_meses=12', async ({ req
 // ============================================================
 
 test('Accuracy: share URL includes state path after clicking a state', async ({ page }) => {
-  await page.goto('/');
+  await page.goto(BASE_API);
   await waitForMapReady(page);
   await openSidebarAndWait(page);
 
@@ -491,7 +491,7 @@ test('Accuracy: share URL includes state path after clicking a state', async ({ 
 });
 
 test('Accuracy: share URL preserves tipo filter in address bar', async ({ page }) => {
-  await page.goto('/');
+  await page.goto(BASE_API);
   await waitForMapReady(page);
   await openSidebarAndWait(page);
 
@@ -547,7 +547,7 @@ test('Accuracy: share URL preserves tipo filter in address bar', async ({ page }
 // ============================================================
 
 test('Accuracy: compare pane appears on top of detail panel', async ({ page }) => {
-  await page.goto('/');
+  await page.goto(BASE_API);
   await waitForMapReady(page);
   await openSidebarAndWait(page);
 
@@ -623,7 +623,7 @@ test('Accuracy: compare pane appears on top of detail panel', async ({ page }) =
 });
 
 test('Accuracy: compare panes persist after exiting compare mode', async ({ page }) => {
-  await page.goto('/');
+  await page.goto(BASE_API);
   await waitForMapReady(page);
   await openSidebarAndWait(page);
 
