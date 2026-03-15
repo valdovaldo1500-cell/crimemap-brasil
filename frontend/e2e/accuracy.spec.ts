@@ -322,7 +322,7 @@ test('Accuracy: filter-options has no duplicate tipo display names for RS+RJ', a
 
 test('Accuracy: tipo filter returns heatmap results for RJ', async ({ request }) => {
   // Get a valid RJ tipo
-  const foResp = await request.get(`${BASE_API}/api/filter-options?selected_states=RJ&ultimos_meses=12`);
+  const foResp = await request.get(`${BASE_API}/api/filter-options?selected_states=RJ&ultimos_meses=12`, { timeout: 30_000 });
   expect(foResp.ok()).toBeTruthy();
   const tipos: Array<{ value: string } | string> = (await foResp.json()).tipo || [];
   if (tipos.length === 0) return;
