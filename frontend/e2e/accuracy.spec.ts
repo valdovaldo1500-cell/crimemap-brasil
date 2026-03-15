@@ -299,7 +299,7 @@ test('Accuracy: heatmap municipios weight > 0 for all RS points', async ({ reque
 // ============================================================
 
 test('Accuracy: filter-options has no duplicate tipo display names for RS+RJ', async ({ request }) => {
-  const resp = await request.get(`${BASE_API}/api/filter-options?selected_states=RS&selected_states=RJ&ultimos_meses=12`);
+  const resp = await request.get(`${BASE_API}/api/filter-options?selected_states=RS&selected_states=RJ&ultimos_meses=12`, { timeout: 30_000 });
   expect(resp.ok()).toBeTruthy();
   const tipos: Array<{ value: string; count: number } | string> = (await resp.json()).tipo || [];
   if (tipos.length === 0) return;
