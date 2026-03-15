@@ -551,6 +551,17 @@ test('Share URL round-trip: bairro with accents (Gloria) shows data', async ({ p
   }
 });
 
+test('Share URL: heatmap municipios include state field (not null)', async ({ request }) => {
+  for (const state of ['RS', 'RJ']) {
+    const resp = await request.get(`${BASE_API}/api/heatmap/municipios?selected_states=${state}&ultimos_meses=12`, { timeout: 60_000 });
+    expect(resp.ok()).toBeTruthy();
+    const data = await resp.json();
+    if (data.length === 0) continue;
+    const nullState = data.filter((p: { state: string | null }) => !p.state);
+    expect(nullState).toHaveLength(0);
+  }
+});
+
 test('Share URL round-trip: API returns data for unslugified bairro names', async ({ request }) => {
   // This tests the backend contract: slugify → unslugify → API call must work
   const bairros = [
