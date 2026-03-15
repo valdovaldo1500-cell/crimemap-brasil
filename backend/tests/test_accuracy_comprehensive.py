@@ -11,6 +11,9 @@ Covers:
 8. Geographic accuracy (no misplaced bairros)
 9. MG compatibility filter behavior
 10. API contract (all required fields present)
+11. Cross-table tipo filtering (Ameaça bug — RS uppercase vs RJ lowercase)
+12. Compare feature (RJ city location-stats availability)
+13. Filter param forwarding (share URL contract)
 """
 import os
 import sys
