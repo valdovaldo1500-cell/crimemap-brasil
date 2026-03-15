@@ -526,6 +526,8 @@ async def _build_autocomplete_index():
 
         _autocomplete_cache_ready = True
         logger.info(f"Autocomplete index built: {len(_autocomplete_munis)} municipios, {len(_autocomplete_bairros)} bairros ({_time.time()-t0:.1f}s)")
+        # Recompute homepage stats now that autocomplete index is ready (for accurate municipio count)
+        _compute_homepage_stats()
     except Exception as e:
         logger.error(f"Failed to build autocomplete index: {e}")
     finally:
