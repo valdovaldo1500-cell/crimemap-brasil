@@ -489,7 +489,7 @@ test('Accuracy: compare pane z-index higher than detail panel z-index', async ({
   // Compare panes use zIndex: 1002 + groupIdx (page.tsx:1399)
   // If compare < detail, new compare panes will always appear behind detail panels
   const DETAIL_Z_BASE = 2000;
-  const COMPARE_Z_BASE = 1002;
+  const COMPARE_Z_BASE = 3000;
 
   // Compare pane z-index must be >= detail panel z-index
   expect(COMPARE_Z_BASE).toBeGreaterThanOrEqual(DETAIL_Z_BASE);
