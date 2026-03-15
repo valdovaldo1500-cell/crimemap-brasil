@@ -360,8 +360,6 @@ export default function Home() {
   const filterDebounceRef = useRef<ReturnType<typeof setTimeout>|null>(null);
   useEffect(() => {
     if (initialLoading) return;
-    // Skip heavy filter-options fetch until user selects a state
-    if (selectedStates.length === 0 && selectedTypes.length === 0 && selectedGrupo.length === 0 && selectedSexo.length === 0 && selectedCor.length === 0 && !idadeMin && !idadeMax) return;
     if (filterDebounceRef.current) clearTimeout(filterDebounceRef.current);
     filterDebounceRef.current = setTimeout(() => {
       setFilterLoading(true);
