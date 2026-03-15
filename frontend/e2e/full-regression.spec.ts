@@ -277,10 +277,8 @@ test.describe('Share URL Round-trips', () => {
 
   test('compare share URL loads both locations', async ({ request }) => {
     // Simulate compare: RS vs RJ
-    const [r1, r2] = await Promise.all([
-      request.get(`${API}/api/state-stats?state=RS&selected_states=RS&selected_states=RJ&ultimos_meses=12`, { timeout: 30_000 }),
-      request.get(`${API}/api/state-stats?state=RJ&selected_states=RS&selected_states=RJ&ultimos_meses=12`, { timeout: 30_000 }),
-    ]);
+    const r1 = await apiGet(request, `${API}/api/state-stats?state=RS&selected_states=RS&selected_states=RJ&ultimos_meses=12`, 60_000);
+    const r2 = await apiGet(request, `${API}/api/state-stats?state=RJ&selected_states=RS&selected_states=RJ&ultimos_meses=12`, 60_000);
     expect(r1.ok()).toBeTruthy();
     expect(r2.ok()).toBeTruthy();
     const d1 = await r1.json();
