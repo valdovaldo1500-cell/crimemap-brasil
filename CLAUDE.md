@@ -161,15 +161,33 @@ Source: IBGE API for municipality/state boundaries.
 ## Anti-Regression Rules
 
 ### Before committing:
-- Run `cd backend && python -m pytest tests/ -v` (blocked by pre-commit hook anyway)
+- Run `cd backend && python3 -m pytest tests/test_accuracy_comprehensive.py tests/test_contract.py -v --tb=short`
 - For bairro matching changes: run `pytest tests/test_bairro_matching.py -v`
 - For filter logic changes: verify with `curl` against the live API after deploy
+
+### After EVERY deploy (mandatory):
+- Run E2E: `cd frontend && npx playwright test e2e/accuracy.spec.ts --reporter=line`
+- Verify share URL round-trips work (navigate to share URL → panel shows data):
+  ```bash
+  curl -s "https://crimebrasil.com.br/api/location-stats?state=RS&municipio=PORTO+ALEGRE&bairro=CENTRO+HISTORICO&ultimos_meses=12" | python3 -c "import json,sys; d=json.load(sys.stdin); assert d['total'] > 0, f'FAIL: total={d[\"total\"]}'; print(f'OK: {d[\"total\"]} crimes')"
+  ```
+- Verify no duplicate tipo entries:
+  ```bash
+  curl -s "https://crimebrasil.com.br/api/filter-options?selected_states=RS&selected_states=RJ&ultimos_meses=12" | python3 -c "import json,sys,unicodedata; d=json.load(sys.stdin); tipos=[t['value'] if isinstance(t,dict) else t for t in d.get('tipo',[])]; norms=[unicodedata.normalize('NFD',t.lower().replace('_',' ')).encode('ascii','ignore').decode() for t in tipos]; dups=[n for n in set(norms) if norms.count(n)>1]; assert not dups, f'DUPLICATE TIPOS: {dups}'; print(f'OK: {len(tipos)} unique tipos')"
+  ```
+
+### Share URL verification (mandatory after any DetailPanel/share/URL/SEO page change):
+- Navigate to `/cidade/rs/porto-alegre` in browser — verify detail panel opens with total > 0
+- Navigate to `/bairro/rs/porto-alegre/centro-historico` — verify bairro detail panel shows data
+- Navigate to `/bairro/rs/porto-alegre/gloria` — verify accented bairro (Glória) shows data
+- Click "Copiar link" on an open detail panel → verify URL contains state+city path (not just "/")
 
 ### Behavioral constraints:
 - If a fix requires changes to more than 3 files, STOP and use /plan mode first
 - If tests fail after your change, REVERT and rethink — do NOT modify existing tests
 - Never add city-specific or state-specific matching rules — all fixes must be general-purpose
 - After every deploy, verify the specific fix with curl + verify no regression on POA unknown%
+- **NEVER claim a fix works based only on API tests** — always verify through the actual user flow (navigate URL → see panel → verify data)
 
 ### Module dependency map (what to test when you change what):
 - `_normalize_bairro_for_matching()` → run test_bairro_matching.py
