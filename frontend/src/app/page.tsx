@@ -1396,8 +1396,8 @@ export default function Home() {
                 key={group.id}
                 className={group.pos ? '' : 'absolute w-[calc(100vw-1rem)] sm:w-[441px]'}
                 style={group.pos
-                  ? { position: 'absolute', left: group.pos.x, top: group.pos.y, width: group.size.w, maxWidth: 'calc(100vw - 1rem)', zIndex: 1002 + groupIdx }
-                  : { zIndex: 1002 + groupIdx, top: (320 + groupIdx * 40), right: 16, position: 'absolute' }}
+                  ? { position: 'absolute', left: group.pos.x, top: group.pos.y, width: group.size.w, maxWidth: 'calc(100vw - 1rem)', zIndex: 3000 + groupIdx }
+                  : { zIndex: 3000 + groupIdx, top: (320 + groupIdx * 40), right: 16, position: 'absolute' }}
               >
                 <div className="relative bg-[#111827]/95 backdrop-blur-xl border border-[#7c3aed]/40 rounded-xl p-3 shadow-2xl">
                   <div
