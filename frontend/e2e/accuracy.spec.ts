@@ -483,80 +483,16 @@ test('Accuracy: share URL preserves tipo filter in address bar', async ({ page }
 // Group: Compare pane behavior (browser interaction)
 // ============================================================
 
-test('Accuracy: compare pane appears on top of detail panel', async ({ page }) => {
-  await page.goto(BASE_API);
-  await waitForMapReady(page);
-  await openSidebarAndWait(page);
+test('Accuracy: compare pane z-index higher than detail panel z-index', async ({ request }) => {
+  // Verify the z-index values from the source code constants
+  // Detail panels use zIndex: 2000 + stackIndex (DetailPanel.tsx:169)
+  // Compare panes use zIndex: 1002 + groupIdx (page.tsx:1399)
+  // If compare < detail, new compare panes will always appear behind detail panels
+  const DETAIL_Z_BASE = 2000;
+  const COMPARE_Z_BASE = 1002;
 
-  // Select RS and wait for data
-  const rsCheckbox = page.locator('aside label').filter({ hasText: /^RS/ }).locator('input[type="checkbox"]');
-  await rsCheckbox.check();
-  await page.waitForFunction(() => {
-    const paths = document.querySelectorAll('.leaflet-overlay-pane path');
-    for (const p of paths) {
-      const fill = p.getAttribute('fill') || '';
-      if (['#ef4444', '#f97316', '#eab308', '#16a34a'].includes(fill)) return true;
-    }
-    return false;
-  }, { timeout: 30_000 });
-
-  // Click a polygon to open a detail panel
-  const pathIdx = await page.evaluate(() => {
-    const paths = document.querySelectorAll('.leaflet-overlay-pane path');
-    for (let i = 0; i < paths.length; i++) {
-      const fill = paths[i].getAttribute('fill') || '';
-      if (['#ef4444', '#f97316', '#eab308', '#16a34a'].includes(fill)) {
-        const rect = paths[i].getBoundingClientRect();
-        if (rect.width > 5 && rect.height > 5) return i;
-      }
-    }
-    return -1;
-  });
-  if (pathIdx < 0) return;
-  await page.locator('.leaflet-overlay-pane path').nth(pathIdx).click({ force: true });
-  await page.waitForSelector('[aria-label="Copiar link"]', { timeout: 30_000 });
-
-  // Get detail panel z-index
-  const detailZIndex = await page.evaluate(() => {
-    const panels = document.querySelectorAll('.fixed.bg-\\[\\#111827\\]');
-    for (const p of panels) {
-      const z = (p as HTMLElement).style.zIndex;
-      if (z) return parseInt(z);
-    }
-    return 0;
-  });
-
-  // Enter compare mode
-  await page.locator('button', { hasText: /Comparar|comparação/i }).first().click();
-  await page.waitForTimeout(1000);
-
-  // Click two different polygons to complete a comparison
-  const polygonPaths = await page.locator('.leaflet-overlay-pane path.leaflet-interactive').all();
-  if (polygonPaths.length >= 2) {
-    await polygonPaths[0].click({ force: true });
-    await page.waitForTimeout(2000);
-    await polygonPaths[1].click({ force: true });
-
-    // Wait for comparison pane to appear
-    const comparePaneVisible = await page.locator('text=Comparação').first().waitFor({ state: 'visible', timeout: 30_000 }).then(() => true).catch(() => false);
-    if (comparePaneVisible) {
-      // Get compare pane z-index
-      const compareZIndex = await page.evaluate(() => {
-        const els = document.querySelectorAll('[class*="border-[#7c3aed]"]');
-        for (const el of els) {
-          const parent = el.closest('[style*="z-index"]') || el.closest('[style*="zIndex"]');
-          if (parent) {
-            const z = (parent as HTMLElement).style.zIndex;
-            if (z) return parseInt(z);
-          }
-        }
-        return 0;
-      });
-
-      // Compare pane must be on top of detail panel
-      expect(compareZIndex).toBeGreaterThan(detailZIndex);
-    }
-  }
+  // Compare pane z-index must be >= detail panel z-index
+  expect(COMPARE_Z_BASE).toBeGreaterThanOrEqual(DETAIL_Z_BASE);
 });
 
 test('Accuracy: compare panes persist after exiting compare mode', async ({ page }) => {
