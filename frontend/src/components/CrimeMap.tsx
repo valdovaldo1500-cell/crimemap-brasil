@@ -457,6 +457,14 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
   // from cachedDataRef without triggering a new fetch.
   const loadData = useCallback(async () => {
     if (!mapRef.current) return;
+    // Skip heavy heatmap-states fetch when no states selected (homepage shows grey map)
+    if (zoomLevel === 'states' && selectedStates.length === 0 && !compareMode) {
+      if (markersRef.current) markersRef.current.clearLayers();
+      if (geoJsonRef.current) { mapRef.current.removeLayer(geoJsonRef.current); geoJsonRef.current = null; }
+      setLoading(false);
+      setEmptyResult(false);
+      return;
+    }
     const thisLoadId = ++loadIdRef.current;
     setLoading(true);
     setEmptyResult(false);

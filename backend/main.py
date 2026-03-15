@@ -611,6 +611,7 @@ async def startup():
     from services.scheduler import start_scheduler
     start_scheduler(interval_days=7)
     asyncio.create_task(_build_autocomplete_index())
+    _compute_homepage_stats()
 
 @app.on_event("shutdown")
 def shutdown():
@@ -1738,6 +1739,15 @@ def _is_garbage_muni(name: str) -> bool:
         return True
     cleaned = name.strip().upper()
     return cleaned in ('', '-', 'NAO INFORMADO', 'NÃO INFORMADO', 'IGNORADO', 'NAO IDENTIFICADO')
+
+@app.get("/api/homepage-stats")
+@limiter.limit("120/minute")
+def homepage_stats(request: Request):
+    if _homepage_stats_cache:
+        return _homepage_stats_cache
+    # Fallback: compute on first request if startup hasn't finished
+    _compute_homepage_stats()
+    return _homepage_stats_cache or {"total_crimes": 0, "total_municipios": 0, "period_start_year": 2022, "period_end_year": 2026, "states": ["RS", "RJ", "MG"]}
 
 @app.get("/api/system-info")
 @limiter.limit("60/minute")

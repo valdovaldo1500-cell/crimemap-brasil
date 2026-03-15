@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { fetchCrimeTypes, fetchSemesters, fetchAutocomplete, fetchSexoValues, fetchCorValues, fetchGrupoValues, fetchFilterOptions, submitBugReport, fetchAvailableStates, fetchStateFilterInfo, fetchLocationStats, fetchStateStats, fetchSystemInfo, fetchDataAvailability, searchLocation, fetchGeocode } from '@/lib/api';
+import { fetchCrimeTypes, fetchSemesters, fetchAutocomplete, fetchSexoValues, fetchCorValues, fetchGrupoValues, fetchFilterOptions, submitBugReport, fetchAvailableStates, fetchStateFilterInfo, fetchLocationStats, fetchStateStats, fetchSystemInfo, fetchHomepageStats, fetchDataAvailability, searchLocation, fetchGeocode } from '@/lib/api';
 import { slugify } from '@/lib/slugify';
 import { calcRate, formatRate } from '@/lib/rates';
 import DetailPanel from '@/components/DetailPanel';
@@ -296,16 +296,11 @@ export default function Home() {
   useEffect(() => {
     Promise.all([
       fetchSemesters().then((s: string[]) => { setSemesters(s); if (s.length > 0) { if (!urlYearSetRef.current) setSelectedYear(s[0].split('-')[0]); if (!urlPeriodSetRef.current) setSelectedPeriod('12m'); } }),
-      fetchFilterOptions({ ultimos_meses: 12 }).then((opts: any) => {
-        const VALID_GRUPOS = ['CRIMES', 'CONTRAVENCOES'];
-        setCrimeTypes((opts.tipo || []).map((t: any) => ({ tipo_enquadramento: t.value, count: t.count, aliases: t.aliases || [] })));
-        setGrupoValues((opts.grupo || []).filter((g: any) => VALID_GRUPOS.includes(g.value)));
-        setSexoValues(opts.sexo || []);
-        setCorValues(opts.cor || []);
-        if (opts.total !== undefined) setStats({ total_crimes: opts.total });
-      }),
+      fetchHomepageStats().then((hp: any) => {
+        setStats({ total_crimes: hp.total_crimes });
+        setSystemInfo({ total_municipios: hp.total_municipios, period_start_year: hp.period_start_year, period_end_year: hp.period_end_year });
+      }).catch(() => {}),
       fetchAvailableStates().then(setAvailableStates).catch(() => {}),
-      fetchSystemInfo().then(setSystemInfo).catch(() => {}),
     ]).finally(() => setInitialLoading(false));
   }, []);
 
@@ -365,6 +360,8 @@ export default function Home() {
   const filterDebounceRef = useRef<ReturnType<typeof setTimeout>|null>(null);
   useEffect(() => {
     if (initialLoading) return;
+    // Skip heavy filter-options fetch until user selects a state
+    if (selectedStates.length === 0 && selectedTypes.length === 0 && selectedGrupo.length === 0 && selectedSexo.length === 0 && selectedCor.length === 0 && !idadeMin && !idadeMax) return;
     if (filterDebounceRef.current) clearTimeout(filterDebounceRef.current);
     filterDebounceRef.current = setTimeout(() => {
       setFilterLoading(true);
