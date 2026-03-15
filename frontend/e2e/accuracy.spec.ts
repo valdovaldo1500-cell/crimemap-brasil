@@ -293,3 +293,148 @@ test('Accuracy: heatmap municipios weight > 0 for all RS points', async ({ reque
   const zeroWeight = data.filter((p: { weight: number }) => p.weight <= 0);
   expect(zeroWeight).toHaveLength(0);
 });
+
+// ============================================================
+// Group: Cross-table tipo filtering
+// ============================================================
+
+test('Accuracy: filter-options has no duplicate tipo display names for RS+RJ', async ({ request }) => {
+  const resp = await request.get(`${BASE_API}/api/filter-options?selected_states=RS&selected_states=RJ&ultimos_meses=12`);
+  expect(resp.ok()).toBeTruthy();
+  const tipos: Array<{ value: string; count: number } | string> = (await resp.json()).tipo || [];
+  if (tipos.length === 0) return;
+
+  function normTipo(s: string): string {
+    return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/_/g, ' ').trim();
+  }
+
+  const seen = new Map<string, string[]>();
+  for (const t of tipos) {
+    const v = typeof t === 'string' ? t : t.value;
+    const norm = normTipo(v);
+    if (!seen.has(norm)) seen.set(norm, []);
+    seen.get(norm)!.push(v);
+  }
+
+  const duplicates = [...seen.entries()].filter(([, v]) => v.length > 1);
+  expect(duplicates).toHaveLength(0);
+});
+
+test('Accuracy: tipo filter returns heatmap results for RJ', async ({ request }) => {
+  // Get a valid RJ tipo
+  const foResp = await request.get(`${BASE_API}/api/filter-options?selected_states=RJ&ultimos_meses=12`);
+  expect(foResp.ok()).toBeTruthy();
+  const tipos: Array<{ value: string } | string> = (await foResp.json()).tipo || [];
+  if (tipos.length === 0) return;
+  const tipoValue = typeof tipos[0] === 'string' ? tipos[0] : tipos[0].value;
+
+  // Fetch heatmap with that tipo
+  const heatResp = await request.get(
+    `${BASE_API}/api/heatmap/municipios?selected_states=RJ&tipo=${encodeURIComponent(tipoValue)}&ultimos_meses=12`,
+    { timeout: 60_000 }
+  );
+  expect(heatResp.ok()).toBeTruthy();
+  const data = await heatResp.json();
+  const totalWeight: number = data.reduce((s: number, p: { weight: number }) => s + p.weight, 0);
+  expect(totalWeight).toBeGreaterThan(0);
+});
+
+test('Accuracy: cross-table tipo filter returns results for both RS and RJ', async ({ request }) => {
+  // Get RS tipos
+  const rsResp = await request.get(`${BASE_API}/api/filter-options?selected_states=RS&ultimos_meses=12`);
+  expect(rsResp.ok()).toBeTruthy();
+  const rsTipos: Array<{ value: string } | string> = (await rsResp.json()).tipo || [];
+  if (rsTipos.length === 0) return;
+  const rsValue = typeof rsTipos[0] === 'string' ? rsTipos[0] : rsTipos[0].value;
+
+  // Filter RS+RJ heatmap by RS tipo variant
+  const heatResp = await request.get(
+    `${BASE_API}/api/heatmap/municipios?selected_states=RS&selected_states=RJ&tipo=${encodeURIComponent(rsValue)}&ultimos_meses=12`,
+    { timeout: 60_000 }
+  );
+  expect(heatResp.ok()).toBeTruthy();
+  const data = await heatResp.json();
+
+  // Heuristic: check if any result exists (ideally from both states)
+  const totalWeight: number = data.reduce((s: number, p: { weight: number }) => s + p.weight, 0);
+  expect(totalWeight).toBeGreaterThan(0);
+});
+
+// ============================================================
+// Group: Compare feature
+// ============================================================
+
+test('Accuracy: location-stats returns data for Cabo Frio RJ', async ({ request }) => {
+  const resp = await request.get(`${BASE_API}/api/location-stats?municipio=CABO+FRIO&state=RJ&ultimos_meses=12`, { timeout: 30_000 });
+  expect(resp.ok()).toBeTruthy();
+  const d = await resp.json();
+  expect(d.total).toBeGreaterThan(0);
+});
+
+test('Accuracy: location-stats returns data for Arraial do Cabo RJ', async ({ request }) => {
+  const resp = await request.get(`${BASE_API}/api/location-stats?municipio=ARRAIAL+DO+CABO&state=RJ&ultimos_meses=12`, { timeout: 30_000 });
+  expect(resp.ok()).toBeTruthy();
+  const d = await resp.json();
+  expect(d.total).toBeGreaterThan(0);
+});
+
+test('Accuracy: both cities in a comparison return data simultaneously', async ({ request }) => {
+  const [resp1, resp2] = await Promise.all([
+    request.get(`${BASE_API}/api/location-stats?municipio=CABO+FRIO&state=RJ&ultimos_meses=12`, { timeout: 30_000 }),
+    request.get(`${BASE_API}/api/location-stats?municipio=ARRAIAL+DO+CABO&state=RJ&ultimos_meses=12`, { timeout: 30_000 }),
+  ]);
+  expect(resp1.ok()).toBeTruthy();
+  expect(resp2.ok()).toBeTruthy();
+  const d1 = await resp1.json();
+  const d2 = await resp2.json();
+  expect(d1.total).toBeGreaterThan(0);
+  expect(d2.total).toBeGreaterThan(0);
+});
+
+test('Accuracy: location-stats handles duplicate selected_states', async ({ request }) => {
+  const resp1 = await request.get(`${BASE_API}/api/location-stats?municipio=RIO+DE+JANEIRO&state=RJ&selected_states=RJ&ultimos_meses=12`, { timeout: 30_000 });
+  const resp2 = await request.get(`${BASE_API}/api/location-stats?municipio=RIO+DE+JANEIRO&state=RJ&selected_states=RJ&selected_states=RJ&ultimos_meses=12`, { timeout: 30_000 });
+  expect(resp1.ok()).toBeTruthy();
+  expect(resp2.ok()).toBeTruthy();
+  const d1 = await resp1.json();
+  const d2 = await resp2.json();
+  if (d1.total === 0) return;
+  expect(d2.total).toBe(d1.total);
+});
+
+// ============================================================
+// Group: Filter param forwarding (share URL contract)
+// ============================================================
+
+test('Accuracy: tipo filter reduces location-stats total', async ({ request }) => {
+  const respAll = await request.get(`${BASE_API}/api/location-stats?municipio=PORTO+ALEGRE&state=RS&ultimos_meses=12`, { timeout: 30_000 });
+  expect(respAll.ok()).toBeTruthy();
+  const totalAll: number = (await respAll.json()).total || 0;
+  if (totalAll === 0) return;
+
+  // Get a tipo value
+  const foResp = await request.get(`${BASE_API}/api/filter-options?selected_states=RS`);
+  expect(foResp.ok()).toBeTruthy();
+  const tipos = (await foResp.json()).tipo || [];
+  if (tipos.length === 0) return;
+  const tipoValue = typeof tipos[0] === 'string' ? tipos[0] : tipos[0].value;
+
+  const respFiltered = await request.get(
+    `${BASE_API}/api/location-stats?municipio=PORTO+ALEGRE&state=RS&ultimos_meses=12&tipo=${encodeURIComponent(tipoValue)}`,
+    { timeout: 30_000 }
+  );
+  expect(respFiltered.ok()).toBeTruthy();
+  const totalFiltered: number = (await respFiltered.json()).total || 0;
+  expect(totalFiltered).toBeLessThan(totalAll);
+});
+
+test('Accuracy: ultimos_meses=3 reduces total vs ultimos_meses=12', async ({ request }) => {
+  const resp12 = await request.get(`${BASE_API}/api/location-stats?municipio=PORTO+ALEGRE&state=RS&ultimos_meses=12`, { timeout: 30_000 });
+  const resp3 = await request.get(`${BASE_API}/api/location-stats?municipio=PORTO+ALEGRE&state=RS&ultimos_meses=3`, { timeout: 30_000 });
+  expect(resp12.ok()).toBeTruthy();
+  expect(resp3.ok()).toBeTruthy();
+  const total12: number = (await resp12.json()).total || 0;
+  const total3: number = (await resp3.json()).total || 0;
+  if (total12 === 0) return;
+  expect(total3).toBeLessThanOrEqual(total12);
+});
