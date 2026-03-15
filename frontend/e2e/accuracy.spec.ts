@@ -485,6 +485,96 @@ test('Accuracy: share URL preserves tipo filter in address bar', async ({ page }
 });
 
 // ============================================================
+// Group: Share URL round-trip (full user flow)
+// ============================================================
+
+test('Share URL round-trip: city Porto Alegre shows data', async ({ page }) => {
+  // Navigate to a city share URL — should redirect to map and open detail panel with data
+  await page.goto(`${BASE_API}/cidade/rs/porto-alegre`);
+  // Wait for either: map loads (redirect happened) or SEO page renders
+  await page.waitForTimeout(5000);
+
+  // Check if we got redirected to map (URL should be /?panel=... or /cidade/...)
+  const currentUrl = page.url();
+  const isOnMap = currentUrl.includes('panel=') || currentUrl.includes('?');
+  const isOnSEO = currentUrl.includes('/cidade/rs/porto-alegre');
+
+  if (isOnMap) {
+    // Redirected to map — wait for detail panel
+    await page.waitForSelector('[aria-label="Copiar link"]', { timeout: 60_000 });
+    // Verify the panel has non-zero data (check for "ocorrências" text with a number)
+    const panelText = await page.locator('.fixed').first().textContent();
+    expect(panelText).toBeTruthy();
+    // Should not show "0 ocorrências"
+    expect(panelText).not.toContain('0 ocorrências');
+  } else if (isOnSEO) {
+    // Stayed on SEO page — verify it shows data
+    const bodyText = await page.textContent('body');
+    expect(bodyText).toContain('ocorrências');
+    // The total should be visible on the page
+    expect(bodyText).not.toContain('0 ocorrências registradas');
+  }
+});
+
+test('Share URL round-trip: bairro Centro Historico shows data', async ({ page }) => {
+  await page.goto(`${BASE_API}/bairro/rs/porto-alegre/centro-historico`);
+  await page.waitForTimeout(5000);
+
+  const currentUrl = page.url();
+  if (currentUrl.includes('panel=') || currentUrl.includes('?')) {
+    await page.waitForSelector('[aria-label="Copiar link"]', { timeout: 60_000 });
+    const panelText = await page.locator('.fixed').first().textContent();
+    expect(panelText).toBeTruthy();
+    expect(panelText).not.toContain('0 ocorrências');
+  } else {
+    const bodyText = await page.textContent('body');
+    expect(bodyText).toContain('ocorrências');
+    expect(bodyText).not.toContain('0 ocorrências registradas');
+  }
+});
+
+test('Share URL round-trip: bairro with accents (Gloria) shows data', async ({ page }) => {
+  // Glória → slug: gloria → unslugify: GLORIA (accent lost)
+  await page.goto(`${BASE_API}/bairro/rs/porto-alegre/gloria`);
+  await page.waitForTimeout(5000);
+
+  const currentUrl = page.url();
+  if (currentUrl.includes('panel=') || currentUrl.includes('?')) {
+    await page.waitForSelector('[aria-label="Copiar link"]', { timeout: 60_000 });
+    const panelText = await page.locator('.fixed').first().textContent();
+    expect(panelText).toBeTruthy();
+    expect(panelText).not.toContain('0 ocorrências');
+  } else {
+    const bodyText = await page.textContent('body');
+    expect(bodyText).toContain('ocorrências');
+    expect(bodyText).not.toContain('0 ocorrências registradas');
+  }
+});
+
+test('Share URL round-trip: API returns data for unslugified bairro names', async ({ request }) => {
+  // This tests the backend contract: slugify → unslugify → API call must work
+  const bairros = [
+    { slug: 'centro-historico', expected: 'CENTRO HISTORICO' },
+    { slug: 'gloria', expected: 'GLORIA' },
+    { slug: 'moinhos-de-vento', expected: 'MOINHOS DE VENTO' },
+    { slug: 'sao-joao', expected: 'SAO JOAO' },
+    { slug: 'restinga', expected: 'RESTINGA' },
+  ];
+
+  for (const { slug, expected } of bairros) {
+    const resp = await request.get(
+      `${BASE_API}/api/location-stats?municipio=PORTO+ALEGRE&state=RS&bairro=${encodeURIComponent(expected)}&ultimos_meses=12`,
+      { timeout: 60_000 }
+    );
+    expect(resp.ok()).toBeTruthy();
+    const d = await resp.json();
+    expect(d.total).toBeGreaterThan(0,
+      `Bairro "${slug}" → unslugify → "${expected}" → total=${d.total} (should be > 0)`
+    );
+  }
+});
+
+// ============================================================
 // Group: Compare pane behavior (browser interaction)
 // ============================================================
 
