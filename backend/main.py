@@ -46,6 +46,12 @@ def normalize_name(s: str) -> str:
     nfkd = unicodedata.normalize('NFD', s)
     return ''.join(c for c in nfkd if unicodedata.category(c) != 'Mn').upper().strip()
 
+def _staging_tipo_filter(tipo_list: list[str]):
+    """Case-insensitive tipo filter for CrimeStaging — handles RS uppercase vs RJ lowercase."""
+    upper_tipos = [normalize_name(t.replace("_", " ")) for t in tipo_list]
+    return func.upper(func.replace(CrimeStaging.crime_type, '_', ' ')).in_(upper_tipos)
+
+
 def normalize_fuzzy(s: str) -> str:
     """Aggressive normalization: strip accents, spaces, hyphens, apostrophes."""
     n = normalize_name(s)
