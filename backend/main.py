@@ -1408,9 +1408,10 @@ def filter_options(request: Request,
         staging_states = [s for s in selected_states if s not in ('RS', 'SP')]
         if crimes_total == 0:
             staging_states = list(selected_states)
-    elif crimes_total == 0:
-        # No states selected and no crimes data — query staging for all detailed states
-        staging_states = ["RS", "RJ", "MG"]
+    else:
+        # No states selected — always include RJ/MG staging types so they appear
+        # in the filter even before user selects a state (fixes trafico_drogas missing)
+        staging_states = ["RJ", "MG"]
     if staging_states:
             existing_values = {t['value'] for t in tipo_opts}
             existing_norm = {normalize_name(v) for v in existing_values}
