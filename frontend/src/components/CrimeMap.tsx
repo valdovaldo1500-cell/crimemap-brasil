@@ -767,7 +767,7 @@ export default function CrimeMap({ center, zoom, filters, viewMode = 'dots', rat
               const displayName = feature?.properties?.name || '';
               const info = lookup[name];
               if (info) {
-                bindInteractions(layer, displayName, info.weight, info.municipio, undefined, undefined, info.population);
+                bindInteractions(layer, displayName, info.weight, info.municipio, undefined, undefined, info.population, info.state ?? undefined);
                 addPolygonHover(layer);
                 const ctr = L.geoJSON(feature).getBounds().getCenter();
                 const lbl = L.marker(ctr, {
