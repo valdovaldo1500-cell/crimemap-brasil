@@ -7,6 +7,13 @@ async function waitForMapReady(page: import('@playwright/test').Page) {
   await page.waitForFunction(() => {
     return document.body.textContent?.includes('Ocorrências');
   }, { timeout: 60_000 });
+  // Dismiss welcome dialog if present
+  const welcomeDialog = page.locator('[role="dialog"][aria-label="Mensagem de boas-vindas"]');
+  if (await welcomeDialog.isVisible({ timeout: 2_000 }).catch(() => false)) {
+    const closeBtn = welcomeDialog.locator('button').last();
+    await closeBtn.click();
+    await welcomeDialog.waitFor({ state: 'hidden', timeout: 5_000 }).catch(() => {});
+  }
 }
 
 async function openSidebarAndWait(page: import('@playwright/test').Page) {
