@@ -530,6 +530,63 @@ async def _build_autocomplete_index():
     finally:
         db.close()
 
+def _compute_homepage_stats():
+    global _homepage_stats_cache
+    import time as _time
+    t0 = _time.time()
+    db = SessionLocal()
+    try:
+        # Total crimes from detailed table
+        crimes_count = db.execute(text("SELECT COUNT(*) FROM crimes")).scalar() or 0
+        # Total occurrences from staging (only interactive states, excluding RS which is in crimes table)
+        staging_count = db.execute(text(
+            "SELECT COALESCE(SUM(occurrences), 0) FROM crimes_staging WHERE state IN ('RJ','MG')"
+        )).scalar() or 0
+        total = crimes_count + staging_count
+
+        # Municipios count from autocomplete index (already computed)
+        total_munis = len(_autocomplete_munis) if _autocomplete_munis else 0
+
+        # If autocomplete not ready yet, compute from DB
+        if total_munis == 0:
+            munis_crimes = db.execute(text(
+                "SELECT COUNT(DISTINCT municipio_fato) FROM crimes WHERE municipio_fato IS NOT NULL AND municipio_fato != ''"
+            )).scalar() or 0
+            munis_staging = db.execute(text(
+                "SELECT COUNT(DISTINCT municipio) FROM crimes_staging WHERE state IN ('RJ','MG') AND municipio IS NOT NULL AND municipio != ''"
+            )).scalar() or 0
+            total_munis = munis_crimes + munis_staging
+
+        # Year range
+        crimes_range = db.execute(text(
+            "SELECT MIN(SUBSTR(data_fato, -4)), MAX(SUBSTR(data_fato, -4)) FROM crimes WHERE data_fato IS NOT NULL"
+        )).first()
+        staging_range = db.execute(text(
+            "SELECT MIN(year), MAX(year) FROM crimes_staging WHERE state IN ('RS','RJ','MG')"
+        )).first()
+
+        start_year = min(
+            int(crimes_range[0]) if crimes_range and crimes_range[0] else 9999,
+            int(staging_range[0]) if staging_range and staging_range[0] else 9999
+        )
+        end_year = max(
+            int(crimes_range[1]) if crimes_range and crimes_range[1] else 0,
+            int(staging_range[1]) if staging_range and staging_range[1] else 0
+        )
+
+        _homepage_stats_cache = {
+            "total_crimes": total,
+            "total_municipios": total_munis,
+            "period_start_year": start_year,
+            "period_end_year": end_year,
+            "states": ["RS", "RJ", "MG"]
+        }
+        logger.info(f"Homepage stats computed: {total:,} crimes, {total_munis} municipios, {start_year}-{end_year} ({_time.time()-t0:.1f}s)")
+    except Exception as e:
+        logger.error(f"Failed to compute homepage stats: {e}")
+    finally:
+        db.close()
+
 @app.on_event("startup")
 async def startup():
     import asyncio
