@@ -1018,6 +1018,95 @@ class TestCompareFeature:
         )
 
 
+class TestFilterPanelParity:
+    """Every crime type shown in a detail panel must be selectable in the filter sidebar.
+
+    If a type exists in location-stats but not in filter-options, users see it
+    in the panel but can't filter by it — confusing and broken UX.
+    """
+
+    def _get_filter_types(self, selected_states: list[str] | None = None) -> set[str]:
+        params = [("ultimos_meses", "12")]
+        if selected_states:
+            params += [("selected_states", s) for s in selected_states]
+        resp = client.get("/api/filter-options", params=params)
+        assert resp.status_code == 200
+        tipos = resp.json().get("tipo", [])
+        values = {t["value"] if isinstance(t, dict) else t for t in tipos}
+        # Also include aliases
+        for t in tipos:
+            if isinstance(t, dict):
+                for alias in t.get("aliases", []):
+                    values.add(alias)
+        return values
+
+    def _get_panel_types(self, municipio: str, state: str) -> set[str]:
+        resp = client.get("/api/location-stats", params={
+            "municipio": municipio, "state": state, "ultimos_meses": 12,
+        })
+        assert resp.status_code == 200
+        return {
+            ct.get("tipo_enquadramento") or ct.get("tipo")
+            for ct in resp.json().get("crime_types", [])
+        }
+
+    def test_all_panel_types_appear_in_filter_rj(self):
+        """RJ city panel types must all exist in filter when RJ selected."""
+        filter_types = self._get_filter_types(["RJ"])
+        filter_norm = {_strip_accents(t.lower().replace("_", " ")) for t in filter_types}
+
+        for city in ["SAO PEDRO DA ALDEIA", "CABO FRIO", "RIO DE JANEIRO"]:
+            panel_types = self._get_panel_types(city, "RJ")
+            if not panel_types:
+                continue
+            missing = []
+            for pt in panel_types:
+                pt_norm = _strip_accents(pt.lower().replace("_", " "))
+                if pt_norm not in filter_norm:
+                    missing.append(pt)
+            assert not missing, (
+                f"RJ/{city}: {len(missing)} panel types not in filter (selected_states=RJ): "
+                + str(missing[:10])
+            )
+
+    def test_all_panel_types_appear_in_filter_no_state(self):
+        """Panel types must be in filter even with no states selected."""
+        filter_types = self._get_filter_types(None)
+        filter_norm = {_strip_accents(t.lower().replace("_", " ")) for t in filter_types}
+
+        for city, state in [("SAO PEDRO DA ALDEIA", "RJ"), (_POA, "RS")]:
+            panel_types = self._get_panel_types(city, state)
+            if not panel_types:
+                continue
+            missing = []
+            for pt in panel_types:
+                pt_norm = _strip_accents(pt.lower().replace("_", " "))
+                if pt_norm not in filter_norm:
+                    missing.append(pt)
+            assert not missing, (
+                f"{state}/{city}: {len(missing)} panel types not in filter (no states): "
+                + str(missing[:10])
+            )
+
+    def test_all_panel_types_appear_in_filter_rs(self):
+        """RS city panel types must exist in filter when RS selected."""
+        filter_types = self._get_filter_types(["RS"])
+        filter_norm = {_strip_accents(t.lower().replace("_", " ")) for t in filter_types}
+
+        for city in [_POA, _CANOAS, "PELOTAS"]:
+            panel_types = self._get_panel_types(city, "RS")
+            if not panel_types:
+                continue
+            missing = []
+            for pt in panel_types:
+                pt_norm = _strip_accents(pt.lower().replace("_", " "))
+                if pt_norm not in filter_norm:
+                    missing.append(pt)
+            assert not missing, (
+                f"RS/{city}: {len(missing)} panel types not in filter: " + str(missing[:10])
+            )
+
+
 class TestShareUrlRoundTrip:
     """Verifies the share URL contract: slugify → unslugify → API lookup must return data.
 
