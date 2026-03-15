@@ -674,3 +674,194 @@ test('Accuracy: comparing Cabo Frio vs Arraial do Cabo shows data', async ({ pag
   expect(d1.crime_types?.length).toBeGreaterThan(0);
   expect(d2.crime_types?.length).toBeGreaterThan(0);
 });
+
+// ============================================================
+// Group: Compare mode proactive bug detection
+// ============================================================
+
+function normTipoCompare(s: string): string {
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
+}
+
+test('Accuracy: compare state-stats crime type dedup across RS and RJ', async ({ request }) => {
+  // Catches the bug where "AMEACA" and "Ameaça" appear as separate rows in a cross-state compare
+  const [respRS, respRJ] = await Promise.all([
+    request.get(`${BASE_API}/api/state-stats?state=RS&selected_states=RS&selected_states=RJ&ultimos_meses=12`, { timeout: 60_000 }),
+    request.get(`${BASE_API}/api/state-stats?state=RJ&selected_states=RS&selected_states=RJ&ultimos_meses=12`, { timeout: 60_000 }),
+  ]);
+  expect(respRS.ok()).toBeTruthy();
+  expect(respRJ.ok()).toBeTruthy();
+
+  const dRS = await respRS.json();
+  const dRJ = await respRJ.json();
+
+  const rsTypes: string[] = (dRS.crime_types || []).map((ct: { tipo_enquadramento?: string; tipo?: string }) =>
+    ct.tipo_enquadramento || ct.tipo || ''
+  );
+  const rjTypes: string[] = (dRJ.crime_types || []).map((ct: { tipo_enquadramento?: string; tipo?: string }) =>
+    ct.tipo_enquadramento || ct.tipo || ''
+  );
+
+  // Check no duplicates within each state response (normalized)
+  function assertNoDups(types: string[], label: string) {
+    const norms = types.map(normTipoCompare).filter(Boolean);
+    const seen = new Map<string, string[]>();
+    for (const n of norms) {
+      if (!seen.has(n)) seen.set(n, []);
+      seen.get(n)!.push(n);
+    }
+    const duplicates = [...seen.entries()].filter(([, v]) => v.length > 1).map(([k]) => k);
+    expect(duplicates).toHaveLength(0,
+      `Duplicate normalized crime types in ${label}: ${duplicates.join(', ')}`
+    );
+  }
+
+  assertNoDups(rsTypes, 'RS state-stats');
+  assertNoDups(rjTypes, 'RJ state-stats');
+});
+
+test('Accuracy: compare state-stats filter application returns only matching tipo', async ({ request }) => {
+  // Catches the bug where filtered compare shows unrelated crime types alongside the filtered one
+  const resp = await request.get(
+    `${BASE_API}/api/state-stats?state=RS&selected_states=RS&selected_states=RJ&tipo=AMEACA&ultimos_meses=12`,
+    { timeout: 60_000 }
+  );
+  expect(resp.ok()).toBeTruthy();
+  const d = await resp.json();
+
+  expect(d.total).toBeGreaterThan(0,
+    'state-stats for RS with tipo=AMEACA returned total=0 — AMEACA should have data for RS'
+  );
+
+  const crimeTypes: Array<{ tipo_enquadramento?: string; tipo?: string }> = d.crime_types || [];
+  for (const ct of crimeTypes) {
+    const raw = ct.tipo_enquadramento || ct.tipo || '';
+    const norm = normTipoCompare(raw);
+    expect(norm).toBe('AMEACA',
+      `Filtered state-stats returned unrelated type "${raw}" when tipo=AMEACA was requested`
+    );
+  }
+});
+
+test('Accuracy: compare state-stats rate math consistency for RS and RJ', async ({ request }) => {
+  // Catches bugs where population is null or rate is zero/unrealistic in compare mode
+  const [respRS, respRJ] = await Promise.all([
+    request.get(`${BASE_API}/api/state-stats?state=RS&selected_states=RS&ultimos_meses=12`, { timeout: 60_000 }),
+    request.get(`${BASE_API}/api/state-stats?state=RJ&selected_states=RJ&ultimos_meses=12`, { timeout: 60_000 }),
+  ]);
+  expect(respRS.ok()).toBeTruthy();
+  expect(respRJ.ok()).toBeTruthy();
+
+  const dRS = await respRS.json();
+  const dRJ = await respRJ.json();
+
+  // Population must be present for rate to work in compare mode
+  expect(dRS.population).not.toBeNull();
+  expect(dRS.population).toBeGreaterThan(0);
+  expect(dRJ.population).not.toBeNull();
+  expect(dRJ.population).toBeGreaterThan(0);
+
+  // Compute rates independently and verify they are reasonable (0–50000 per 100K)
+  const rateRS = (dRS.total / dRS.population) * 100_000;
+  const rateRJ = (dRJ.total / dRJ.population) * 100_000;
+
+  expect(rateRS).toBeGreaterThan(0);
+  expect(rateRS).toBeLessThan(50_000);
+  expect(rateRJ).toBeGreaterThan(0);
+  expect(rateRJ).toBeLessThan(50_000);
+
+  // RS and RJ should have different rates — identical rates indicate a copy/paste bug
+  expect(rateRS).not.toBeCloseTo(rateRJ, 2);
+});
+
+test('Accuracy: compare state-stats has crime_categories field', async ({ request }) => {
+  // Catches when the frontend tries to render categories but they are missing from the API response
+  const resp = await request.get(
+    `${BASE_API}/api/state-stats?state=RS&selected_states=RS&selected_states=RJ&ultimos_meses=12`,
+    { timeout: 60_000 }
+  );
+  expect(resp.ok()).toBeTruthy();
+  const d = await resp.json();
+
+  expect(d).toHaveProperty('crime_categories');
+  const cats: Array<{ category: string; count: number }> = d.crime_categories || [];
+  expect(cats.length).toBeGreaterThan(0,
+    'state-stats crime_categories is empty — compare panel cannot show category breakdown'
+  );
+
+  for (const cat of cats) {
+    expect(cat).toHaveProperty('category');
+    expect(cat).toHaveProperty('count');
+    expect(typeof cat.category).toBe('string');
+    expect(typeof cat.count).toBe('number');
+  }
+});
+
+test('Accuracy: compare state-stats data validation for RS and RJ', async ({ request }) => {
+  // Validates that both states return realistic totals in a cross-state compare context
+  const [respRS, respRJ] = await Promise.all([
+    request.get(`${BASE_API}/api/state-stats?state=RS&selected_states=RS&selected_states=RJ&ultimos_meses=12`, { timeout: 60_000 }),
+    request.get(`${BASE_API}/api/state-stats?state=RJ&selected_states=RS&selected_states=RJ&ultimos_meses=12`, { timeout: 60_000 }),
+  ]);
+  expect(respRS.ok()).toBeTruthy();
+  expect(respRJ.ok()).toBeTruthy();
+
+  const dRS = await respRS.json();
+  const dRJ = await respRJ.json();
+
+  // Both states must have data
+  expect(dRS.total).toBeGreaterThan(0);
+  expect(dRJ.total).toBeGreaterThan(0);
+
+  // Both must have crime type breakdowns
+  expect((dRS.crime_types || []).length).toBeGreaterThan(0);
+  expect((dRJ.crime_types || []).length).toBeGreaterThan(0);
+
+  // Totals must be realistic for 12 months
+  expect(dRS.total).toBeGreaterThan(100_000,
+    `RS 12-month total=${dRS.total} is suspiciously low (expected > 100K)`
+  );
+  expect(dRJ.total).toBeGreaterThan(10_000,
+    `RJ 12-month total=${dRJ.total} is suspiciously low (expected > 10K)`
+  );
+
+  // Breakdown sum must not exceed total for either state
+  const rsSumBreakdown: number = (dRS.crime_types || []).reduce((s: number, ct: { count: number }) => s + ct.count, 0);
+  const rjSumBreakdown: number = (dRJ.crime_types || []).reduce((s: number, ct: { count: number }) => s + ct.count, 0);
+  expect(dRS.total).toBeGreaterThanOrEqual(rsSumBreakdown,
+    `RS: total=${dRS.total} < sum of crime_types=${rsSumBreakdown}`
+  );
+  expect(dRJ.total).toBeGreaterThanOrEqual(rjSumBreakdown,
+    `RJ: total=${dRJ.total} < sum of crime_types=${rjSumBreakdown}`
+  );
+});
+
+test('Accuracy: compare filter-options tipo normalization for RS+RJ', async ({ request }) => {
+  // Catches the same accent-dedup bug at the filter-options level for cross-state compare
+  const resp = await request.get(
+    `${BASE_API}/api/filter-options?selected_states=RS&selected_states=RJ&ultimos_meses=12`,
+    { timeout: 60_000 }
+  );
+  expect(resp.ok()).toBeTruthy();
+  const d = await resp.json();
+
+  const tipos: Array<{ value?: string } | string> = d.tipo || [];
+  if (tipos.length === 0) return;
+
+  const seen = new Map<string, string[]>();
+  for (const t of tipos) {
+    const raw = typeof t === 'string' ? t : (t.value || '');
+    const norm = normTipoCompare(raw);
+    if (!norm) continue;
+    if (!seen.has(norm)) seen.set(norm, []);
+    seen.get(norm)!.push(raw);
+  }
+
+  const duplicates = [...seen.entries()]
+    .filter(([, v]) => v.length > 1)
+    .map(([k, v]) => `"${k}": [${v.join(', ')}]`);
+
+  expect(duplicates).toHaveLength(0,
+    `filter-options has duplicate normalized tipos for RS+RJ: ${duplicates.join(' | ')}`
+  );
+});

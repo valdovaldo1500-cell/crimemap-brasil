@@ -23,6 +23,7 @@ RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 BUG_REPORT_EMAIL = os.getenv("BUG_REPORT_EMAIL", "")
 
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Simple TTL cache for expensive query results
 _query_cache: dict[str, tuple[float, any]] = {}
