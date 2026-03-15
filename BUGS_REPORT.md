@@ -276,21 +276,21 @@ print(f'{len(named)}/{len(data)} named bairros (should be 20+)')
 
 ## Section 3: Test Coverage Summary
 
-| Test Suite | Location | What it covers |
-|------------|----------|----------------|
-| `test_accuracy_comprehensive.py` | `backend/tests/` | API-level regressions for all 3 recent bugs + 10 identified risks |
-| `accuracy.spec.ts` | `frontend/e2e/` | End-to-end validation of same behaviors via HTTP |
-| `test_contract.py` | `backend/tests/` | Heatmap/location-stats parity, accent dedup, total≥breakdown |
-| `bug-fixes.spec.ts` | `frontend/e2e/` | UI behavior regressions for 14 fixed bugs |
-| `qa_full_accuracy.py` | project root | Source-file-vs-API accuracy (RS ZIPs, RJ CSV, MG CSV) |
+| Test Suite | Tests | What it covers |
+|------------|-------|----------------|
+| `test_accuracy_comprehensive.py` | 55 (53 pass, 2 skip) | Bairro pipeline bugs, cross-table tipo filtering, compare feature, filter params, geographic accuracy, MG compat, API contract |
+| `test_contract.py` | 13 (13 pass) | Heatmap/location-stats parity, accent dedup, total>=breakdown |
+| `accuracy.spec.ts` | 32 (32 pass) | E2E: tipo dedup, cross-table filter, compare data, share URL, z-index, filter forwarding, geographic accuracy |
+| `bug-fixes.spec.ts` | 14+ | UI behavior regressions for fixed bugs |
+| `qa_full_accuracy.py` | 68 | Source-file-vs-API accuracy (RS ZIPs, RJ CSV, MG CSV) |
 
 ### Run all tests
 ```bash
-# Backend (in-process, local DB)
+# Backend (in-process, local DB) — 66 pass, 2 skip expected
 cd /home/valdo/crime-map/backend
-python -m pytest tests/test_accuracy_comprehensive.py tests/test_contract.py -v --tb=short
+python3 -m pytest tests/test_accuracy_comprehensive.py tests/test_contract.py -v --tb=short
 
-# Frontend E2E (requires local server on :3001 and :8000)
+# Frontend E2E (against production) — 32 pass expected
 export PATH="/home/valdo/.local/node-v20.11.1-linux-x64/bin:$PATH"
 cd /home/valdo/crime-map/frontend
 npx playwright test e2e/accuracy.spec.ts --reporter=line
