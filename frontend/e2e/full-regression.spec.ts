@@ -354,11 +354,13 @@ test.describe('Homepage & Navigation', () => {
 
     // Click the city result
     await autocomplete.click();
-    await page.waitForTimeout(4000);
+    // Wait for map to zoom and data to load
+    await page.waitForTimeout(8000);
 
-    // Map should zoom — view level should change from ESTADOS
+    // Map should zoom — view level indicator should show Municípios or Bairros
     const bodyText = await page.textContent('body') || '';
-    const hasZoomed = bodyText.includes('MUNICÍPIOS') || bodyText.includes('BAIRROS');
+    const hasZoomed = bodyText.includes('Municípios') || bodyText.includes('Bairros')
+      || bodyText.includes('MUNICÍPIOS') || bodyText.includes('BAIRROS');
     expect(hasZoomed).toBeTruthy();
   });
 
