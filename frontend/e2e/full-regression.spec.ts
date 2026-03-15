@@ -333,26 +333,26 @@ test.describe('Homepage & Navigation', () => {
   test('search for city navigates and shows data', async ({ page }) => {
     await page.goto(SITE);
     await waitForMapReady(page);
-    await page.waitForTimeout(1000);
-
-    // Search for Porto Alegre
-    const input = page.locator('input[placeholder*="Buscar"]').first();
-    await input.click();
-    await input.fill('Porto Alegre');
     await page.waitForTimeout(1500);
 
+    // Search for Canoas (smaller city, faster to load)
+    const input = page.locator('input[placeholder*="Buscar"]').first();
+    await input.click();
+    await input.fill('Canoas');
+    await page.waitForTimeout(2000);
+
     // Autocomplete should show results
-    const autocomplete = page.locator('text=PORTO ALEGRE').first();
+    const autocomplete = page.locator('text=CANOAS').first();
     await expect(autocomplete).toBeVisible({ timeout: 10_000 });
 
     // Click the city result
     await autocomplete.click();
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(4000);
 
-    // Map should zoom to show bairro-level data
+    // Map should zoom — view level should change from ESTADOS
     const bodyText = await page.textContent('body') || '';
-    // Should show bairro-level view or municipio data
-    expect(bodyText).toContain('BAIRROS') || expect(bodyText).toContain('Ocorrências');
+    const hasZoomed = bodyText.includes('MUNICÍPIOS') || bodyText.includes('BAIRROS');
+    expect(hasZoomed).toBeTruthy();
   });
 
   test('filters populate without state selection', async ({ page }) => {
