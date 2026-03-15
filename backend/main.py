@@ -630,6 +630,7 @@ def heatmap_municipios(request: Request,
         func.count(Crime.id).label("cnt"),
         func.avg(Crime.latitude).label("lat"),
         func.avg(Crime.longitude).label("lng"),
+        func.min(Crime.state).label("state"),
     ).filter(Crime.latitude.isnot(None))
     if effective_tipo: q = q.filter(Crime.tipo_enquadramento.in_(effective_tipo))
     if grupo: q = q.filter(Crime.grupo_fato == grupo)
