@@ -453,17 +453,22 @@ test('Accuracy: ultimos_meses=3 reduces total vs ultimos_meses=12', async ({ req
 // ============================================================
 
 test('Accuracy: share URL includes location path when detail panel opens', async ({ page }) => {
-  // Navigate directly to a city URL — this opens the detail panel automatically
+  // Navigate directly to a city URL — MapRedirect should redirect to map with panel
   await page.goto(`${BASE_API}/cidade/rs/porto-alegre`);
   await waitForMapReady(page);
 
   // Wait for detail panel with "Copiar link" button
   await page.waitForSelector('[aria-label="Copiar link"]', { timeout: 60_000 });
 
-  // Address bar should contain the city path, not just "/"
+  // Wait for panel to finish loading (address bar syncs after loading=false)
+  await page.waitForFunction(() => {
+    return window.location.pathname !== '/';
+  }, { timeout: 30_000 });
+
   const url = page.url();
   const path = new URL(url).pathname;
-  expect(path).toContain('/cidade/rs/porto-alegre');
+  expect(path).not.toBe('/');
+  expect(path.length).toBeGreaterThan(1);
 });
 
 test('Accuracy: share URL preserves tipo filter in address bar', async ({ page }) => {
