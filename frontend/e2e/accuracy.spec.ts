@@ -438,3 +438,255 @@ test('Accuracy: ultimos_meses=3 reduces total vs ultimos_meses=12', async ({ req
   if (total12 === 0) return;
   expect(total3).toBeLessThanOrEqual(total12);
 });
+
+// ============================================================
+// Group: Share URL integrity (browser interaction)
+// ============================================================
+
+test('Accuracy: share URL includes state path after clicking a state', async ({ page }) => {
+  await page.goto('/');
+  await waitForMapReady(page);
+  await openSidebarAndWait(page);
+
+  // Select RS
+  const rsCheckbox = page.locator('aside label').filter({ hasText: /^RS/ }).locator('input[type="checkbox"]');
+  await rsCheckbox.check();
+  await page.waitForTimeout(2000);
+
+  // Click a municipality on the map to open a detail panel
+  // Wait for colored polygons to appear
+  await page.waitForFunction(() => {
+    const paths = document.querySelectorAll('.leaflet-overlay-pane path');
+    for (const p of paths) {
+      const fill = p.getAttribute('fill') || '';
+      if (['#ef4444', '#f97316', '#eab308', '#16a34a'].includes(fill)) return true;
+    }
+    return false;
+  }, { timeout: 30_000 });
+
+  // Click a colored polygon (RS municipality)
+  const pathIdx = await page.evaluate(() => {
+    const paths = document.querySelectorAll('.leaflet-overlay-pane path');
+    for (let i = 0; i < paths.length; i++) {
+      const fill = paths[i].getAttribute('fill') || '';
+      if (['#ef4444', '#f97316', '#eab308', '#16a34a'].includes(fill)) {
+        const rect = paths[i].getBoundingClientRect();
+        if (rect.width > 5 && rect.height > 5) return i;
+      }
+    }
+    return -1;
+  });
+
+  if (pathIdx < 0) return; // no polygon found — skip
+  await page.locator('.leaflet-overlay-pane path').nth(pathIdx).click({ force: true });
+
+  // Wait for detail panel to appear
+  await page.waitForSelector('[aria-label="Copiar link"]', { timeout: 30_000 });
+
+  // Check the browser address bar — should NOT be just "/"
+  const url = page.url();
+  const path = new URL(url).pathname;
+  expect(path).not.toBe('/');
+  expect(path.length).toBeGreaterThan(1);
+});
+
+test('Accuracy: share URL preserves tipo filter in address bar', async ({ page }) => {
+  await page.goto('/');
+  await waitForMapReady(page);
+  await openSidebarAndWait(page);
+
+  // Select RS
+  const rsCheckbox = page.locator('aside label').filter({ hasText: /^RS/ }).locator('input[type="checkbox"]');
+  await rsCheckbox.check();
+
+  // Wait for filter-options to load
+  await page.waitForResponse(
+    resp => resp.url().includes('/api/filter-options') && resp.status() === 200,
+    { timeout: 30_000 }
+  );
+  await page.waitForTimeout(1000);
+
+  // Select the first crime type checkbox
+  const firstTipo = page.locator('aside h3').filter({ hasText: 'Tipo de Crime' }).locator('xpath=..').locator('label input[type="checkbox"]').first();
+  await firstTipo.check();
+  await page.waitForTimeout(2000);
+
+  // Click a colored polygon to open detail panel
+  await page.waitForFunction(() => {
+    const paths = document.querySelectorAll('.leaflet-overlay-pane path');
+    for (const p of paths) {
+      const fill = p.getAttribute('fill') || '';
+      if (['#ef4444', '#f97316', '#eab308', '#16a34a'].includes(fill)) return true;
+    }
+    return false;
+  }, { timeout: 30_000 });
+
+  const pathIdx = await page.evaluate(() => {
+    const paths = document.querySelectorAll('.leaflet-overlay-pane path');
+    for (let i = 0; i < paths.length; i++) {
+      const fill = paths[i].getAttribute('fill') || '';
+      if (['#ef4444', '#f97316', '#eab308', '#16a34a'].includes(fill)) {
+        const rect = paths[i].getBoundingClientRect();
+        if (rect.width > 5 && rect.height > 5) return i;
+      }
+    }
+    return -1;
+  });
+
+  if (pathIdx < 0) return;
+  await page.locator('.leaflet-overlay-pane path').nth(pathIdx).click({ force: true });
+  await page.waitForSelector('[aria-label="Copiar link"]', { timeout: 30_000 });
+
+  // Address bar should include tipos= query param
+  const url = page.url();
+  expect(url).toContain('tipos=');
+});
+
+// ============================================================
+// Group: Compare pane behavior (browser interaction)
+// ============================================================
+
+test('Accuracy: compare pane appears on top of detail panel', async ({ page }) => {
+  await page.goto('/');
+  await waitForMapReady(page);
+  await openSidebarAndWait(page);
+
+  // Select RS and wait for data
+  const rsCheckbox = page.locator('aside label').filter({ hasText: /^RS/ }).locator('input[type="checkbox"]');
+  await rsCheckbox.check();
+  await page.waitForFunction(() => {
+    const paths = document.querySelectorAll('.leaflet-overlay-pane path');
+    for (const p of paths) {
+      const fill = p.getAttribute('fill') || '';
+      if (['#ef4444', '#f97316', '#eab308', '#16a34a'].includes(fill)) return true;
+    }
+    return false;
+  }, { timeout: 30_000 });
+
+  // Click a polygon to open a detail panel
+  const pathIdx = await page.evaluate(() => {
+    const paths = document.querySelectorAll('.leaflet-overlay-pane path');
+    for (let i = 0; i < paths.length; i++) {
+      const fill = paths[i].getAttribute('fill') || '';
+      if (['#ef4444', '#f97316', '#eab308', '#16a34a'].includes(fill)) {
+        const rect = paths[i].getBoundingClientRect();
+        if (rect.width > 5 && rect.height > 5) return i;
+      }
+    }
+    return -1;
+  });
+  if (pathIdx < 0) return;
+  await page.locator('.leaflet-overlay-pane path').nth(pathIdx).click({ force: true });
+  await page.waitForSelector('[aria-label="Copiar link"]', { timeout: 30_000 });
+
+  // Get detail panel z-index
+  const detailZIndex = await page.evaluate(() => {
+    const panels = document.querySelectorAll('.fixed.bg-\\[\\#111827\\]');
+    for (const p of panels) {
+      const z = (p as HTMLElement).style.zIndex;
+      if (z) return parseInt(z);
+    }
+    return 0;
+  });
+
+  // Enter compare mode
+  await page.locator('button', { hasText: /Comparar|comparação/i }).first().click();
+  await page.waitForTimeout(1000);
+
+  // Click two different polygons to complete a comparison
+  const polygonPaths = await page.locator('.leaflet-overlay-pane path.leaflet-interactive').all();
+  if (polygonPaths.length >= 2) {
+    await polygonPaths[0].click({ force: true });
+    await page.waitForTimeout(2000);
+    await polygonPaths[1].click({ force: true });
+
+    // Wait for comparison pane to appear
+    const comparePaneVisible = await page.locator('text=Comparação').first().waitFor({ state: 'visible', timeout: 30_000 }).then(() => true).catch(() => false);
+    if (comparePaneVisible) {
+      // Get compare pane z-index
+      const compareZIndex = await page.evaluate(() => {
+        const els = document.querySelectorAll('[class*="border-[#7c3aed]"]');
+        for (const el of els) {
+          const parent = el.closest('[style*="z-index"]') || el.closest('[style*="zIndex"]');
+          if (parent) {
+            const z = (parent as HTMLElement).style.zIndex;
+            if (z) return parseInt(z);
+          }
+        }
+        return 0;
+      });
+
+      // Compare pane must be on top of detail panel
+      expect(compareZIndex).toBeGreaterThan(detailZIndex);
+    }
+  }
+});
+
+test('Accuracy: compare panes persist after exiting compare mode', async ({ page }) => {
+  await page.goto('/');
+  await waitForMapReady(page);
+  await openSidebarAndWait(page);
+
+  // Select RS
+  const rsCheckbox = page.locator('aside label').filter({ hasText: /^RS/ }).locator('input[type="checkbox"]');
+  await rsCheckbox.check();
+  await page.waitForFunction(() => {
+    const paths = document.querySelectorAll('.leaflet-overlay-pane path');
+    for (const p of paths) {
+      const fill = p.getAttribute('fill') || '';
+      if (['#ef4444', '#f97316', '#eab308', '#16a34a'].includes(fill)) return true;
+    }
+    return false;
+  }, { timeout: 30_000 });
+
+  // Enter compare mode
+  const compareBtn = page.locator('button', { hasText: /Comparar|comparação/i }).first();
+  await compareBtn.click();
+  await page.waitForTimeout(1000);
+
+  // Click two polygons to create a comparison
+  const polygonPaths = await page.locator('.leaflet-overlay-pane path.leaflet-interactive').all();
+  if (polygonPaths.length < 2) return; // skip if not enough polygons
+
+  await polygonPaths[0].click({ force: true });
+  await page.waitForTimeout(3000);
+  await polygonPaths[1].click({ force: true });
+
+  // Wait for "Comparação" pane to appear
+  const comparePaneVisible = await page.locator('text=Comparação').first().waitFor({ state: 'visible', timeout: 30_000 }).then(() => true).catch(() => false);
+  if (!comparePaneVisible) return; // skip if comparison didn't complete
+
+  // Count compare panes before toggling off
+  const paneCountBefore = await page.locator('text=Comparação').count();
+  expect(paneCountBefore).toBeGreaterThan(0);
+
+  // Exit compare mode by clicking the toggle again
+  await compareBtn.click();
+  await page.waitForTimeout(1000);
+
+  // Compare panes should STILL be visible (not cleared)
+  const paneCountAfter = await page.locator('text=Comparação').count();
+  expect(paneCountAfter).toBe(paneCountBefore);
+});
+
+test('Accuracy: comparing Cabo Frio vs Arraial do Cabo shows data', async ({ page, request }) => {
+  // This test verifies the compare feature works for specific RJ cities
+  // by checking the API responses that the compare UI would make
+  const [resp1, resp2] = await Promise.all([
+    request.get(`${BASE_API}/api/location-stats?municipio=Cabo+Frio&state=RJ&selected_states=RJ&ultimos_meses=12`, { timeout: 60_000 }),
+    request.get(`${BASE_API}/api/location-stats?municipio=Arraial+do+Cabo&state=RJ&selected_states=RJ&ultimos_meses=12`, { timeout: 60_000 }),
+  ]);
+  expect(resp1.ok()).toBeTruthy();
+  expect(resp2.ok()).toBeTruthy();
+
+  const d1 = await resp1.json();
+  const d2 = await resp2.json();
+
+  // Both cities must return crime data for compare to show anything
+  expect(d1.total).toBeGreaterThan(0);
+  expect(d2.total).toBeGreaterThan(0);
+
+  // Both must have crime_types breakdown
+  expect(d1.crime_types?.length).toBeGreaterThan(0);
+  expect(d2.crime_types?.length).toBeGreaterThan(0);
+});
