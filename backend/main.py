@@ -1406,6 +1406,7 @@ def filter_options(request: Request,
         staging_states = ["RS", "RJ", "MG"]
     if staging_states:
             existing_values = {t['value'] for t in tipo_opts}
+            existing_norm = {normalize_name(v) for v in existing_values}
             staging_q = db.query(
                 CrimeStaging.crime_type,
                 (func.coalesce(func.sum(CrimeStaging.occurrences), 0) +
@@ -1432,9 +1433,19 @@ def filter_options(request: Request,
                 staging_q = staging_q.filter(CrimeStaging.year == int(ano))
             staging_q = staging_q.group_by(CrimeStaging.crime_type)
             for row in staging_q.all():
-                if row.crime_type not in existing_values:
+                # Dedup by normalized name (case+accent insensitive) to avoid
+                # AMEACA (from crimes) vs ameaca (from staging) appearing as duplicates
+                norm = normalize_name(row.crime_type.replace("_", " "))
+                if norm not in existing_norm and row.crime_type not in existing_values:
                     tipo_opts.append({"value": row.crime_type, "count": int(row.cnt)})
                     existing_values.add(row.crime_type)
+                    existing_norm.add(norm)
+                elif norm in existing_norm and row.crime_type not in existing_values:
+                    # Merge count into existing entry with same normalized name
+                    for t in tipo_opts:
+                        if normalize_name(t['value'].replace("_", " ")) == norm:
+                            t['count'] += int(row.cnt)
+                            break
 
     # Sexo options (apply all filters except sexo)
     if has_crimes_states:
