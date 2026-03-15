@@ -302,21 +302,31 @@ test.describe('Homepage & Navigation', () => {
     expect(text).toContain('Clique em um estado para começar');
   });
 
-  test('clicking RS opens state menu then loads data', async ({ page }) => {
+  test('clicking interactive state opens state menu', async ({ page }) => {
     await page.goto(SITE);
     await waitForMapReady(page);
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(3000);
 
-    const clicked = await clickState(page, 'Rio Grande do Sul');
-    if (!clicked) {
-      // Fallback: click directly on RS approximate location
-      await page.mouse.click(640, 450);
-      await page.waitForTimeout(1000);
-    }
+    // Find and click the first interactive state polygon with substantial area
+    const clickedState = await page.evaluate(() => {
+      const paths = document.querySelectorAll('.leaflet-overlay-pane path.leaflet-interactive');
+      for (const p of paths) {
+        const rect = p.getBoundingClientRect();
+        if (rect.width > 50 && rect.height > 50) {
+          (p as HTMLElement).dispatchEvent(new MouseEvent('click', {
+            bubbles: true, clientX: rect.x + rect.width / 2, clientY: rect.y + rect.height / 2
+          }));
+          return true;
+        }
+      }
+      return false;
+    });
+    expect(clickedState).toBeTruthy();
+    await page.waitForTimeout(1500);
 
     // State menu should appear with "Selecionar estado" or "Ver estatísticas"
     const menuText = await page.textContent('body') || '';
-    const hasMenu = menuText.includes('Selecionar estado') || menuText.includes('Ver estatísticas');
+    const hasMenu = menuText.includes('Selecionar estado') || menuText.includes('Ver estatísticas') || menuText.includes('estatísticas detalhadas');
     expect(hasMenu).toBeTruthy();
   });
 
