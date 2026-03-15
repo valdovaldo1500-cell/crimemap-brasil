@@ -722,8 +722,9 @@ test('Accuracy: compare state-stats crime type dedup across RS and RJ', async ({
 
 test('Accuracy: compare state-stats filter application returns only matching tipo', async ({ request }) => {
   // Catches the bug where filtered compare shows unrelated crime types alongside the filtered one
+  // Single-state test: tipo=AMEACA with only RS selected should return ONLY ameaca types
   const resp = await request.get(
-    `${BASE_API}/api/state-stats?state=RS&selected_states=RS&selected_states=RJ&tipo=AMEACA&ultimos_meses=12`,
+    `${BASE_API}/api/state-stats?state=RS&selected_states=RS&tipo=AMEACA&ultimos_meses=12`,
     { timeout: 60_000 }
   );
   expect(resp.ok()).toBeTruthy();
@@ -741,6 +742,17 @@ test('Accuracy: compare state-stats filter application returns only matching tip
       `Filtered state-stats returned unrelated type "${raw}" when tipo=AMEACA was requested`
     );
   }
+
+  // Cross-state test: tipo=AMEACA with RS+RJ should have AMEACA in the results (may also include expanded types)
+  const resp2 = await request.get(
+    `${BASE_API}/api/state-stats?state=RS&selected_states=RS&selected_states=RJ&tipo=AMEACA&ultimos_meses=12`,
+    { timeout: 60_000 }
+  );
+  expect(resp2.ok()).toBeTruthy();
+  const d2 = await resp2.json();
+  expect(d2.total).toBeGreaterThan(0);
+  const hasAmeaca = (d2.crime_types || []).some((ct: any) => normTipoCompare(ct.tipo_enquadramento || ct.tipo || '') === 'AMEACA');
+  expect(hasAmeaca).toBeTruthy();
 });
 
 test('Accuracy: compare state-stats rate math consistency for RS and RJ', async ({ request }) => {
