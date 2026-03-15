@@ -1,11 +1,49 @@
 # Crime Brasil — Bug Report & Risk Registry
 
-Generated: 2026-03-14
-Coverage: Bugs fixed + risks identified from bairro heatmap pipeline analysis.
+Updated: 2026-03-15
+Coverage: All bugs fixed (2026-03-12 through 2026-03-15) + risks identified.
 
 ---
 
-## Section 1: Bugs Fixed (Last 3 Days)
+## Section 0: Bugs Fixed (2026-03-15) — Cross-table filtering, compare, share URL
+
+### Bug #4: Duplicate tipo display names — AMEACA vs ameaca (fixed 2026-03-15)
+**Commit:** 4d8147e
+**Symptom:** Filter sidebar showed duplicate entries for 5 crime types (AMEACA/ameaca, ESTUPRO/estupro, ESTELIONATO/estelionato, FEMINICIDIO/feminicidio, SEQUESTRO RELAMPAGO/sequestro_relampago). Selecting one variant didn't match the other table's data.
+**Root cause:** RS `crimes` table stores tipos as uppercase ("AMEACA"), RJ `crimes_staging` stores as lowercase ("ameaca"). The `filter-options` dedup compared raw strings (`row.crime_type not in existing_values`) — case-sensitive, so both passed.
+**Fix:** (1) Normalized dedup in `filter-options` — compares `normalize_name(tipo.replace("_"," "))` before merging, sums counts for duplicates. (2) Added `_staging_tipo_filter()` helper for case-insensitive tipo matching across all 7 staging query locations.
+**Regression tests:** `TestCrossTableTipoFiltering` (5 tests), E2E `filter-options has no duplicate tipo display names`
+
+### Bug #5: Share URL is just `https://crimebrasil.com.br/` (fixed 2026-03-15)
+**Commit:** 4d8147e
+**Symptom:** Sharing a link like `/cidade/rj/cabo-frio` stayed on the static SEO page — never redirected to the map or opened the detail panel.
+**Root cause:** `MapRedirect.tsx` only redirected when filter params (`per`, `view`, `tipos`, etc.) were in the URL. Bare share URLs with no filter params were blocked by `if (!hasMapParams) return;`.
+**Fix:** Removed the `hasMapParams` gate — MapRedirect now always redirects SEO URLs to the map view with the correct `?panel=&state=&municipio=` params.
+**Regression test:** E2E `share URL includes location path when detail panel opens`
+
+### Bug #6: Compare pane opens behind detail panel (fixed 2026-03-15)
+**Commit:** 4d8147e
+**Symptom:** New compare panes appeared behind existing detail panels, invisible to the user.
+**Root cause:** Compare panes used `zIndex: 1002 + groupIdx`, detail panels used `zIndex: 2000 + stackIndex`. Compare was always lower.
+**Fix:** Changed compare pane z-index base from 1002 to 3000.
+**Regression test:** E2E `compare pane z-index higher than detail panel z-index`
+
+### Bug #7: Compare panes disappear when exiting compare mode (fixed 2026-03-15)
+**Commit:** 4d8147e
+**Symptom:** Toggling compare mode off destroyed all completed comparison panes. Users lost their comparison work.
+**Root cause:** Toggle handler called `clearComparison()` which sets `setCompareGroups([])`. Should only clear the in-progress building state.
+**Fix:** Changed toggle handler to call `resetBuilding()` instead of `clearComparison()`. Completed compare groups persist until user clicks ✕.
+
+### Bug #8: RJ duplicate municipality dots — Barra do Piraí / Barra do Pirai (fixed 2026-03-15)
+**Commit:** 152a42d (earlier in same session)
+**Symptom:** Two dots for the same RJ city due to accent variants in staging data.
+**Root cause:** Staging results within the same state weren't deduplicated by normalized name. Only cross-table dedup (staging vs crimes) existed.
+**Fix:** Added intra-staging dedup by `normalize_name(municipio)` with weight merging in `heatmap_municipios`.
+**Regression test:** `TestCrossTableAccuracy::test_no_duplicate_municipality_dots_rj`
+
+---
+
+## Section 1: Bugs Fixed (2026-03-12 through 2026-03-14)
 
 ### Bug #1: Duplicate BairroComponent entries (fixed 2026-03-14)
 **Commit:** a2f9470
