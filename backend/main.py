@@ -1445,14 +1445,18 @@ def filter_options(request: Request,
                 # AMEACA (from crimes) vs ameaca (from staging) appearing as duplicates
                 norm = normalize_name(row.crime_type.replace("_", " "))
                 if norm not in existing_norm and row.crime_type not in existing_values:
-                    tipo_opts.append({"value": row.crime_type, "count": int(row.cnt)})
+                    tipo_opts.append({"value": row.crime_type, "count": int(row.cnt), "aliases": []})
                     existing_values.add(row.crime_type)
                     existing_norm.add(norm)
                 elif norm in existing_norm and row.crime_type not in existing_values:
                     # Merge count into existing entry with same normalized name
+                    # Store the alternative name as an alias for search
                     for t in tipo_opts:
                         if normalize_name(t['value'].replace("_", " ")) == norm:
                             t['count'] += int(row.cnt)
+                            if 'aliases' not in t:
+                                t['aliases'] = []
+                            t['aliases'].append(row.crime_type)
                             break
 
     # Sexo options (apply all filters except sexo)
